@@ -20,9 +20,11 @@ def enigma_step(positions, notches, letters):
         for notch in notches[-1]:
             if (positions[-1] == notch): 
                 new_positions[-1] = (positions[-1]+1) % letters
+                #new_positions[-2] = (positions[-2]+1) % letters
     else:
         if (positions[-1] == notches[-1]): 
             new_positions[-1] = (positions[-1]+1) % letters
+            #new_positions[-2] = (positions[-2]+1) % letters #XXX if last roror also doublestpes, uncomment
     return new_positions
 
 #assumes one argument function
@@ -38,21 +40,22 @@ def repeat(proc, n):
 def reverse(x):
     return x[::-1]
 
-def path(starting_position, notches, letters):
+def path(starting_position, notches, letters, stopping_criterion = lambda p: False):
     #make a list, then make that into a dictionary of steps
-    step = lambda p: enigma_step(p, notches ,letters)
+    step    = lambda p: enigma_step(p, notches ,letters)
     current = step(starting_position)
-    steps = [starting_position]
-    while (not (current in steps)):
+    steps   = [starting_position]
+    while True:
         steps.append(current)
         current = step(current)
+        if (current in steps or stopping_criterion(current)):
+            steps.append(current)
+            break
 
     #make stepping dictionary
     d= []
     for previous, current in zip(steps[:-1], steps[1:]):
         d.append(tuple([str(previous), str(current)]))
-    #and finish the loop
-    d.append(tuple([str(steps[-1]), str(step(current))]))
     return d, steps
 
 
@@ -60,7 +63,7 @@ def path(starting_position, notches, letters):
 
 #okay we have it
 
-path([1,1,1], [0,0,0], 3)
+path([2,1,0], [0,0,0], 3)[0]
 
 
 import networkx as nx
@@ -98,11 +101,12 @@ def make_cycle_graph(notches,letters):
     for starting_position in all_starting_positions:
         if (not (str(starting_position) in positions_checked)):
             #add edges, until we hit a path that is traversed from before
-            edges, _ = path(starting_position, notches, letters)
+            def already_traversed(position):
+                return str(position) in positions_checked
+            edges, _ = path(starting_position, notches, letters, stopping_criterion=already_traversed)
             for edge in edges:
-                if (not (edge[0] in positions_checked)):
-                    all_paths+=[edge]
-                    positions_checked.append(edge[0])
+                all_paths+=[edge]
+                positions_checked.append(edge[0])
     #remap edges to something more readable
     edges = []
     for e in all_paths:
@@ -162,12 +166,12 @@ def check_multiple_notch_isomorphy(letters, rotors, max_notches):
 
 
 
-check_isomorphy(6,3)
-check_isomorphy(6,3,[[1,2],[1],[2]])
-check_multiple_notch_isomorphy(7,3,2)
+check_isomorphy(5,3)
+check_isomorphy(5,3,[[1,2],[1],[2]])
+check_multiple_notch_isomorphy(5,3,2)
 
 
-draw_cycle_graph([2,0,0], 3)
+draw_cycle_graph([0,0,0], 3)
 
 """
 It seems that all enigmas with equal distance between notches in corresponding rotors
