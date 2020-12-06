@@ -10,6 +10,8 @@ using namespace std;
 #include <cstddef>
 #include <iostream>
 
+
+
 // wiring
 class Wire {
   private:
@@ -215,4 +217,6 @@ class Bombe {
     // float index_of_coincidence(const string, const string);
     struct BombeSetting &get_setting();
 };
+
+
 #endif
