@@ -1,3 +1,6 @@
+# Dependencies
+boost/program_options
+
 # Enigma and the Bombe
 This repository contains code for encrypting/decrypting with an enigma, and breaking enigma encryptions with the algorithm used for the bombe.
 
@@ -10,7 +13,7 @@ Information on the algorithm for the Bombe can be found [here](http://www.ellsbu
 Information on the Enigma can be found [here](http://users.telenet.be/d.rijmenants/en/enigmatech.htm), [here](https://plus.maths.org/content/exploring-enigma) and for a mediocre article, on [wikipedia](https://en.wikipedia.org/wiki/Enigma_machine)([details on the rotors](https://en.wikipedia.org/wiki/Enigma_rotor_details)). There is also [this article](http://www.intelligenia.org/downloads/enigvar2.pdf) documenting variations on the enigma.
 
 ## Elements of the Enigma
-### Rotors
+### Rotorssudo apt-get install libboost-all-dev
 ### Plugboard
 ### Ring setting
 ### Initial position

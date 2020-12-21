@@ -268,6 +268,7 @@ class Enigma {
     int                  get_wires() const;
     int                  get_rotors() const;
     const int *          get_positions() const;
+    const string         get_positions_as_string() const;
     // const int *            get_rotor_position() const;
     const string           get_rotor_position_as_string() const;
     const int *            get_ring_setting() const;

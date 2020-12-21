@@ -731,6 +731,7 @@ struct EnigmaSetting Enigma::get_setting() {
 int        Enigma::get_wires() const { return m_wires; }
 int        Enigma::get_rotors() const { return m_rotors_number; }
 const int *Enigma::get_positions() const { return m_cartridge->get_positions(); }
+const string Enigma::get_positions_as_string() const { return m_cartridge->get_positions_as_string(); }
 /*const int *Enigma::get_rotor_position() const {
 return m_cartridge->get_rotor_position();
 }*/

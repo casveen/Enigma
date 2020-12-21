@@ -1,5 +1,5 @@
 CC:= g++
-FLAGS= -Wall -pedantic -O0 -fopenmp #-g -pg #openmp only needed in linking
+FLAGS= -Wall -pedantic -O3 -fopenmp #-g -pg #openmp only needed in linking
 SRC=src
 BIN=bin
 BUILD=build
@@ -18,14 +18,14 @@ ENIGMA_DEP_NAMES = enigma_main.o enigma.o rotors.o
 ENIGMA_DEP       = $(ENIGMA_DEP_NAMES:%=$(BUILD)/%)
 BOMBE_DEP_NAMES = enigma.o rotors.o bombe.o bombe_main.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o
 BOMBE_DEP       = $(BOMBE_DEP_NAMES:%=$(BUILD)/%)
-TEST_DEP_NAMES   = test.o test_enigma.o test_bombe.o enigma.o bombe.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o
+TEST_DEP_NAMES   = test.o test_enigma.o test_bombe.o enigma.o bombe.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o connections.o test_connections.o
 TEST_DEP         = $(TEST_DEP_NAMES:%=$(BUILD)/%)
 BENCHMARKER_DEP_NAMES   = benchmarker.o enigma.o bombe.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o
 BENCHMARKER_DEP         = $(BENCHMARKER_DEP_NAMES:%=$(BUILD)/%)
 PERFORMANCE_DEP_NAMES   = performance.o bombe.o enigma.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o
 PERFORMANCE_DEP         = $(PERFORMANCE_DEP_NAMES:%=$(BUILD)/%)
 
-LIB := -L lib -lboost_program_options
+LIB := -L lib -lboost_program_options 
 INC := -I $(INCLUDE) -I $(SRC)
 
 .PHONY : all clean test valgrind benchmark remake

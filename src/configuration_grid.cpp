@@ -13,6 +13,7 @@ ConfigurationGrid::ConfigurationGrid(Enigma &enigma) {
     m_rotor_count              = enigma.get_rotors();
     m_all_rotor_positions      = enigma.get_all_rotor_positions();
     m_rotor_configuration_count= m_all_rotor_positions.size();
+    
     try {
         cout << "\rAllocating to inverse ";
         // larger than it needs to be...only m_all_rotor_poositions.size()<<letter^rotors
@@ -107,6 +108,7 @@ void ConfigurationGrid::set_checked(vector<vector<shint>>::const_iterator positi
                 }
                 return true;
             }();
+
             if (equal) {
                 m_checked[rss * m_rotor_configuration_count + rpp]= true;
                 set_count++;
@@ -175,6 +177,13 @@ unsigned int ConfigurationGrid::get_rotor_position_count() const {
     return m_all_rotor_positions.size();
 }
 
+
+
+
+
+
+
+//HASHES
 unsigned int ConfigurationGrid::rotor_position_string_to_int(const string &rotor_position) {
     // a injective mapping from ring setting strings to int. Essentially a hash
     // must map correctly to m_all_rotor_positions

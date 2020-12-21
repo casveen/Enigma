@@ -230,7 +230,7 @@ def valid_paths_brute(starting_position, notches, letters, length):
     G = nx.DiGraph()
     for i_notches in notch_rotations:
         p = path(starting_position, i_notches, letters, max_steps=length)
-        print(i_notches, " -> ", p[1])
+        #print(i_notches, " -> ", p[1])
         #if (p[0][1][0]=='111' and p[0][2][0]=='222'):
         #    print(i_notches)
         #    print(p[1])
@@ -240,18 +240,20 @@ def valid_paths_brute(starting_position, notches, letters, length):
     plt.figure(figsize=(20,20))
     pos = nx.nx_agraph.graphviz_layout(G, prog="dot")
     nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'), node_size = 1)
-    #nx.draw_networkx_labels(G, pos)
+    nx.draw_networkx_labels(G, pos)
     nx.draw_networkx_edges(G, pos, edge_color = 'r', arrows=True, arrowsize=8)
     #nx.draw_shell(G)
     plt.show()
     
-valid_paths_brute([0,0,0], [[0],[2],[7]], 10, 10)
+valid_paths_brute([0,0,0], [[0],[0],[0]], 6, 3)
 valid_paths_brute([0,0,0], [[0],[0],[0]], 10, 10) #isopmorph to above? seems so?
 valid_paths_brute([0,0,0,0,0], [[0,2],[0,3],[0,4],[0,1],[0,8]], 10, 10)
 valid_paths_brute([0,0,0], [[1,2],[2],[0,2]], 10, 10)
 enigma_step([1,2,0], [[2, 0], [0], [2, 1]], 3)
 
 def check_valid_path_isomorphy():
+    return
+
 
 """
 note the double S3 engage for [[2, 0], [0], [2, 1]]  ->  
@@ -273,3 +275,34 @@ S2+S5,(10011)
 S3+S5,(10000)
 S2
 """
+
+
+
+
+"""
+non-merged
+def upper_space_usage_in_gb(r = 3, letters = 26, c = 10):
+    int_bytes     = 2
+    pointer_bytes = 8
+    bool_bytes    = 1
+    node_usage = (1-r**(c+1))/(1-r) * (r*bool_bytes+r*pointer_bytes)
+    leaf_usage = letters**r * (r*int_bytes)
+    
+    nodes         = (1-r**(c+1))/(1-r)
+    print("Nodes:       %d\nSpace usage: %.2E Gb"%(nodes, (node_usage+leaf_usage)/(10**9)))
+    return (node_usage + leaf_usage)/(10**9)
+
+upper_space_usage_in_gb(4,26,14)
+"""
+
+#merged
+def upper_space_usage_in_gb(r = 3, letters = 26, c = 10):
+    int_bytes     = 2
+    pointer_bytes = 8
+    bool_bytes    = 1
+    nodes         = c * (2*(r-1))
+    node_usage =  nodes * (r * bool_bytes + r*pointer_bytes)
+    print("Nodes:       %d\nSpace usage: %.2E Gb"%(nodes, node_usage/(10**9)))
+    return node_usage/(10**9)
+
+upper_space_usage_in_gb(4,26,14)
