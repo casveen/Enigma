@@ -1,3 +1,5 @@
+Bababooie
+
 CC:= g++
 FLAGS= -Wall -pedantic -O3 -fopenmp #-g -pg #openmp only needed in linking
 SRC=src
