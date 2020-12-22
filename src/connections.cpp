@@ -19,8 +19,7 @@
         connection_matrix = symmatu(connection_matrix); //hope it gets some flags that optimizes multiplication...
     }
 
-    //tHIS DOES NOT WORK!!
-    //enforces symmetry manually, bad solution
+    //enforces symmetry manually, bad solution    //tHIS DOES NOT WORK!!
     void Connections::connect(int wire_from, int wire_to) {
         //std::cout<<"connecting "<<wire_from<<" to "<<wire_to<<"\n";
         connection_matrix(std::min(wire_from, wire_to), std::max(wire_from, wire_to))++;
@@ -94,34 +93,44 @@
         return true;
     }
 
+/*
+void set_live(int wire) {
+    m_live_wires.at(wire)=true;
+}
+
+void set_dead(int wire) {
+
+}
+
+bool check_live(int wire) {
+    
+}*/
+
+Bundle_connections::Bundle_connections(int bundles, int wires_per_bundle) : Connections(bundles * wires_per_bundle){
+    m_bundles          = bundles;
+    m_wires_per_bundle = wires_per_bundle;
+}
+
+void Bundle_connections::connect(int bundle_from, int wire_from, int bundle_to, int wire_to) {
+    Connections::connect(bundle_from*m_wires_per_bundle+wire_from, bundle_to*m_wires_per_bundle+wire_to);
+}
+
+void Bundle_connections::disconnect(int bundle_from, int wire_from, int bundle_to, int wire_to) {
+    Connections::disconnect(bundle_from*m_wires_per_bundle+wire_from, bundle_to*m_wires_per_bundle+wire_to);
+}
 
 
 
-    Bundle_connections::Bundle_connections(int bundles, int wires_per_bundle) : Connections(bundles * wires_per_bundle){
-        m_bundles          = bundles;
-        m_wires_per_bundle = wires_per_bundle;
-    }
-
-    void Bundle_connections::connect(int bundle_from, int wire_from, int bundle_to, int wire_to) {
-        Connections::connect(bundle_from*m_wires_per_bundle+wire_from, bundle_to*m_wires_per_bundle+wire_to);
-    }
-
-    void Bundle_connections::disconnect(int bundle_from, int wire_from, int bundle_to, int wire_to) {
-        Connections::disconnect(bundle_from*m_wires_per_bundle+wire_from, bundle_to*m_wires_per_bundle+wire_to);
-    }
 
 
-
-
-
-    Bombe_connections::Bombe_connections(int wires) : Bundle_connections(wires, wires) {
-        /*for (int bundle_from;   bundle_from<wires; bundle_from++) {
+    Enigma_connections::Enigma_connections(int wires) : Bundle_connections(wires, wires) {
+        for (int bundle_from;   bundle_from<wires; bundle_from++) {
             for (int bundle_to; bundle_to  <wires; bundle_to++)   {
-                if (bundle_from != bundle_to) {             
+                if (bundle_from != bundle_to)                     {             
                     Bundle_connections::connect(bundle_from, bundle_to, bundle_to, bundle_from);
                 }
             }
-        }*/
+        }
     }
 /*
 void Bombe_connections::connect_enigma(int *encryption, int t_from, int t_to) {

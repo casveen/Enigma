@@ -51,7 +51,7 @@ BombeUnit::BombeUnit(const vector<Rotor> rotors, const Reflector reflector,
     // Top constructor
     m_letters       = (rotors.begin())->get_wires();
     m_rotor_count   = rotors.size();
-    m_diagonal_board= new DiagonalBoard(m_letters);
+    m_diagonal_board= new DiagonalBoard(m_letters); //diagonalboard
     m_enigma        = new Enigma(rotors, reflector);
     m_identifier    = "";
     for (unsigned int r= 0; r < rotors.size(); ++r) {
