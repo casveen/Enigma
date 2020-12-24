@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string.h>
 #include <set>
+#include <utility>
 #include "enigma.hpp"
 #include "configuration_tracker.hpp"
 
@@ -37,84 +38,6 @@ vector<vector<shint>> permutations(int upto, int n) {
     }
     return out;
 }*/
-
-
-
-
-
-
-
-//Stolen from https://www.techiedelight.com/graph-implementation-using-stl/
-// data structure to store graph edges
-Graph::Graph(int N) { 
-    adjList.resize(N);
- }
-
-void Graph::add_edges(vector<Edge> const &edges) {
-    // resize the vector to N elements of type vector<int>
-    // add edges to the directed graph
-    vector<bool> engaged_notches;
-    for (auto &edge: edges) {
-        // insert at the end
-        notch_engages(edge.src, edge.dest, engaged_notches);
-        adjList[edge.src].insert(pair {edge.dest, engaged_notches.copy()});
-    }
-}
-
-shint Graph::count_edges() {
-    shint sum = 0;
-    for(auto s : adjList) {
-        sum += s.size();
-    }
-    return sum;
-}
-
-void Graph::set_root(shint value) {
-    root = value;
-}
- 
-/*
-// print adjacency list representation of graph
-void printGraph(Graph const& graph, int N)
-{
-    for (int i = 0; i < N; i++)
-    {
-        // print current vertex number
-        cout << i << " --> ";
- 
-        // print all neighboring vertices of vertex i
-        for (int v : graph.adjList[i])
-            cout << v << " ";
-        cout << endl;
-    }
-}*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -162,6 +85,92 @@ shint hash_position(vector<shint> position, set<vector<shint>> position_set) {
 }
 
 
+
+
+
+
+
+//Stolen from https://www.techiedelight.com/graph-implementation-using-stl/
+// data structure to store graph edges
+Graph::Graph(int N) { 
+    adjList.resize(N);
+ }
+
+void Graph::add_edges(vector<Edge> const &edges) {
+    // resize the vector to N elements of type vector<int>
+    // add edges to the directed graph
+    vector<bool> engaged_notches;
+    for (auto &edge: edges) {
+        // insert at the end
+        //notch_engages(edge.src, edge.dest, engaged_notches);
+        adjList[edge.src].insert(make_pair(edge.dest, edge.engages)); ///XXX copy vector???
+    }
+}
+
+shint Graph::count_edges() {
+    shint sum = 0;
+    for(auto s : adjList) {
+        sum += s.size();
+    }
+    return sum;
+}
+
+void Graph::set_root(shint value) {
+    root = value;
+}
+
+adjacency_list Graph::get_adjacency_list() {
+    return adjList;
+}
+ 
+/*
+// print adjacency list representation of graph
+void printGraph(Graph const& graph, int N)
+{
+    for (int i = 0; i < N; i++)
+    {
+        // print current vertex number
+        cout << i << " --> ";
+ 
+        // print all neighboring vertices of vertex i
+        for (int v : graph.adjList[i])
+            cout << v << " ";
+        cout << endl;
+    }
+}*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //initializes as well as creates, since needs to initialize path_set and path graph as well.
 //the set can be forgotten after this construction
 // TODO make an enigma copy!
@@ -169,13 +178,15 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     m_length                   = length;
     m_enigma                   = enigma;
     m_letters                  = enigma->get_wires();
-    m_rotor_count              = enigma->get_rotors();notch_engages(previous_position, current_position, )
+    m_rotor_count              = enigma->get_rotors();
+    //notch_engages(previous_position, current_position, )
     
 
 
 
     if (verbose) { cout<<"\rInitializing tracker ... "; }
     int* initial_position= new shint[m_rotor_count];
+    
     //XXXsloppy solution... but copies the pointer
     for(int i =0; i<m_rotor_count; i++) {
         initial_position[i] = m_enigma->get_positions()[i];
@@ -201,7 +212,8 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     }
     cout<<"Made a set of "<<position_set.size()<<" nodes\n";
     path_graph = new Graph(position_set.size());
-    cout<<"hmmmmmm\n";
+
+    m_start_node = hash_position(vector<shint>{initial_position, initial_position+m_rotor_count}, position_set);
     
 
 
@@ -223,7 +235,7 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
 
     shint prev_sz = 0;
     //vector<vector<bool>> notch_engage_path;
-    for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
+    for (int rs = 0; rs < pow(m_letters,m_rotor_count-2); rs++) {
         cout<<m_enigma->get_ring_setting();
         //cin;
 
@@ -235,7 +247,7 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
         
         //make path
         for (int p=0; p<m_length; p++) {
-            cout<<"\rtracking paths ["<<rs/pow(m_letters, m_rotor_count)*100<<"%]";
+            cout<<"\rtracking paths ["<<rs/pow(m_letters, m_rotor_count-2)*100<<"%]";
             current_position   = read_positions(m_enigma);
             notch_engages(previous_position, current_position, engaged_notches);
             //notch_engage_path.push_back(engaged_notches);
@@ -272,9 +284,14 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
 
 
     if (verbose) { cout<<"DONE\n"; }
+    delete[] initial_position;
 }
 
-Graph* ConfigurationTracker::get_graph() {
+ConfigurationTracker::~ConfigurationTracker() {
+    delete path_graph;
+}
+
+const Graph* ConfigurationTracker::get_graph() {
     return path_graph;
 }
 
@@ -292,6 +309,12 @@ in:
 return
     valid ring settings, as a vecotr of ring settings (which is a vector of shints)
 */
+
+
+
+
+
+/*
 vector<vector<shint>> ConfigurationTracker::get_ring_setting_from_path(vector<vector<shint>> path) {
     //translate the path to a notch engage path
     vector<bool>         engaged_notches    = vector<bool>(m_rotor_count, false);
@@ -300,7 +323,8 @@ vector<vector<shint>> ConfigurationTracker::get_ring_setting_from_path(vector<ve
     vector<vector<bool>> valid_notch_engage_path;
     for (vector<shint> current_position : path) {
         notch_engages(previous_position, current_position, engaged_notches);
-        valid_notch_engage_path.push_back(engaged_notches.copy()); //us copy as to not just add the same object
+        //vector<bool> engaged_notches_copy(engaged_notches); 
+        valid_notch_engage_path.push_back(vector<bool>{engaged_notches}); //us copy as to not just add the same object
     }
     //we have the notch engage path of the valid path.
     //now we need to find the ring settings that replicate these notch engages
@@ -320,7 +344,7 @@ vector<vector<shint>> ConfigurationTracker::get_ring_setting_from_path(vector<ve
         notch_engages(previous_position, read_positions(m_enigma), engaged_notches);
         //make path from given position, break if notch engages is not equal
         while(engaged_notches == *valid_engaged_notch_iterator) {    
-            //the ring setting is currently valid,
+         //ter Syn   //the ring setting is currently valid,
 
             //step the iterator
             valid_engaged_notch_iterator++;
@@ -365,7 +389,33 @@ vector<vector<shint>> ConfigurationTracker::get_ring_setting_from_path(vector<ve
 
 
 }
+*/
 
+
+
+void append(vector<pair<Engage, Engage_direction>> &v1, const vector<pair<Engage, Engage_direction>> &v2) {
+    v1.insert(v1.end(), v2.begin(), v2.end());
+}
+
+vector<pair<Engage, Engage_direction>> ConfigurationTracker :: path_iterator() {
+    //from start node.
+    vector<pair<Engage, Engage_direction>> out;
+    append(out, path_iterator_inner(m_start_node)); //should be 0?
+    return out; //XXX store in configurationtracker.
+}
+
+vector<pair<Engage, Engage_direction>> ConfigurationTracker :: path_iterator_inner(shint from) {
+    //from start node.
+    vector<pair<Engage, Engage_direction>> out;
+    for (pair<shint, Engage> to_and_engages : path_graph->get_adjacency_list().at(from)) {
+        //in
+        out.push_back(make_pair(to_and_engages.second, Engage_direction::forward));
+        append(out, path_iterator_inner(to_and_engages.first));
+        //out
+        out.push_back(make_pair(to_and_engages.second, Engage_direction::backward));
+    }
+    return out;
+}
 
 
 #include "rotors.cpp" 

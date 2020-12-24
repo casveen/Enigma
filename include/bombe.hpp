@@ -1,7 +1,7 @@
 #ifndef BOMBE_H   // include guard
 #define BOMBE_H
 
-const bool DEFAULT_USE_CONFIGURATION_GRID= false;
+const bool DEFAULT_USE_CONFIGURATION_TRACKER= false;
 
 using namespace std;
 #include "enigma.hpp"
@@ -10,9 +10,10 @@ using namespace std;
 #include <cstddef>
 #include <iostream>
 #include "diagonalBoard.hpp"
-
+#include "configuration_tracker.hpp"
+/*
 class ConfigurationGrid {
-    /*The Configuration grid is owned by a bombeunit, but its precomputation used for bookkeeping is
+    The Configuration grid is owned by a bombeunit, but its precomputation used for bookkeeping is
     done by the bombe, ie the class that delegates the work to the units.
     Throghout the checking of all rotor positions and ring settings, there are a lot of ring
     settings and rotor positions that have the same confiduration of the enigma throughout
@@ -20,7 +21,7 @@ class ConfigurationGrid {
     given ciphertext. The configuration board keeps track of which configurations are already
     searched. This approach slows down the individual checks, but will drastically lower the amount
     of checks done at the cost of a lot of bookkeeping. This class is probably the source of the
-    largest meemory footprint in the program.*/
+    largest meemory footprint in the program.
   private:
     int          m_letters;
     int          m_rotor_count;
@@ -63,6 +64,7 @@ class ConfigurationGrid {
     unsigned int      array_to_int_hash(const int *);
     unsigned int      array_to_int_reverse_hash(const int *);
 };
+*/
 
 struct BombeUnitSetting {
     // if true, stops as soon as a valid config is found
@@ -82,15 +84,15 @@ struct BombeUnitSetting {
 
 class BombeUnit {
   private:
-    string             m_identifier= "A bombeunit";
-    int                m_letters= 26, m_rotor_count= 3;
-    DiagonalBoard *    m_diagonal_board;
-    vector<int *>      m_enigma_encryptions;
-    ConfigurationGrid *m_configuration_grid;
+    string                m_identifier= "A bombeunit";
+    int                   m_letters= 26, m_rotor_count= 3;
+    DiagonalBoard *       m_diagonal_board;
+    vector<int *>         m_enigma_encryptions;
+    ConfigurationTracker *m_configuration_tracker;
 
     Enigma *   m_enigma;
     bool       m_verbose               = false;
-    const bool m_use_configuration_grid= DEFAULT_USE_CONFIGURATION_GRID;
+    const bool m_use_configuration_tracker= DEFAULT_USE_CONFIGURATION_TRACKER;
     // rotor positions
     // track encryptions
     struct BombeUnitSetting m_setting;
@@ -98,11 +100,11 @@ class BombeUnit {
 
   public:
     BombeUnit(const std::initializer_list<Rotor> rotors, const Reflector reflector,
-              const bool use_configuration_board= DEFAULT_USE_CONFIGURATION_GRID);
+              const bool use_configuration_board= DEFAULT_USE_CONFIGURATION_TRACKER);
     BombeUnit(const vector<Rotor> rotors, const Reflector reflector,
-              const bool use_configuration_board= DEFAULT_USE_CONFIGURATION_GRID);
+              const bool use_configuration_board= DEFAULT_USE_CONFIGURATION_TRACKER);
     BombeUnit(struct EnigmaSetting,
-              const bool use_configuration_board= DEFAULT_USE_CONFIGURATION_GRID);
+              const bool use_configuration_board= DEFAULT_USE_CONFIGURATION_TRACKER);
     ~BombeUnit();
     // setters
     void set_identifier(string);
@@ -158,16 +160,16 @@ class Bombe {
     vector<Rotor>         m_rotors;
     vector<vector<Rotor>> m_rotor_configurations;
     vector<Reflector>     m_reflector;
-    const bool            m_use_configuration_grid= DEFAULT_USE_CONFIGURATION_GRID;
+    const bool            m_use_configuration_tracker= DEFAULT_USE_CONFIGURATION_TRACKER;
     // ofstream                m_outstream;
     struct BombeSetting     m_setting;
     struct BombeUnitSetting m_unit_setting;
  
   public:
     Bombe(const initializer_list<Rotor> rotors, const Reflector reflector,
-          const bool use_configuration_grid= DEFAULT_USE_CONFIGURATION_GRID);
+          const bool use_configuration_grid= DEFAULT_USE_CONFIGURATION_TRACKER);
     Bombe(vector<Rotor> rotors, vector<Reflector> reflector,
-          const bool use_configuration_grid= DEFAULT_USE_CONFIGURATION_GRID);
+          const bool use_configuration_grid= DEFAULT_USE_CONFIGURATION_TRACKER);
     // Bombe(struct EnigmaSetting enigma_setting);
     vector<struct EnigmaSetting> analyze_unit(const string &, const string &, vector<Rotor> &,
                                               Reflector &, int, int);
