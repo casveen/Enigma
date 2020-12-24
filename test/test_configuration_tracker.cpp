@@ -1,13 +1,114 @@
-// main() provided by Catch in file test.cpp.
-#include "catch.hpp"
-#include "enigma.hpp"
-#include "rotors.cpp"
-#include "configuration_tracker.hpp"
+#include<catch.hpp>
+#include<configuration_tracker.hpp>
+#include<stdlib.h>     /* srand, rand */
 
-const int MAX_TESTS   = 100;
-const int MESSAGE_SIZE= 26 * 10;
-const int WIRES       = 26;
-const int WHEELS      = 4;
+vector<shint> engage_position(vector<shint> position, vector<bool> engages, Engage_direction direction, int rotor_count, int wires) {
+    vector<shint> out(rotor_count, 0);
+    for (int i=0; i<(int) engages.size(); i++) {
+        out.at(i) = position[i];
+        if (engages[i]) {
+            switch(direction) {
+                case Engage_direction::forward:  out.at(i) = (position[i]+1)%wires;       break;
+                case Engage_direction::backward: out.at(i) = (position[i]-1+wires)%wires; break;
+                case Engage_direction::stop:                                              break;
+            }
+        } 
+    }
+    return out;
+}
+
+vector<shint> follow_path_iterator(vector<pair<Engage, Engage_direction>> path_iterator, int rotor_count, int wires) {
+    vector<shint> current_position(rotor_count,0);
+    //cout<<"testing if path sums to zero\n";
+    for (pair<Engage, Engage_direction> engage_and_direction : path_iterator) {
+        //cout<<"e";
+        current_position = engage_position(current_position, engage_and_direction.first, engage_and_direction.second, rotor_count, wires);
+        /*for(auto p:current_position) {
+            cout<<p<<" ";
+        }*/
+        
+        /*for (bool b : engage_and_direction.first ) {
+            b?cout<<"T":cout<<"F";
+        }*/
+        //cout<<"\n";
+    }
+    //cout<<"current_position: \n";
+    //for(auto p:current_position) {
+    //    cout<<p<<" ";
+    //}
+    //cout<<"initial position: \n";
+    //for(auto p:initial_position) {
+    //    cout<<p<<" ";
+    //}
+    return current_position;
+}
+
+
+TEST_CASE("Testing if following path iteraator of configuration tracker ends up at the initial position(small)") {
+    int path_length = 4,
+        wires       = 6,
+        rotors      = 3;
+    Enigma enigma= Enigma(rotors, wires);
+    srand(334);
+    enigma.randomize();
+    ConfigurationTracker tracker(&enigma, path_length);
+
+    //Very quickly exhausts new, but hard to predict
+    vector<shint> initial_position(rotors,0);
+    vector<shint> current_position = follow_path_iterator(tracker.path_iterator(), rotors, wires);
+    for(int i=0; i<rotors; i++) {
+        CHECK(initial_position[i] == current_position[i]);
+    }
+}
+
+TEST_CASE("Testing if following path iteraator of configuration tracker ends up at the initial position(realistic)") {
+    int path_length = 12,
+        wires       = 26,
+        rotors      = 3;
+    Enigma enigma= Enigma(rotors, wires);
+    srand(334);
+    enigma.randomize();
+    ConfigurationTracker tracker(&enigma, path_length);
+
+    //Very quickly exhausts new, but hard to predict
+    vector<shint> initial_position(rotors,0);
+    vector<shint> current_position = follow_path_iterator(tracker.path_iterator(), rotors, wires);
+    for(int i=0; i<rotors; i++) {
+        CHECK(initial_position[i] == current_position[i]);
+    }
+}
+
+TEST_CASE("Testing if following path iteraator of configuration tracker ends up at the initial position(small, but many rotors)") {
+    int path_length = 4,
+        wires       = 6,
+        rotors      = 7;
+    Enigma enigma= Enigma(rotors, wires);
+    srand(334);
+    enigma.randomize();
+    ConfigurationTracker tracker(&enigma, path_length);
+
+    //Very quickly exhausts new, but hard to predict
+    vector<shint> initial_position(rotors,0);
+    vector<shint> current_position = follow_path_iterator(tracker.path_iterator(), rotors, wires);
+    for(int i=0; i<rotors; i++) {
+        CHECK(initial_position[i] == current_position[i]);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*
@@ -23,7 +124,7 @@ a three rotor enigma with 6 letters over a length 4 gives the tree
  |-- |-- | --|  /|
  |  \|  \|/--+-- | ETC
 301 311 322 312 321 310 300
-*/
+
 shint simple_hash(string position, int letters) {
     shint out = 0;
     for (char l : position) {
@@ -107,7 +208,5 @@ bool test_isomorph_tracks(Graph* g1, Graph* g2, shint rotors) {
     vector<set<shint>> adj_list2 = g2.get_adjacency_list();
     shint              pos = 0;
     //set<shint>   
-
-
-
 }
+*/

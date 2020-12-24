@@ -1,11 +1,5 @@
 //#include "bombe.hpp"
-#include "cmath"
-#include <vector>
-#include <iostream>
-#include <string.h>
-#include <set>
-#include <utility>
-#include "enigma.hpp"
+
 #include "configuration_tracker.hpp"
 
 using namespace std;
@@ -42,7 +36,7 @@ vector<vector<shint>> permutations(int upto, int n) {
 
 
 //when going from previous to current, which rotors engaged?
-void notch_engages(vector<shint> prev_position, vector<shint> current_position, vector<bool> engages) {
+void notch_engages(vector<shint> prev_position, vector<shint> current_position, vector<bool>& engages) {
     int n = prev_position.size(); 
     for (int i = 0; i<n; i++) {
         engages[i] = !(prev_position[i] == current_position[i]);
@@ -55,8 +49,9 @@ void notch_engages(vector<shint> prev_position, vector<shint> current_position, 
 vector<shint> read_positions(Enigma *enigma) {
     vector<shint> out;
     string read = enigma->get_positions_as_string();
-    for (char c : read) {
-        out.push_back((shint) (c-(int)'A'));
+    int    rotor_count = read.length();
+    for (int i= rotor_count - 1; i >= 0; --i) {
+        out.push_back((shint) (read[i]-(int)'A')); //XXX might be reverseed?
     }
     return out;
 }
@@ -94,16 +89,20 @@ shint hash_position(vector<shint> position, set<vector<shint>> position_set) {
 // data structure to store graph edges
 Graph::Graph(int N) { 
     adjList.resize(N);
- }
+}
+Graph::~Graph() { 
+    cout<<"oh fuck, the graph died!\n";//XXX
+}
 
 void Graph::add_edges(vector<Edge> const &edges) {
     // resize the vector to N elements of type vector<int>
     // add edges to the directed graph
     vector<bool> engaged_notches;
     for (auto &edge: edges) {
+        //cout<<"inserted to graph\n";
         // insert at the end
         //notch_engages(edge.src, edge.dest, engaged_notches);
-        adjList[edge.src].insert(make_pair(edge.dest, edge.engages)); ///XXX copy vector???
+        adjList[edge.src].insert(make_pair(edge.dest, vector<bool>{edge.engages}));
     }
 }
 
@@ -119,7 +118,7 @@ void Graph::set_root(shint value) {
     root = value;
 }
 
-adjacency_list Graph::get_adjacency_list() {
+adjacency_list& Graph::get_adjacency_list() {
     return adjList;
 }
  
@@ -200,6 +199,7 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     position_set.insert(position);
     //set<vector<shint>>::iterator it;
     for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
+        cout<<"\rmaking position set ["<<rs/pow(m_letters, m_rotor_count)*100<<"%]";
         //make length steps and record all positions
         for (int step = 0; step<m_length; step++) {
             m_enigma->turn();
@@ -224,7 +224,7 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     //store enigma setting
     //notch engages
     vector<bool> engaged_notches(m_rotor_count, false);
-    vector<Edge> edges(position_set.size());
+    vector<Edge> edges;
     vector<shint> previous_position = read_positions(m_enigma);
     m_enigma->next_ring_setting();
     vector<shint> current_position  = read_positions(m_enigma);
@@ -235,19 +235,16 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
 
     shint prev_sz = 0;
     //vector<vector<bool>> notch_engage_path;
-    for (int rs = 0; rs < pow(m_letters,m_rotor_count-2); rs++) {
+    for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
         cout<<m_enigma->get_ring_setting();
         //cin;
 
-        
         previous_position = read_positions(m_enigma);
         m_enigma->turn();
         
-        
-        
         //make path
         for (int p=0; p<m_length; p++) {
-            cout<<"\rtracking paths ["<<rs/pow(m_letters, m_rotor_count-2)*100<<"%]";
+            cout<<"\rtracking paths ["<<rs/pow(m_letters, m_rotor_count)*100<<"%]";
             current_position   = read_positions(m_enigma);
             notch_engages(previous_position, current_position, engaged_notches);
             //notch_engage_path.push_back(engaged_notches);
@@ -393,6 +390,8 @@ vector<vector<shint>> ConfigurationTracker::get_ring_setting_from_path(vector<ve
 
 
 
+
+
 void append(vector<pair<Engage, Engage_direction>> &v1, const vector<pair<Engage, Engage_direction>> &v2) {
     v1.insert(v1.end(), v2.begin(), v2.end());
 }
@@ -407,29 +406,59 @@ vector<pair<Engage, Engage_direction>> ConfigurationTracker :: path_iterator() {
 vector<pair<Engage, Engage_direction>> ConfigurationTracker :: path_iterator_inner(shint from) {
     //from start node.
     vector<pair<Engage, Engage_direction>> out;
+    //cout<<"->initialized vector "<<"\n";
+    //cout<<"adj list has size "<<path_graph->get_adjacency_list().size();
     for (pair<shint, Engage> to_and_engages : path_graph->get_adjacency_list().at(from)) {
+        /*cout<<from<<"->"<<to_and_engages.first<<" ";
+        for (bool b : to_and_engages.second ) {
+            b?cout<<"T":cout<<"F";
+        }
+        cout<<"\n";*/
+
         //in
         out.push_back(make_pair(to_and_engages.second, Engage_direction::forward));
         append(out, path_iterator_inner(to_and_engages.first));
         //out
+        /*cout<<from<<"<-"<<to_and_engages.first<<" ";
+        for (bool b : to_and_engages.second ) {
+            b?cout<<"T":cout<<"F";
+        }
+        cout<<"\n";*/
         out.push_back(make_pair(to_and_engages.second, Engage_direction::backward));
     }
     return out;
 }
 
 
-#include "rotors.cpp" 
-int main() {
-    Enigma enigma= Enigma(5, 10);
-    enigma.randomize();
-    cout<<"made enigma\n";
-    ConfigurationTracker tracker(&enigma, 20);
-    cout<<"made tracker\n";
-    cout<<"initialized\n";
-
-    //Very quickly exhausts new, but hard to predict
+void ConfigurationTracker::print_path_iterator() {
+    vector<pair<Engage, Engage_direction>> iterator = path_iterator();
+    for (auto engage_and_direction : iterator) {
+        switch(engage_and_direction.second) {
+            case Engage_direction::forward:  cout<<"f - "; break;
+            case Engage_direction::backward: cout<<"b - "; break;
+            case Engage_direction::stop:     cout<<"s - "; break;
+        }
+        /*
+        for (bool b : engage_and_direction.first ) {
+            b?cout<<"T":cout<<"F";
+        }
+        cout<<"\n";*/
+    }
 }
 
+/*
+#include "rotors.cpp" 
+int main() {
+    Enigma enigma= Enigma(3, 6);
+    enigma.randomize();
+    cout<<"made enigma\n";
+    ConfigurationTracker tracker(&enigma, 4);
+    cout<<"made tracker\n";
+    cout<<"initialized\n";
+    cout<<"checking iterator\n";
+    tracker.print_path_iterator();
+}
+*/
 
 
 

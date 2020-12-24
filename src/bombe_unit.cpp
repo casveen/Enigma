@@ -46,8 +46,8 @@ vector<shint> vector_from_string(const string &str) {
 
 //the UNITS of the bombe, does the hard work
 BombeUnit::BombeUnit(const vector<Rotor> rotors, const Reflector reflector,
-                     const bool use_configuration_grid /*true*/) :
-    m_use_configuration_grid{use_configuration_grid} {
+                     const bool use_configuration_tracker /*true*/) :
+    m_use_configuration_tracker{use_configuration_tracker} {
     // Top constructor
     m_letters       = (rotors.begin())->get_wires();
     m_rotor_count   = rotors.size();
@@ -60,7 +60,7 @@ BombeUnit::BombeUnit(const vector<Rotor> rotors, const Reflector reflector,
     }
     m_identifier+= reflector.get_name();
     // find all rotor positions, and make configuration grid
-    if (m_use_configuration_grid) { m_configuration_grid= new ConfigurationGrid(*m_enigma); }
+    if (m_use_configuration_tracker) { m_configuration_tracker= new ConfigurationTracker(*m_enigma); }
 }
 
 BombeUnit::BombeUnit(const std::initializer_list<Rotor> rotors, const Reflector reflector,
@@ -316,10 +316,10 @@ void BombeUnit::print_progress(int ring_setting, int max_ring_settings, int solu
     }
     progress_bar+= "]";
     cout << progress_bar;
-    if (m_use_configuration_grid) {
+    if (m_use_configuration_tracker) {
         cout << " [exhausted "
-             << (100 * (float)m_configuration_grid->get_checked_configurations()) /
-                    (float)m_configuration_grid->get_total_configurations()
+             /*<< (100 * (float)m_configuration_grid->get_checked_configurations()) /
+                    (float)m_configuration_grid->get_total_configurations()*/
              << "]";
     }
 
