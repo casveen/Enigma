@@ -41,23 +41,21 @@ void DiagonalBoard::reset() {
 }
 void DiagonalBoard::connect(int t_bundle_1, int t_wire_1, int t_bundle_2, int t_wire_2) {
     get_wire(t_bundle_1, t_wire_1)->connect(get_wire(t_bundle_2, t_wire_2));
-    // get_wire(t_bundle_1, t_wire_2)->connect(get_wire(t_bundle_2, t_wire_1));
     get_wire(t_bundle_2, t_wire_2)->connect(get_wire(t_bundle_1, t_wire_1));
-    // XXX this is the correct secoind one!!!
-    // get_wire(t_bundle_2,
-    // t_wire_2)->connect(get_wire(t_bundle_1, t_wire_1));
+}
+void DiagonalBoard::disconnect(int t_bundle_1, int t_wire_1, int t_bundle_2, int t_wire_2) {
+    get_wire(t_bundle_1, t_wire_1)->disconnect(get_wire(t_bundle_2, t_wire_2));
+    get_wire(t_bundle_2, t_wire_2)->disconnect(get_wire(t_bundle_1, t_wire_1));
 }
 void DiagonalBoard::connect_enigma(int *encryption, int t_from, int t_to) {
     int m_letters= m_bundles.size();
-    // vector<Wire *> bundle_1 = m_bundles[t_from];
-    // vector<Wire *> bundle_2 = m_bundles[t_to];
-    /*for (int i= 0; i < m_letters; i++) {
-        bundle_1[i]->connect(bundle_2[encryption[i]]);
-        bundle_1[encryption[i]]->connect(bundle_2[i]);
-    }*/
-
     for (int i= 0; i < m_letters; i++) { connect(t_from, i, t_to, encryption[i]); }
 }
+void DiagonalBoard::disconnect_enigma(int *encryption, int t_from, int t_to) {
+    int m_letters= m_bundles.size();
+    for (int i= 0; i < m_letters; i++) { disconnect(t_from, i, t_to, encryption[i]); }
+}
+
 int DiagonalBoard::bundle_sum(int bundle) const {
     int sum= 0;
     for (unsigned int i= 0; i < m_bundles.size(); ++i) { sum+= get_wire(bundle, i)->get_live(); }

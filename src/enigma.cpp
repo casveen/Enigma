@@ -639,6 +639,29 @@ void Cartridge::turn() {
         }
     }
 }
+
+void Cartridge::turn_manually(vector<bool> engages, bool forward) {
+     for (int i=0; i<(int) engages.size(); i++) {
+        if (engages[i]) {
+            if (forward) {
+                m_positions[i] = (m_positions[i]+1)%m_wires;
+            } else {
+                m_positions[i] = (m_positions[i]-1+m_wires)%m_wires;
+            }
+        } 
+    }
+}
+
+void Cartridge::turn_positions_odometer() {
+     // odometer style
+    int carry= 1, next;
+    for (int p= 0; p < m_rotor_count && carry > 0; p++) {
+        next             = (m_positions[p] + carry) % m_wires;
+        next == 0 ? carry= 1 : carry= 0;
+        m_positions[p]           = next;
+    }
+}
+
 int Cartridge::plugboard_encrypt(int i) const { return m_plugboard->encrypt(i); }
 
 int Cartridge::encrypt_without_turning(int i) const {
@@ -881,6 +904,15 @@ void Enigma::randomize() { m_cartridge->randomize(); }
 void Enigma::reset() { m_cartridge->reset_positions(); }
 // void Enigma::turn(int turns) { m_cartridge->turn(turns); }
 void Enigma::turn() { m_cartridge->turn(); }
+
+void Enigma::turn_manually(vector<bool> engages, bool forward) {
+    m_cartridge->turn_manually(engages, forward);
+}
+
+void Enigma::turn_positions_odometer() {
+    m_cartridge->turn_positions_odometer();
+}
+
 int  Enigma::encrypt(int m) {
     m_cartridge->turn();
     // cout<<"encr "<<m<<"\n";

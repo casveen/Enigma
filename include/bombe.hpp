@@ -88,7 +88,8 @@ class BombeUnit {
     int                   m_letters= 26, m_rotor_count= 3;
     DiagonalBoard *       m_diagonal_board;
     vector<int *>         m_enigma_encryptions;
-    ConfigurationTracker *m_configuration_tracker;
+    ConfigurationTracker *m_configuration_tracker; //XXX only uses its path...
+    vector<pair<vector<bool>, Engage_direction>> engage_path;
 
     Enigma *   m_enigma;
     bool       m_verbose               = false;
@@ -118,6 +119,7 @@ class BombeUnit {
     void init_enigma_encryptions(int, vector<string> &, vector<vector<shint>> &);
     void reset_diagonal_board();
     vector<struct EnigmaSetting> analyze(const string &, const string &, int, int);
+    vector<struct EnigmaSetting> analyze_with_configuration_tracker(const string &, const string &, int, int);
     void                         setup_diagonal_board(const string &, const string &);
     bool                         check_one_wire(int);
     bool                         bundle_contradiction(int);

@@ -256,7 +256,6 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
 
             previous_position  = read_positions(m_enigma);
             m_enigma->turn();
-
         }
         prev_sz = path_graph->count_edges();
         path_graph->add_edges(edges);

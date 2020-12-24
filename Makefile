@@ -18,7 +18,7 @@ ENIGMA_DEP_NAMES = enigma_main.o enigma.o rotors.o
 ENIGMA_DEP       = $(ENIGMA_DEP_NAMES:%=$(BUILD)/%)
 BOMBE_DEP_NAMES = enigma.o rotors.o bombe.o bombe_main.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o
 BOMBE_DEP       = $(BOMBE_DEP_NAMES:%=$(BUILD)/%)
-TEST_DEP_NAMES   = test.o test_configuration_tracker.o configuration_tracker.o test_enigma.o enigma.o  # diagonal_board.o wire.o bombe.o  bombe_unit.o connections.o test_connections.o test_bombe.o 
+TEST_DEP_NAMES   = test.o test_configuration_tracker.o configuration_tracker.o test_enigma.o enigma.o diagonal_board.o wire.o bombe.o  bombe_unit.o connections.o test_connections.o test_bombe.o 
 TEST_DEP         = $(TEST_DEP_NAMES:%=$(BUILD)/%)
 BENCHMARKER_DEP_NAMES   = benchmarker.o enigma.o bombe.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o
 BENCHMARKER_DEP         = $(BENCHMARKER_DEP_NAMES:%=$(BUILD)/%)
