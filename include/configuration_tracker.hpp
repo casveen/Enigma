@@ -40,6 +40,7 @@ class ConfigurationTracker {
     Graph*   path_graph;
     shint    m_start_node; //hash of starting node, probably 0
     shint    current_position; //XXXmight overshadow?
+    set<vector<shint>> position_set;
 
   public:
     ConfigurationTracker(Enigma *, const int);
@@ -54,7 +55,7 @@ class ConfigurationTracker {
     //bool is_leaf();
     //vector<vector<shint>> get_ring_setting_from_path(vector<vector<shint>> path);
     vector<pair<Engage, Engage_direction>> path_iterator();
-    vector<pair<Engage, Engage_direction>> path_iterator_inner(shint from);
+    vector<pair<Engage, Engage_direction>> path_iterator_inner(shint from, shint depth);
     void print_path_iterator();
 };
 #endif

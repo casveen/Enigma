@@ -67,6 +67,8 @@ vector<struct EnigmaSetting> Bombe::analyze_unit(const string & ciphertext_subst
                                                  Reflector &reflector, int candidate,
                                                  int most_wired_letter) {
     BombeUnit unit(rotor_configuration, reflector, m_use_configuration_tracker);
+    vector<struct EnigmaSetting> solutions;
+
     auto      start_unit_run= std::chrono::system_clock::now();
     unit.set_identifier(unit.get_identifier() + " position " + to_string(candidate) + " ");
     // translate settings
@@ -80,8 +82,13 @@ vector<struct EnigmaSetting> Bombe::analyze_unit(const string & ciphertext_subst
     unit.get_setting().only_one_candidate           = m_setting.only_one_candidate;
     unit.get_setting().stop_on_first_valid          = m_setting.stop_on_first_valid;
     if (m_setting.time_performance) { start_unit_run= std::chrono::system_clock::now(); }
-    vector<struct EnigmaSetting> solutions=
+
+    if (m_use_configuration_tracker) {
+        solutions= unit.analyze_with_configuration_tracker(ciphertext_substring, crib, most_wired_letter, candidate);
+    } else {
+        solutions=
         unit.analyze(ciphertext_substring, crib, most_wired_letter, candidate);
+    }
     if (m_setting.time_performance) {
         auto stop_unit_run= std::chrono::system_clock::now();
         update_performance_2(m_setting.performance_unit_run_mean, m_setting.performance_unit_run_var,

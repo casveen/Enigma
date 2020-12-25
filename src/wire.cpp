@@ -28,4 +28,6 @@ void Wire::reset() {
 vector<Wire *> *Wire::get_connections() { return &m_connections; }
 
 void            Wire::connect(Wire *w) { m_connections.push_back(w); }
-void            Wire::disconnect(Wire *w) { m_connections.pop_back(); } //TODO, due to way used, can merely discard last
+void            Wire::disconnect(Wire *w) { 
+    //cout<<"disconnecting a wire\n";
+    m_connections.pop_back(); } //TODO, due to way used, can merely discard last

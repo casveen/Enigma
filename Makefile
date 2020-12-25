@@ -1,5 +1,5 @@
 CC:= g++
-FLAGS= -Wall -pedantic -O3 -fopenmp #-g -pg #openmp only needed in linking
+FLAGS= -Wall -pedantic -Ofast -fopenmp #-g -pg #openmp only needed in linking
 SRC=src
 BIN=bin
 BUILD=build
@@ -14,16 +14,22 @@ SOURCE_FILES     = $(SOURCE_NAME:%=$(SRC)/%)
 EXECUTABLE_FILES = $(EXECUTABLE_NAME:%=$(BIN)/%)
 OBJECT_FILES     = $(SOURCE_NAME:%.cpp=$(BUILD)/%.o)
 ##DEPENDENCIES
-ENIGMA_DEP_NAMES = enigma_main.o enigma.o rotors.o
+ENIGMA_DEP_NAMES = enigma.o rotors.o
 ENIGMA_DEP       = $(ENIGMA_DEP_NAMES:%=$(BUILD)/%)
-BOMBE_DEP_NAMES = enigma.o rotors.o bombe.o bombe_main.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o
+BOMBE_DEP_NAMES = $(ENIGMA_DEP_NAMES) bombe.o diagonal_board.o wire.o configuration_tracker.o bombe_unit.o
 BOMBE_DEP       = $(BOMBE_DEP_NAMES:%=$(BUILD)/%)
-TEST_DEP_NAMES   = test.o test_configuration_tracker.o configuration_tracker.o test_enigma.o enigma.o diagonal_board.o wire.o bombe.o  bombe_unit.o connections.o test_connections.o test_bombe.o 
+TEST_DEP_NAMES   = test.o test_configuration_tracker.o test_enigma.o test_connections.o connections.o test_bombe.o $(ENIGMA_DEP_NAMES) $(BOMBE_DEP_NAMES) 
 TEST_DEP         = $(TEST_DEP_NAMES:%=$(BUILD)/%)
-BENCHMARKER_DEP_NAMES   = benchmarker.o enigma.o bombe.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o
+BENCHMARKER_DEP_NAMES   = benchmarker.o $(BOMBE_DEP_NAMES)
 BENCHMARKER_DEP         = $(BENCHMARKER_DEP_NAMES:%=$(BUILD)/%)
-PERFORMANCE_DEP_NAMES   = performance.o bombe.o enigma.o diagonal_board.o wire.o configuration_grid.o bombe_unit.o
+PERFORMANCE_DEP_NAMES   = performance.o $(BOMBE_DEP_NAMES)
 PERFORMANCE_DEP         = $(PERFORMANCE_DEP_NAMES:%=$(BUILD)/%)
+##MAIN DEPENDENCIES
+ENIGMA_MAIN_DEP_NAMES = enigma_main.o $(ENIGMA_DEP_NAMES)
+ENIGMA_MAIN_DEP       = $(ENIGMA_MAIN_DEP_NAMES:%=$(BUILD)/%)
+BOMBE_MAIN_DEP_NAMES  = bombe_main.o $(BOMBE_DEP_NAMES)
+BOMBE_MAIN_DEP        = $(BOMBE_MAIN_DEP_NAMES:%=$(BUILD)/%)
+
 
 LIB := -L lib -lboost_program_options 
 INC := -I $(INCLUDE) -I $(SRC)

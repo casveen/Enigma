@@ -40,10 +40,12 @@ void DiagonalBoard::reset() {
     }
 }
 void DiagonalBoard::connect(int t_bundle_1, int t_wire_1, int t_bundle_2, int t_wire_2) {
+    //cout<<t_bundle_1<<","<<t_wire_1<<" <-> "<<t_bundle_2<<","<<t_wire_2<<"\n";
     get_wire(t_bundle_1, t_wire_1)->connect(get_wire(t_bundle_2, t_wire_2));
     get_wire(t_bundle_2, t_wire_2)->connect(get_wire(t_bundle_1, t_wire_1));
 }
 void DiagonalBoard::disconnect(int t_bundle_1, int t_wire_1, int t_bundle_2, int t_wire_2) {
+    //cout<<t_bundle_1<<","<<t_wire_1<<" <-> "<<t_bundle_2<<","<<t_wire_2<<"\n";
     get_wire(t_bundle_1, t_wire_1)->disconnect(get_wire(t_bundle_2, t_wire_2));
     get_wire(t_bundle_2, t_wire_2)->disconnect(get_wire(t_bundle_1, t_wire_1));
 }
