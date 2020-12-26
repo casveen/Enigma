@@ -35,6 +35,7 @@ vector<vector<shint>> permutations(int upto, int n) {
 
 
 
+
 //when going from previous to current, which rotors engaged?
 void notch_engages(vector<shint> prev_position, vector<shint> current_position, vector<bool>& engages) {
     int n = prev_position.size(); 
