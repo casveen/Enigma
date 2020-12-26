@@ -17,16 +17,16 @@ void update_performance_2(double &mean, double &var, std::chrono::duration<doubl
 
 //The main BOMBE, delegates the hard work to its units
 Bombe::Bombe(const initializer_list<Rotor> rotors, const Reflector reflector,
-             const bool use_configuration_grid) :
+             const bool use_configuration_tracker) :
     m_rotors{vector<Rotor>(rotors)},
-    m_reflector{vector<Reflector>({reflector})}, m_use_configuration_grid{use_configuration_grid} {
+    m_reflector{vector<Reflector>({reflector})}, m_use_configuration_tracker{use_configuration_tracker} {
     m_letters= m_rotors[0].get_wires();
     // streambuf *streambuffer= cout.rdbuf();
     // m_outstream            = ostream(streambuffer);
 }
 
-Bombe::Bombe(vector<Rotor> rotors, vector<Reflector> reflector, const bool use_configuration_grid) :
-    m_rotors(rotors), m_reflector(reflector), m_use_configuration_grid{use_configuration_grid} {
+Bombe::Bombe(vector<Rotor> rotors, vector<Reflector> reflector, const bool use_configuration_tracker) :
+    m_rotors(rotors), m_reflector(reflector), m_use_configuration_tracker{use_configuration_tracker} {
     m_letters= m_rotors[0].get_wires();
 }
 
@@ -66,7 +66,9 @@ vector<struct EnigmaSetting> Bombe::analyze_unit(const string & ciphertext_subst
                                                  vector<Rotor> &rotor_configuration,
                                                  Reflector &reflector, int candidate,
                                                  int most_wired_letter) {
-    BombeUnit unit(rotor_configuration, reflector, m_use_configuration_grid);
+    BombeUnit unit(rotor_configuration, reflector, m_use_configuration_tracker);
+    vector<struct EnigmaSetting> solutions;
+
     auto      start_unit_run= std::chrono::system_clock::now();
     unit.set_identifier(unit.get_identifier() + " position " + to_string(candidate) + " ");
     // translate settings
@@ -80,8 +82,13 @@ vector<struct EnigmaSetting> Bombe::analyze_unit(const string & ciphertext_subst
     unit.get_setting().only_one_candidate           = m_setting.only_one_candidate;
     unit.get_setting().stop_on_first_valid          = m_setting.stop_on_first_valid;
     if (m_setting.time_performance) { start_unit_run= std::chrono::system_clock::now(); }
-    vector<struct EnigmaSetting> solutions=
+
+    if (m_use_configuration_tracker) {
+        solutions= unit.analyze_with_configuration_tracker(ciphertext_substring, crib, most_wired_letter, candidate);
+    } else {
+        solutions=
         unit.analyze(ciphertext_substring, crib, most_wired_letter, candidate);
+    }
     if (m_setting.time_performance) {
         auto stop_unit_run= std::chrono::system_clock::now();
         update_performance_2(m_setting.performance_unit_run_mean, m_setting.performance_unit_run_var,
@@ -130,12 +137,16 @@ vector<struct EnigmaSetting> Bombe::analyze(const string &ciphertext, const stri
         rotor_configurations.erase(rotor_configurations.begin() + 1, rotor_configurations.end());
     }
 
+    //Make the engage_path
+    
+    
+
     // spawn units that analyze. For each candidate, for each configuration of rotors
     // TODO thread unsaefe!!!
     vector<Rotor> rotor_configuration;
     unsigned int  i, j, k;
     //#pragma omp parallel for collapse(3) private(rotor_configuration, i, j, k)
-    for (i= 0; i < candidates.size(); ++i) {
+    for (i= 0; i < candidates.size(); ++i) { //move to inner
         for (k= 0; k < m_reflector.size(); ++k) {
             for (j= 0; j < rotor_configurations.size(); ++j) {
                 // cout << i << j << k << "\n";

@@ -1,5 +1,5 @@
 #include "bombe.hpp"
-const int PROGRESS_BAR_WIDTH= 20;
+const int PROGRESS_BAR_WIDTH= 50;
 #include <cmath>
 
 
@@ -46,8 +46,8 @@ vector<shint> vector_from_string(const string &str) {
 
 //the UNITS of the bombe, does the hard work
 BombeUnit::BombeUnit(const vector<Rotor> rotors, const Reflector reflector,
-                     const bool use_configuration_grid /*true*/) :
-    m_use_configuration_grid{use_configuration_grid} {
+                     const bool use_configuration_tracker /*true*/) :
+    m_use_configuration_tracker{use_configuration_tracker} {
     // Top constructor
     m_letters       = (rotors.begin())->get_wires();
     m_rotor_count   = rotors.size();
@@ -59,8 +59,6 @@ BombeUnit::BombeUnit(const vector<Rotor> rotors, const Reflector reflector,
         m_identifier+= "-";
     }
     m_identifier+= reflector.get_name();
-    // find all rotor positions, and make configuration grid
-    if (m_use_configuration_grid) { m_configuration_grid= new ConfigurationGrid(*m_enigma); }
 }
 
 BombeUnit::BombeUnit(const std::initializer_list<Rotor> rotors, const Reflector reflector,
@@ -88,7 +86,7 @@ BombeUnit::~BombeUnit() {
 // setters
 void BombeUnit::set_ring_setting(const string setting) { m_enigma->set_ring_setting(setting); }
 void BombeUnit::set_rotor_position(const string setting) { m_enigma->set_rotor_position(setting); }
-void BombeUnit::set_identifier(string identifier) { m_identifier= identifier; }
+void BombeUnit::set_identifier(string identifier) { m_identifier = identifier; }
 
 
 
@@ -142,15 +140,10 @@ vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const 
     int                          crib_n= crib.length(),
         total_permutations= m_enigma->compute_total_permutations_brute_force() + crib_n - 1,
         ring_settings     = min((int)pow(m_letters, m_rotor_count), m_setting.max_ring_settings);
-    if (m_use_configuration_grid) {
-        ring_settings/= m_letters;   // ignore slowest rotor TODO make use of in CG, to alloc less
-    }
     ring_settings+= 1;   // maybe only if using CG
-    vector<string>        rotor_positions;
+    vector<string> rotor_positions;
     vector<vector<shint>> positions;
     m_enigma->set_ring_setting(m_setting.starting_ring_setting);
-    if (m_use_configuration_grid) { m_configuration_grid->set_crib_length(crib_n); }
-    
     
     // for each ring setting
     auto start_ring_setting= std::chrono::system_clock::now();
@@ -160,34 +153,26 @@ vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const 
         if (m_setting.time_performance) { start_ring_setting= std::chrono::system_clock::now(); }
         // for each rotor position
         for (int j= 0; j < total_permutations - 1; j++) {
-            if (!m_use_configuration_grid ||
-                (m_use_configuration_grid &&
-                 !m_configuration_grid->get_checked(
-                     m_enigma->get_ring_setting(),
-                     vector_from_string(rotor_positions[rotor_positions.size() - crib_n - 1])))) {
-                reset_diagonal_board();
-                setup_diagonal_board(ciphertext, crib);
-                // BEGIN TESTS
-                if (check_one_wire(most_wired_letter)) {     // first test
-                    if (doublecheck_and_get_plugboard()) {   // second test
-                        if (tripplecheck(crib, ciphertext, position,
-                                         rotor_positions)) {   // final test
+            reset_diagonal_board();
+            setup_diagonal_board(ciphertext, crib);
+            // BEGIN TESTS
+            if (check_one_wire(most_wired_letter)) {     // first test
+                if (doublecheck_and_get_plugboard()) {   // second test
+                    if (tripplecheck(crib, ciphertext, position,
+                                     rotor_positions)) {   // final test
                             /*cout << "\nRS:" << m_enigma->get_ring_setting_as_string() << "   RP:"
                                  << rotor_positions[rotor_positions.size() - crib.length() - 1]
                                  << "   P:" << m_enigma->get_cartridge()->get_positions_as_string()
                                  << "\n";*/
-                            m_enigma->set_rotor_position(rotor_positions[0]);
-                            solutions.push_back(m_enigma->get_setting());
-                            m_enigma->set_rotor_position(rotor_positions.back());
-                            if (m_setting.stop_on_first_valid) { return solutions; }
-                        }
-                        m_enigma->set_plugboard("");   // reset plugboard
+                        m_enigma->set_rotor_position(rotor_positions[0]);
+                        solutions.push_back(m_enigma->get_setting());
+                        m_enigma->set_rotor_position(rotor_positions.back());
+                        if (m_setting.stop_on_first_valid) { return solutions; }
                     }
-                }
-                if (m_use_configuration_grid) {
-                    m_configuration_grid->set_checked(positions.end() - crib.length() - 1);
+                    m_enigma->set_plugboard("");   // reset plugboard
                 }
             }
+            
 
             // END TESTS
             // shuffle arrays TODO make own function
@@ -214,10 +199,114 @@ vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const 
         }
 
     }   //end for ring setting
-    cout << "                                                                                      "
-            "      \r";
+    cout<<"                                                                                      "
+        << "      \r";
     if (m_setting.time_performance && m_verbose) { print_performance(); }
-    if (m_use_configuration_grid) { m_configuration_grid->find_unchecked(); }
+    //if (m_use_configuration_tracker) { m_configuration_tracker->find_unchecked(); }
+    return solutions;
+}
+
+vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const string &ciphertext, const string &crib,
+                                                                           int most_wired_letter, int position) {
+    //general setup
+    vector<struct EnigmaSetting> solutions;
+    int                          crib_n= crib.length(),
+                                 //total_permutations = m_enigma->compute_total_permutations_brute_force() + crib_n - 1,
+                                 positions_count = min((int)pow(m_letters, m_rotor_count), m_setting.max_ring_settings),
+                                 path_i = 0;
+    //vector<vector<shint>> positions;
+    //vector<shint> initial_positions(m_rotor_count, 0);
+    shint *encryption         = new shint[m_letters]; //used in place by enigma
+    shint *initial_positions  = new shint[m_letters];
+    for(int i=0; i<m_rotor_count; i++) {initial_positions[i]=0;}
+    //get engagae_path, TODO move to bombe
+    ConfigurationTracker tracker = ConfigurationTracker(m_enigma, crib_n);
+    //cout<<"made tracker\n";
+    vector<pair<vector<bool>, Engage_direction>> path_iterator = tracker.path_iterator();
+    //cout<<"got iterator\n";
+    
+
+    // for each rotor_position
+    auto start_ring_setting= std::chrono::system_clock::now();
+    for (int rp= 0; rp < positions_count; ++rp) {
+        print_progress(rp, positions_count, (int) solutions.size());
+        //init_enigma_encryptions(crib_n, rotor_positions, positions);
+        if (m_setting.time_performance) { start_ring_setting= std::chrono::system_clock::now(); }
+        // for each edge in the engage path
+        for (pair<vector<bool>, Engage_direction> engage_and_direction : path_iterator) {
+                //engage, connect the enigma if forward, disconnect if backward, test if stop
+                //setup_diagonal_board(ciphertext, crib);
+                switch (engage_and_direction.second) {
+                case Engage_direction::forward :
+                    //connect
+                    //cout<<"\n f:turnning manually\n";
+                    m_enigma->turn_manually(engage_and_direction.first, true);
+                    //cout<<"\n f:getting encryption\n";
+                    m_enigma->get_encryption_inplace(encryption);
+                    //cout<<"\n f:connectiong\n";
+                    m_diagonal_board->connect_enigma(encryption, 
+                                                     (int)crib[path_i] - (int)'A',
+                                                     (int)ciphertext[path_i] - (int)'A');
+                    path_i++;
+                    break;
+                case Engage_direction::backward :
+                    //disconnect
+                    path_i--;
+                    //cout<<"\n b:turnning manually\n";
+                    m_enigma->turn_manually(engage_and_direction.first, false);
+                    //cout<<"\n b:getting encryption\n";
+                    m_enigma->get_encryption_inplace(encryption);
+                    //cout<<"\n b:connectiong\n";
+                    //cout<<crib[path_i]<<" <-("<<path_i<<")-> "<<ciphertext[path_i]<<"\n";
+                    m_diagonal_board->disconnect_enigma(encryption, 
+                                                        (int)crib[path_i] - (int)'A',
+                                                        (int)ciphertext[path_i] - (int)'A');
+                    
+                    break;
+                case Engage_direction::stop :
+                    //reset_diagonal_board();
+                    /*
+                    // BEGIN TESTS, XXX DOES NOT WORK
+                    if (check_one_wire(most_wired_letter)) {     // first test
+                        if (doublecheck_and_get_plugboard()) {   // second test
+                            if (tripplecheck(crib, ciphertext, position,
+                                             m_enigma->get_rotor_position())) {   // final test
+                            /*cout << "\nRS:" << m_enigma->get_ring_setting_as_string() << "   RP:"
+                                 << rotor_positions[rotor_positions.size() - crib.length() - 1]
+                                 << "   P:" << m_enigma->get_cartridge()->get_positions_as_string()
+                                 << "\n";
+                                m_enigma->set_rotor_position(rotor_positions[0]);
+                                solutions.push_back(m_enigma->get_setting());
+                                m_enigma->set_rotor_position(rotor_positions.back());
+                                if (m_setting.stop_on_first_valid) { return solutions; }
+                            }
+                            m_enigma->set_plugboard("");   // reset plugboard
+                        }
+                    } // END TESTS
+                    */
+                    break;
+                } //END SWITCH
+        }//END FOR PATH
+
+        m_enigma->set_positions(initial_positions);
+        m_enigma->turn_positions_odometer();
+        for(int i=0; i<m_rotor_count; i++) {initial_positions[i] = m_enigma->get_positions()[i];}
+
+        if (m_setting.time_performance) {
+            auto stop_ring_setting= std::chrono::system_clock::now();
+            update_performance(
+                m_setting.performance_ring_setting_mean, m_setting.performance_ring_setting_var,
+                stop_ring_setting - start_ring_setting, m_setting.records_ring_setting);
+        }
+    }   // end for rotor position
+    
+    //cout<<"almost done\n";
+    if (m_setting.time_performance && m_verbose) { print_performance(); }
+    //cout<<"1\n";
+    delete[] encryption;
+    //cout<<"2\n";
+    delete[] initial_positions;
+    cout<<"\r";
     return solutions;
 }
 
@@ -273,7 +362,7 @@ bool BombeUnit::doublecheck_and_get_plugboard() {
                 }
             }
         } else {   // undeterminable... try some more! TODO
-            cout<<"\n\nbombe_unit: doublecheck: undeterminable, not implemented\n\n";
+            //cout<<"\n\nbombe_unit: doublecheck: undeterminable, not implemented\n\n";
         }
     }
     return true;
@@ -307,6 +396,7 @@ void BombeUnit::interactive_wirechecking() {
         m_diagonal_board->print();
     }
 }
+
 void BombeUnit::print_progress(int ring_setting, int max_ring_settings, int solutions_n) {
     cout << "\r";
     string progress_bar= "[";
@@ -316,17 +406,34 @@ void BombeUnit::print_progress(int ring_setting, int max_ring_settings, int solu
     }
     progress_bar+= "]";
     cout << progress_bar;
-    if (m_use_configuration_grid) {
-        cout << " [exhausted "
-             << (100 * (float)m_configuration_grid->get_checked_configurations()) /
-                    (float)m_configuration_grid->get_total_configurations()
-             << "]";
+    if (m_use_configuration_tracker) {
+        cout << " --- using CT ";
+             /*<< (100 * (float)m_configuration_grid->get_checked_configurations()) /
+                    (float)m_configuration_grid->get_total_configurations()*/
+        cout << " [" << m_identifier << "] ";
+        cout << " --- PO: " << m_enigma->get_positions_as_string() << ", solutions: " << solutions_n
+             << flush;
+        
+    } else {
+        cout << " [" << m_identifier << "] ";
+        cout << " --- RS: " << m_enigma->get_ring_setting_as_string() << ", solutions: " << solutions_n
+             << flush;
     }
 
-    cout << " [" << m_identifier << "] ";
-    cout << "RS: " << m_enigma->get_ring_setting_as_string() << ", solutions: " << solutions_n
-         << flush;
+    
 }
+
+
+
+
+
+
+
+
+
+
+
+
 void BombeUnit::print_encryptions() const {
     cout << "size of encryptions: " << m_enigma_encryptions.size() << "\n";
     for (int wire= 0; wire < m_letters; ++wire) {
@@ -339,9 +446,11 @@ void BombeUnit::print_encryptions() const {
 }
 void BombeUnit::print_performance() const {
     // ring_setting
-    printf("---------------------------------------------------\n");
-    printf("|                   MEAN       VAR        RECORDS |\n");
-    printf("| RING-SETTING      %6.2E   %6.2E   %7d |\n", m_setting.performance_ring_setting_mean,
+    cout<<"printingggg performance\n";
+    printf("1---------------------------------------------------\n");
+    printf("2|                   MEAN       VAR        RECORDS |\n");
+    printf("3| RING-SETTING      %6.2E   %6.2E   %7d |\n", m_setting.performance_ring_setting_mean,
            m_setting.performance_ring_setting_var, m_setting.records_ring_setting);
-    printf("---------------------------------------------------\n");
+    printf("4---------------------------------------------------\n");
+    cout<<"printed performance\n";
 }

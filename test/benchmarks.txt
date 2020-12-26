@@ -83,3 +83,28 @@ CG stands for Configuration grid.
 | 3 ROTOR W/O. CG: PER RUN 1.34E+03   0.00E+00         1 |
 | 3 ROTOR W. CG: RS        1.95E-01   4.24E-02       677 |<- using double notches
 | 3 ROTOR W. CG: PER RUN   1.32E+02   0.00E+00         1 |
+
+
+
+*********************************25.12.2020*****************
+----------------------------------------------------------
+|                      PARTIAL RUNS                      |
+----------------------------------------------------------
+|                          MEAN       VAR        RECORDS |
+| 3 ROTOR SMALL CRIB       5.02E-02   1.34E-06        51 |                                                                                           
+| 3 ROTOR SMALL CRIB W.CT. 4.82E-04   8.05E-12        50 |
+| 3 ROTOR MEDIUM CRIB      1.83E-01   1.05E-06        51 |                                                                                       
+| 3 ROTOR MEDIUM CRB W.CT. 3.37E-03   1.37E-10        50 |
+| 3 ROTOR LARGE CRIB       2.52E-01   5.53E-06        51 |                                                                                        
+| 3 ROTOR LARGE CRIB W.CT. 1.68E-02   2.74E-10        50 |
+| 3 ROTOR VERY LARGE CRIB  3.85E-01   1.41E-05        51 |                                                                                       
+| 3 RTR VRY LRG CRIB W.CT. 3.92E+00   2.25E-06        50 |                                                                                    
+| 4 ROTOR SMALL CRIB       6.83E-01   1.84E-04        51 |
+| 4 ROTOR SMALL CRIB W.CT. 2.16E-03   5.49E-11        50 |
+| 4 ROTOR MEDIUM CRIB      4.94E+00   3.54E-05        51 |                                                                                         
+| 4 ROTOR MEDIUM CRB W.CT. 2.51E-02   4.29E-08        50 |
+| 4 ROTOR LARGE CRIB       6.37E+00   2.73E-05        51 |                                                                                         
+| 4 ROTOR LARGE CRIB W.CT. 1.90E-01   3.51E-06        50 |
+| 4 ROTOR VERY LARGE CRIB  9.75E+00   4.54E-04        51 |                                                                                          
+| 4 RTR VR LRG CRIB W.CT.  7.40E+01   5.46E-03        50 |
+| 5 ROTOR SMALL CRIB    CT 4.86E-02   3.11E-08        50 |

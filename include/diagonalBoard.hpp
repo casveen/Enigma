@@ -11,6 +11,7 @@ class Wire {
     void            kill();   // set to 0
     void            reset();
     void            connect(Wire *w);
+    void            disconnect(Wire *w); //only pops the back
     vector<Wire *> *get_connections();
 };
 
@@ -24,10 +25,12 @@ class DiagonalBoard {
     Wire *get_wire(int, int) const;
     void  activate(int, int);
     void  connect(int, int, int, int);
+    void  disconnect(int, int, int, int);
     void  print() const;
     void  print_live() const;
     void  print_connections() const;
     void  connect_enigma(int *, int, int);
+    void  disconnect_enigma(int * , int, int);
     void  wipe();
     void  reset();
     bool  bundle_contradiction(int) const;

@@ -179,6 +179,8 @@ class Cartridge {
     void        reset_ring_setting();
     void        turn(int);
     void        turn();
+    void        turn_manually(vector<bool>, bool);
+    void        turn_positions_odometer();
     int         encrypt_without_turning(int i) const;
     vector<int> encrypt_stepwise(int) const;
     int         plugboard_encrypt(int i) const;
@@ -298,6 +300,8 @@ class Enigma {
     // void indicator_procedure_kriegsmarine(string, string);
     // void   turn(int);
     void   turn();
+    void   turn_manually(vector<bool>, bool); //XXX does this do anything?
+    void   turn_positions_odometer();
     void   reset();
     void   randomize();
     int    encrypt(int m);
