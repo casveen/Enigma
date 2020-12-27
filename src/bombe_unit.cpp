@@ -264,6 +264,9 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                     
                     break;
                 case Engage_direction::stop :
+                    /*cout<<"stopped\n";
+                    interactive_wirechecking();
+                    cin.get();*/
                     //reset_diagonal_board();
                     /*
                     // BEGIN TESTS, XXX DOES NOT WORK

@@ -40,6 +40,7 @@ class Graph {
 class PointerGraph { 
   private:
     shint m_depth;
+    int   m_rotor_count;
     class PointerGraphEdge;
 
     class Node {
@@ -74,9 +75,9 @@ class PointerGraph {
     Node*        root;
   public:
     // Graph Constructor
-    PointerGraph(shint);
+    PointerGraph(shint, int);
     ~PointerGraph();
-    void            add_edges(vector<Edge> const &);
+    void            add_edges(vector<Edge> const &, vector<shint>);
     shint           count_edges();
     shint           count_edges_inner(Node *);
     vector<pair<Engage, Engage_direction>> path_iterator();

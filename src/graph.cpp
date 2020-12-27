@@ -170,8 +170,9 @@ adjacency_list& Graph::get_adjacency_list() {
 
 
 
-PointerGraph::PointerGraph(shint t_depth) {
+PointerGraph::PointerGraph(shint t_depth, int t_rotor_count) {
     m_depth = t_depth;
+    m_rotor_count = t_rotor_count;
     root = new PointerGraph::Node();
     nodeList.push_back(root);
 }
@@ -183,7 +184,7 @@ PointerGraph::~PointerGraph() {
     nodeList.clear();
 }
 
-void  PointerGraph::add_edges(vector<Edge> const& edges) {
+void  PointerGraph::add_edges(vector<Edge> const& edges, vector<shint> ring_setting) {
     //for each edge, look in current node for edges, if not found make a new path
     Node* current_node = root;
     Node* temp_node;
@@ -192,7 +193,9 @@ void  PointerGraph::add_edges(vector<Edge> const& edges) {
     }*/
     //auto pg_edge;
     //cout<<"adding edges\n";
+    int depth = 1;
     for (auto edge: edges) {
+        
         //cout<<"e: ";
         /*for(bool b: edge.engages) {
             cout<<(b?"T":"F");
@@ -204,19 +207,31 @@ void  PointerGraph::add_edges(vector<Edge> const& edges) {
         if (current_node->get_connections().count(PointerGraphEdge{current_node, edge.engages}) == 0) {
             //cout<<"new\n";
             //not found
-            temp_node   =new Node();
+            if (depth < m_depth) {
+                temp_node = new Node();
+            } else {
+                temp_node = new Leaf();
+            }
             current_node->connect(make_pair(temp_node, edge.engages));
             current_node=temp_node;
             nodeList.push_back(current_node);
+            //cout<<"n";
 
         } else {
             //found
-            cout<<"o";
+            //cout<<"o";
             current_node = current_node->get_connections().find(PointerGraphEdge{current_node, edge.engages})->get_node();
             //cout<<"got old\n";
         }
-        //cout<<"e: done\n";
+
+        if (depth == m_depth) {
+            //add the ring setting to the leaf node
+            ((PointerGraph::Leaf*) current_node)->get_ring_settings().push_back(ring_setting);
+        }
+        depth++;
     }
+    //cout<<"\n";
+    //cin.get();
 }
 
 shint PointerGraph::count_edges() {
@@ -342,6 +357,9 @@ vector<pair<Engage, Engage_direction>> PointerGraph :: path_iterator_inner(Node*
         cout<<"\n";*/
             out.push_back(make_pair(edge.get_engages(), Engage_direction::backward));
         }
+    }
+    if (depth == m_depth) {
+        out.push_back(make_pair(vector<bool>(m_rotor_count, false), Engage_direction::stop));
     }
     return out;
 }

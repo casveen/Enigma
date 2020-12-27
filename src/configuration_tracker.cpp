@@ -265,13 +265,14 @@ void ConfigurationTracker::make_tight_graph() {
 
 void ConfigurationTracker::make_wide_graph() {
     int* initial_position= new shint[m_rotor_count];
+    const shint* ring_setting;
     
     //XXXsloppy solution... but copies the pointer
     for(int i =0; i<m_rotor_count; i++) {
         initial_position[i] = m_enigma->get_positions()[i];
     }
     //cout<<"Made a set of "<<position_set.size()<<" nodes\n";
-    path_graph_wide = new PointerGraph(m_length);
+    path_graph_wide = new PointerGraph(m_length, m_rotor_count);
     //m_start_node = hash_position(vector<shint>{initial_position, initial_position+m_rotor_count}, position_set);
 
     //then make a graph
@@ -314,7 +315,8 @@ void ConfigurationTracker::make_wide_graph() {
         //cout<<"made a path\n";
         //prev_sz = path_graph_wide->count_edges();
         //cout<<"counted\n";
-        path_graph_wide->add_edges(edges);
+        ring_setting = m_enigma->get_ring_setting();
+        path_graph_wide->add_edges(edges, vector<shint>{ring_setting, ring_setting+m_rotor_count});
         //cout<<"added edges\n";
         //cout<< "  ---  "<<edges.size()<<" edges "<<(path_graph->count_edges()-prev_sz)<<" of which are new";
         edges.clear();
