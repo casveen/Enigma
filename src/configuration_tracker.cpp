@@ -88,6 +88,8 @@ vector<shint> unhash_position(shint hash, set<vector<shint>> position_set) {
         }
         i++;
     }
+    cout<<"ERROR: faulty hash\n";
+    return *position_set.end();
 }
 
 
@@ -99,39 +101,7 @@ vector<shint> unhash_position(shint hash, set<vector<shint>> position_set) {
 
 //Stolen from https://www.techiedelight.com/graph-implementation-using-stl/
 // data structure to store graph edges
-Graph::Graph(int N) { 
-    adjList.resize(N);
-}
-Graph::~Graph() { 
-}
 
-void Graph::add_edges(vector<Edge> const &edges) {
-    // resize the vector to N elements of type vector<int>
-    // add edges to the directed graph
-    vector<bool> engaged_notches;
-    for (auto &edge: edges) {
-        //cout<<"inserted to graph\n";
-        // insert at the end
-        //notch_engages(edge.src, edge.dest, engaged_notches);
-        adjList[edge.src].insert(make_pair(edge.dest, vector<bool>{edge.engages}));
-    }
-}
-
-shint Graph::count_edges() {
-    shint sum = 0;
-    for(auto s : adjList) {
-        sum += s.size();
-    }
-    return sum;
-}
-
-void Graph::set_root(shint value) {
-    root = value;
-}
-
-adjacency_list& Graph::get_adjacency_list() {
-    return adjList;
-}
  
 /*
 // print adjacency list representation of graph
@@ -172,28 +142,7 @@ void printGraph(Graph const& graph, int N)
 
 
 
-
-
-
-
-
-
-
-
-
-//initializes as well as creates, since needs to initialize path_set and path graph as well.
-//the set can be forgotten after this construction
-// TODO make an enigma copy!
-ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
-    m_length                   = length;
-    m_enigma                   = enigma;
-    m_letters                  = enigma->get_wires();
-    m_rotor_count              = enigma->get_rotors();
-    //notch_engages(previous_position, current_position, )
-    
-
-
-
+void ConfigurationTracker::initialize_position_set() {
     //if (verbose) { cout<<"\rInitializing tracker ... "; }
     int* initial_position= new shint[m_rotor_count];
     
@@ -207,7 +156,7 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     vector<shint> position;
     //insert initial
     position = read_positions(m_enigma);
-    position_set.insert(position);
+    position_set.insert(position); //init in header
     //set<vector<shint>>::iterator it;
     for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
         //cout<<"\rmaking position set ["<<rs/pow(m_letters, m_rotor_count)*100<<"%]";
@@ -221,12 +170,21 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
         //advance ring_setting, odometer style
         m_enigma->next_ring_setting();
     }
-    //cout<<"Made a set of "<<position_set.size()<<" nodes\n";
-    path_graph = new Graph(position_set.size());
+    delete[] initial_position;
+}
 
-    m_start_node = hash_position(vector<shint>{initial_position, initial_position+m_rotor_count}, position_set);
+
+
+void ConfigurationTracker::make_tight_graph() {
+    int* initial_position= new shint[m_rotor_count]();
     
-
+    //XXXsloppy solution... but copies the pointer
+    for(int i =0; i<m_rotor_count; i++) {
+        initial_position[i] = m_enigma->get_positions()[i];
+    }
+    //cout<<"Made a set of "<<position_set.size()<<" nodes\n";
+    path_graph = new Graph(position_set.size(), m_length);
+    //m_start_node = hash_position(vector<shint>{initial_position, initial_position+m_rotor_count}, position_set);
 
     //then make a graph
     //with initial rotor pos (any)
@@ -241,9 +199,6 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     vector<shint> current_position  = read_positions(m_enigma);
     shint previous_hash, current_hash;
 
-
-
-
     shint prev_sz = 0;
     //vector<vector<bool>> notch_engage_path;
     for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
@@ -252,7 +207,9 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
 
         previous_position = read_positions(m_enigma);
         m_enigma->turn();
-        
+        /*edges.push_back(Edge{hash_position(current_position,  position_set), 
+                             hash_position(current_position,  position_set),
+                             vector<bool>{m_rotor_count, false}});*/
         //make path
         for (int p=0; p<m_length; p++) {
             cout<<"\rtracking paths ["<<rs/pow(m_letters, m_rotor_count)*100<<"%]";
@@ -281,25 +238,155 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
         //advance ring_setting, odometer style
         m_enigma->next_ring_setting();
         //notch_engage_path.clear();
-        
 
     }
-    //add edges to graph
-    
-    //and we are ok?
-    //cout<<"made graph with edge total "<<edges.size();
-    //cout<<"\n but actually just "<<path_graph->count_edges()<<" edges";
-
-
-
-
-    //if (verbose) { cout<<"DONE\n"; }
+    //cout<<"tight graph dealloc\n";
     delete[] initial_position;
-    //cout<<"done\n";
+    //cout<<"made tight graph\n";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void ConfigurationTracker::make_wide_graph() {
+    int* initial_position= new shint[m_rotor_count];
+    
+    //XXXsloppy solution... but copies the pointer
+    for(int i =0; i<m_rotor_count; i++) {
+        initial_position[i] = m_enigma->get_positions()[i];
+    }
+    //cout<<"Made a set of "<<position_set.size()<<" nodes\n";
+    path_graph_wide = new PointerGraph(m_length);
+    //m_start_node = hash_position(vector<shint>{initial_position, initial_position+m_rotor_count}, position_set);
+
+    //then make a graph
+    //with initial rotor pos (any)
+    //for all ring settings
+    //track paths of given length
+    //store enigma setting
+    //notch engages
+    vector<bool> engaged_notches(m_rotor_count, false);
+    vector<Edge> edges;
+    vector<shint> previous_position = read_positions(m_enigma);
+    m_enigma->next_ring_setting();
+    vector<shint> current_position  = read_positions(m_enigma);
+    shint previous_hash, current_hash;
+
+    shint prev_sz = 0;
+    //vector<vector<bool>> notch_engage_path;
+    for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
+        //cout<<m_enigma->get_ring_setting();
+        //cin;
+
+        previous_position = read_positions(m_enigma);
+        m_enigma->turn();
+        
+        //make path
+        for (int p=0; p<m_length; p++) {
+            cout<<"\rtracking paths ["<<rs/pow(m_letters, m_rotor_count)*100<<"%]";
+            current_position   = read_positions(m_enigma);
+            notch_engages(previous_position, current_position, engaged_notches);
+            //notch_engage_path.push_back(engaged_notches);
+            
+
+            //previous_hash = hash_position(previous_position, position_set);
+            //current_hash  = hash_position(current_position,  position_set);
+            edges.push_back((Edge {0, 0, engaged_notches}));
+
+            previous_position  = read_positions(m_enigma);
+            m_enigma->turn();
+        }
+        //cout<<"made a path\n";
+        prev_sz = path_graph->count_edges();
+        //cout<<"counted\n";
+        path_graph_wide->add_edges(edges);
+        //cout<<"added edges\n";
+        //cout<< "  ---  "<<edges.size()<<" edges "<<(path_graph->count_edges()-prev_sz)<<" of which are new";
+        edges.clear();
+        //cout<<"cleared edges\n";
+        //edges.shrink_to_fit();
+        //translate to tracker structure
+        //this.add_path(notch_engage_path);
+        //reset enigma POSITION
+        m_enigma->set_positions(initial_position); //safe pointer
+        //advance ring_setting, odometer style
+        m_enigma->next_ring_setting();
+        //notch_engage_path.clear();
+    }
+    cout<<"\rmade a ptah graph of "<<path_graph_wide->count_edges()<<" edges";
+    delete[] initial_position;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//initializes as well as creates, since needs to initialize path_set and path graph as well.
+//the set can be forgotten after this construction
+// TODO make an enigma copy!
+ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
+    m_length                   = length;
+    m_enigma                   = enigma;
+    m_letters                  = enigma->get_wires();
+    m_rotor_count              = enigma->get_rotors();
+    
+    try {
+        //cout<<"making wide graph\n";
+        make_wide_graph();
+        //cout<<"\n\n size of wide CT: "<<sizeof(out)<<"\n\n";
+        mode = CT_mode::wide;
+        //cout<<"made wide graph\n";
+    } catch (bad_alloc &ba) {
+        //cout<<"unable to allocate to wide CT, trying to make tight CT\n";
+        try {
+            initialize_position_set();
+            make_tight_graph();
+            //cout<<"\n\n size of tight CT: "<<sizeof(path_graph->get_adjacency_list())<<"\n\n";
+            mode = CT_mode::tight;
+        } catch (bad_alloc &ba) {
+            cout<<"unable to allocate to tight CT, CT unusable\n";
+            position_set.clear();
+            mode = CT_mode::none;
+        }
+    }
+    //cout<<"done init CT\n";
 }
 
 ConfigurationTracker::~ConfigurationTracker() {
-    delete path_graph;
+    switch(mode) {
+        case(CT_mode::tight) : 
+            delete path_graph;
+            break;
+        case(CT_mode::wide) :
+            delete path_graph_wide;
+            break;
+        case(CT_mode::none) :
+            break;
+    }
 }
 
 const Graph* ConfigurationTracker::get_graph() {
@@ -406,49 +493,14 @@ vector<vector<shint>> ConfigurationTracker::get_ring_setting_from_path(vector<ve
 
 
 
-void append(vector<pair<Engage, Engage_direction>> &v1, const vector<pair<Engage, Engage_direction>> &v2) {
-    v1.insert(v1.end(), v2.begin(), v2.end());
-}
-
-vector<pair<Engage, Engage_direction>> ConfigurationTracker :: path_iterator() {
-    //from start node.
+vector<pair<Engage, Engage_direction>> ConfigurationTracker::path_iterator() {
     vector<pair<Engage, Engage_direction>> out;
-    out = path_iterator_inner(m_start_node, 0); //should be 0?
-    return out; //XXX store in configurationtracker.
-}
-
-vector<pair<Engage, Engage_direction>> ConfigurationTracker :: path_iterator_inner(shint from, shint depth) {
-    //from start node.
-    vector<pair<Engage, Engage_direction>> out;
-    //cout<<"->initialized vector "<<"\n";
-    //cout<<"adj list has size "<<path_graph->get_adjacency_list().size();
-    for (pair<shint, Engage> to_and_engages : path_graph->get_adjacency_list().at(from)) {
-        /*cout<<from<<"->"<<to_and_engages.first<<"      ";
-        for (shint i : unhash_position(from, position_set) ) {
-            cout<<i<<" ";
-        }
-        cout<<" -> ";
-        for (shint i : unhash_position(to_and_engages.first, position_set) ) {
-            cout<<i<<" ";
-        }
-        cout<<"     ";
-        for (bool b : to_and_engages.second ) {
-            b?cout<<"T":cout<<"F";
-        }
-        cout<<"\n";*/
-
-        //in
-        if (depth<m_length) {
-            out.push_back(make_pair(to_and_engages.second, Engage_direction::forward));
-            append(out, path_iterator_inner(to_and_engages.first, depth+1));
-        //out
-        /*cout<<from<<"<-"<<to_and_engages.first<<" ";
-        for (bool b : to_and_engages.second ) {
-            b?cout<<"T":cout<<"F";
-        }
-        cout<<"\n";*/
-            out.push_back(make_pair(to_and_engages.second, Engage_direction::backward));
-        }
+    if        (mode == CT_mode::wide) {
+        out = path_graph_wide->path_iterator();
+    } else if (mode == CT_mode::tight) {
+        out = path_graph->path_iterator();
+    } else {
+        cout<<"ERROR requesting iterator without valid mode\n";
     }
     return out;
 }

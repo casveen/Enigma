@@ -359,6 +359,7 @@ int main() {
     printf("|                      PARTIAL RUNS                      |\n");
     printf("----------------------------------------------------------\n");
     printf("|                          MEAN       VAR        RECORDS |\n");
+    
     struct BombeSetting setting1= benchmark1(false);
     printf("| 3 ROTOR SMALL CRIB       %6.2E   %6.2E   %7d |\n",
            setting1.performance_ring_setting_mean, setting1.performance_ring_setting_var,
@@ -385,7 +386,7 @@ int main() {
     printf("| 3 ROTOR LARGE CRIB W.CT. %6.2E   %6.2E   %7d |\n",
            setting3CT.performance_ring_setting_mean, setting3CT.performance_ring_setting_var,
            setting3CT.records_ring_setting);
-
+       
     struct BombeSetting setting4= benchmark4(false);
     printf("| 3 ROTOR VERY LARGE CRIB  %6.2E   %6.2E   %7d |\n",
            setting4.performance_ring_setting_mean, setting4.performance_ring_setting_var,
