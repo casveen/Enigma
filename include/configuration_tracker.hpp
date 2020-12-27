@@ -52,6 +52,13 @@ class PointerGraph {
         set<PointerGraphEdge> get_connections();
     };
 
+    class Leaf : public Node {
+      private:
+        vector<vector<shint>> ring_settings;
+      public:
+        vector<vector<shint>>& get_ring_settings();
+    };
+
     class PointerGraphEdge {
       private:
         Node*        to;

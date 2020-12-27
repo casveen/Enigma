@@ -211,7 +211,7 @@ void  PointerGraph::add_edges(vector<Edge> const& edges) {
 
         } else {
             //found
-            //cout<<"old\n";
+            cout<<"o";
             current_node = current_node->get_connections().find(PointerGraphEdge{current_node, edge.engages})->get_node();
             //cout<<"got old\n";
         }
@@ -241,6 +241,11 @@ void PointerGraph::Node::connect(pair<Node*, vector<bool>> node_and_engage) {
 
 set<PointerGraph::PointerGraphEdge> PointerGraph::Node::get_connections() {
     return connected_to;
+}
+
+
+vector<vector<shint>>& PointerGraph::Leaf::get_ring_settings() {
+    return ring_settings;
 }
 
 

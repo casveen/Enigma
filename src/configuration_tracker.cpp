@@ -225,7 +225,7 @@ void ConfigurationTracker::make_tight_graph() {
             previous_position  = read_positions(m_enigma);
             m_enigma->turn();
         }
-        prev_sz = path_graph->count_edges();
+        //prev_sz = path_graph->count_edges();
         path_graph->add_edges(edges);
         //cout<< "  ---  "<<edges.size()<<" edges "<<(path_graph->count_edges()-prev_sz)<<" of which are new";
         edges.clear();
@@ -312,7 +312,7 @@ void ConfigurationTracker::make_wide_graph() {
             m_enigma->turn();
         }
         //cout<<"made a path\n";
-        prev_sz = path_graph->count_edges();
+        //prev_sz = path_graph_wide->count_edges();
         //cout<<"counted\n";
         path_graph_wide->add_edges(edges);
         //cout<<"added edges\n";

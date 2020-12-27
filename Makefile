@@ -70,7 +70,7 @@ profile : performance.exe
 	kcachegrind
 
 valgrind : performance.exe #enigma.exe
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./bin/performance.exe 
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./bin/test.exe 
 	#valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./bin/enigma.exe --rotors I,II,III --reflector UKWK --plaintext ARTADOZSDUXDHCAMMRTCBVBLUYTOKGGEWZFYUICNNVPBRNYBRSCTSNUMLAYVAW
 
 test : test.exe
