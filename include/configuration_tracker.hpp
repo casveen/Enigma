@@ -82,6 +82,8 @@ class PointerGraph {
     shint           count_edges_inner(Node *);
     vector<pair<Engage, Engage_direction>> path_iterator();
     vector<pair<Engage, Engage_direction>> path_iterator_inner(Node* from, shint depth);
+    vector<vector<vector<shint>>>          ring_settings_iterator();
+    vector<vector<vector<shint>>>          ring_settings_iterator_inner(Node* from, shint depth);
 };
 
 class ConfigurationTracker {
@@ -91,12 +93,17 @@ class ConfigurationTracker {
     Enigma*  m_enigma;
     shint    m_letters;
     shint    m_rotor_count;
-    Graph*        path_graph;
-    PointerGraph* path_graph_wide;
     shint    m_start_node; //hash of starting node, probably 0
     shint    current_position; //XXXmight overshadow?
     set<vector<shint>> position_set;
     CT_mode  mode;
+    //tight
+    Graph*   path_graph;
+    //wide
+    PointerGraph*                          path_graph_wide;
+    vector<pair<Engage, Engage_direction>> m_path_iterator;
+    vector<vector<vector<shint>>>          m_ring_settings_iterator;
+    
 
   public:
     ConfigurationTracker(Enigma *, const int);
@@ -113,7 +120,11 @@ class ConfigurationTracker {
     //Edge next(); //XXX important, tell if going backwards.
     //bool is_leaf();
     //vector<vector<shint>> get_ring_setting_from_path(vector<vector<shint>> path);
-    vector<pair<Engage, Engage_direction>> path_iterator();
+    void                                          make_path_iterator();
+    const vector<pair<Engage, Engage_direction>>& get_path_iterator();
+    void                                          make_ring_settings_iterator();
+    const vector<vector<vector<shint>>>&          get_ring_settings_iterator();
+
     void print_path_iterator();
 };
 #endif

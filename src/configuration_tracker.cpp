@@ -330,7 +330,7 @@ void ConfigurationTracker::make_wide_graph() {
         m_enigma->next_ring_setting();
         //notch_engage_path.clear();
     }
-    cout<<"\rmade a ptah graph of "<<path_graph_wide->count_edges()<<" edges";
+    //cout<<"\rmade a ptah graph of "<<path_graph_wide->count_edges()<<" edges";
     delete[] initial_position;
 }
 
@@ -355,24 +355,27 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     m_enigma                   = enigma;
     m_letters                  = enigma->get_wires();
     m_rotor_count              = enigma->get_rotors();
+    mode = CT_mode::none;
     
     try {
         //cout<<"making wide graph\n";
         make_wide_graph();
-        //cout<<"\n\n size of wide CT: "<<sizeof(out)<<"\n\n";
         mode = CT_mode::wide;
+        make_path_iterator();
+        make_ring_settings_iterator(); 
         //cout<<"made wide graph\n";
     } catch (bad_alloc &ba) {
-        //cout<<"unable to allocate to wide CT, trying to make tight CT\n";
+        cout<<"unable to allocate to wide CT, trying to make tight CT\n";
         try {
             initialize_position_set();
             make_tight_graph();
-            //cout<<"\n\n size of tight CT: "<<sizeof(path_graph->get_adjacency_list())<<"\n\n";
             mode = CT_mode::tight;
+            make_path_iterator();
+            //cout<<"\n\n size of tight CT: "<<sizeof(path_graph->get_adjacency_list())<<"\n\n";
+            
         } catch (bad_alloc &ba) {
             cout<<"unable to allocate to tight CT, CT unusable\n";
             position_set.clear();
-            mode = CT_mode::none;
         }
     }
     //cout<<"done init CT\n";
@@ -495,8 +498,9 @@ vector<vector<shint>> ConfigurationTracker::get_ring_setting_from_path(vector<ve
 
 
 
-vector<pair<Engage, Engage_direction>> ConfigurationTracker::path_iterator() {
+void ConfigurationTracker::make_path_iterator() {
     vector<pair<Engage, Engage_direction>> out;
+    //cout<<mode<<"\n";
     if        (mode == CT_mode::wide) {
         out = path_graph_wide->path_iterator();
     } else if (mode == CT_mode::tight) {
@@ -504,12 +508,33 @@ vector<pair<Engage, Engage_direction>> ConfigurationTracker::path_iterator() {
     } else {
         cout<<"ERROR requesting iterator without valid mode\n";
     }
-    return out;
+    m_path_iterator = out;
+}
+
+const vector<pair<Engage, Engage_direction>>& ConfigurationTracker::get_path_iterator() {
+    return m_path_iterator;
+}
+
+void ConfigurationTracker::make_ring_settings_iterator() {
+    vector<vector<vector<shint>>> out;
+    if        (mode == CT_mode::wide) {
+        out = path_graph_wide->ring_settings_iterator();
+    } else if (mode == CT_mode::tight) {
+        cerr << "ERROR cannot get ring settings iterator while in tight mode\n";
+    } else {
+        cerr << "ERROR requesting iterator without valid mode\n";
+    }
+    m_ring_settings_iterator = out;
+}
+
+const vector<vector<vector<shint>>>& ConfigurationTracker::get_ring_settings_iterator() {
+    return m_ring_settings_iterator;
 }
 
 
+
 void ConfigurationTracker::print_path_iterator() {
-    vector<pair<Engage, Engage_direction>> iterator = path_iterator();
+    vector<pair<Engage, Engage_direction>> iterator = m_path_iterator;
     for (auto engage_and_direction : iterator) {
         switch(engage_and_direction.second) {
             case Engage_direction::forward:  cout<<"f - "; break;

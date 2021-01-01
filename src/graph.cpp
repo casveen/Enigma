@@ -39,7 +39,8 @@ adjacency_list& Graph::get_adjacency_list() {
     return adjList;
 }
 
-void append(vector<pair<Engage, Engage_direction>> &v1, const vector<pair<Engage, Engage_direction>> &v2) {
+template <typename T>
+void append(vector<T> &v1, const vector<T> &v2) {
     v1.insert(v1.end(), v2.begin(), v2.end());
 }
 
@@ -328,38 +329,42 @@ vector<pair<Engage, Engage_direction>> PointerGraph :: path_iterator() {
 vector<pair<Engage, Engage_direction>> PointerGraph :: path_iterator_inner(Node* from, shint depth) {
     //from start node.
     vector<pair<Engage, Engage_direction>> out(0);
-    //cout<<"->initialized vector "<<"\n";
-    //cout<<"adj list has size "<<path_graph->get_adjacency_list().size();
     for (PointerGraphEdge edge : from->get_connections()) {
-        /*cout<<from<<"->"<<to_and_engages.first<<"      ";
-        for (shint i : unhash_position(from, position_set) ) {
-            cout<<i<<" ";
-        }
-        cout<<" -> ";
-        for (shint i : unhash_position(to_and_engages.first, position_set) ) {
-            cout<<i<<" ";
-        }
-        cout<<"     ";
-        for (bool b : to_and_engages.second ) {
-            b?cout<<"T":cout<<"F";
-        }
-        cout<<"\n";*/
-
         //in
         if (depth<m_depth) {
             out.push_back(make_pair(edge.get_engages(), Engage_direction::forward));
             append(out, path_iterator_inner(edge.get_node(), depth+1));
         //out
-        /*cout<<from<<"<-"<<to_and_engages.first<<" ";
-        for (bool b : to_and_engages.second ) {
-            b?cout<<"T":cout<<"F";
-        }
-        cout<<"\n";*/
             out.push_back(make_pair(edge.get_engages(), Engage_direction::backward));
         }
     }
     if (depth == m_depth) {
         out.push_back(make_pair(vector<bool>(m_rotor_count, false), Engage_direction::stop));
+    }
+    return out;
+}
+
+vector<vector<vector<shint>>> PointerGraph :: ring_settings_iterator() {
+    //from start node.
+    vector<vector<vector<shint>>>  out;
+    out = ring_settings_iterator_inner(root, 0); //should be 0?
+    return out; //XXX store in configurationtracker.
+}
+
+vector<vector<vector<shint>>>  PointerGraph :: ring_settings_iterator_inner(Node* from, shint depth) {
+    //from start node.
+    vector<vector<vector<shint>>> out(0);
+    for (PointerGraphEdge edge : from->get_connections()) {
+        //in
+        if (depth<m_depth) {
+            //out.push_back(make_pair(edge.get_engages(), Engage_direction::forward));
+            append(out, ring_settings_iterator_inner(edge.get_node(), depth+1));
+        //out
+            //out.push_back(make_pair(edge.get_engages(), Engage_direction::backward));
+        }
+    }
+    if (depth == m_depth) {
+        out.push_back(((PointerGraph::Leaf *) from)->get_ring_settings());
     }
     return out;
 }

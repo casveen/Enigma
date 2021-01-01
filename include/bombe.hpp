@@ -127,6 +127,7 @@ class BombeUnit {
     void                         print_performance() const;
     bool                         doublecheck_and_get_plugboard();
     bool           tripplecheck(const string &, const string &, int, vector<string> &);
+    bool           tripplecheck_with_configuration_tracker(const string &, const string &, const vector<shint>&, const shint*);
     void           interactive_wirechecking();
     vector<string> get_special_rotor_positions();
     void           print_progress(int, int, int);

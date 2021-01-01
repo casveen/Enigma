@@ -55,7 +55,7 @@ TEST_CASE("Testing if following path iteraator of configuration tracker ends up 
 
     //Very quickly exhausts new, but hard to predict
     vector<shint> initial_position(rotors,0);
-    vector<shint> current_position = follow_path_iterator(tracker.path_iterator(), rotors, wires);
+    vector<shint> current_position = follow_path_iterator(tracker.get_path_iterator(), rotors, wires);
     for(int i=0; i<rotors; i++) {
         CHECK(initial_position[i] == current_position[i]);
     }
@@ -72,7 +72,7 @@ TEST_CASE("Testing if following path iteraator of configuration tracker ends up 
 
     //Very quickly exhausts new, but hard to predict
     vector<shint> initial_position(rotors,0);
-    vector<shint> current_position = follow_path_iterator(tracker.path_iterator(), rotors, wires);
+    vector<shint> current_position = follow_path_iterator(tracker.get_path_iterator(), rotors, wires);
     for(int i=0; i<rotors; i++) {
         CHECK(initial_position[i] == current_position[i]);
     }
@@ -89,7 +89,7 @@ TEST_CASE("Testing if following path iteraator of configuration tracker ends up 
 
     //Very quickly exhausts new, but hard to predict
     vector<shint> initial_position(rotors,0);
-    vector<shint> current_position = follow_path_iterator(tracker.path_iterator(), rotors, wires);
+    vector<shint> current_position = follow_path_iterator(tracker.get_path_iterator(), rotors, wires);
     for(int i=0; i<rotors; i++) {
         CHECK(initial_position[i] == current_position[i]);
     }

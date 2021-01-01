@@ -18,7 +18,7 @@ ENIGMA_DEP_NAMES = enigma.o rotors.o
 ENIGMA_DEP       = $(ENIGMA_DEP_NAMES:%=$(BUILD)/%)
 BOMBE_DEP_NAMES = $(ENIGMA_DEP_NAMES) bombe.o diagonal_board.o wire.o configuration_tracker.o bombe_unit.o graph.o
 BOMBE_DEP       = $(BOMBE_DEP_NAMES:%=$(BUILD)/%)
-TEST_DEP_NAMES   = test.o test_configuration_tracker.o test_enigma.o test_connections.o connections.o test_bombe.o $(ENIGMA_DEP_NAMES) $(BOMBE_DEP_NAMES) 
+TEST_DEP_NAMES   = $(BOMBE_DEP_NAMES) test.o test_configuration_tracker.o test_enigma.o test_connections.o connections.o test_bombe.o 
 TEST_DEP         = $(TEST_DEP_NAMES:%=$(BUILD)/%)
 BENCHMARKER_DEP_NAMES   = benchmarker.o $(BOMBE_DEP_NAMES)
 BENCHMARKER_DEP         = $(BENCHMARKER_DEP_NAMES:%=$(BUILD)/%)
@@ -70,7 +70,7 @@ profile : performance.exe
 	kcachegrind
 
 valgrind : performance.exe #enigma.exe
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./bin/test.exe 
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./bin/benchmarker.exe 
 	#valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./bin/enigma.exe --rotors I,II,III --reflector UKWK --plaintext ARTADOZSDUXDHCAMMRTCBVBLUYTOKGGEWZFYUICNNVPBRNYBRSCTSNUMLAYVAW
 
 test : test.exe

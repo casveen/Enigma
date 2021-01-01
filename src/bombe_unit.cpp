@@ -131,7 +131,7 @@ void BombeUnit::setup_diagonal_board(const string &ciphertext, const string &cri
 ciphertext:        ciphertext to crack
 crib:              corresponding crib, a plaintext that encrypts to a substring of ciphertext
 most_wired_letter: when finding a potential crib, this is the letter that is most "wired to"
-position:          XXX not used?
+position:          XXX not used? in triplecheck, but not there either
 */
 vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const string &crib,
                                                 int most_wired_letter, int position) {
@@ -199,8 +199,8 @@ vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const 
         }
 
     }   //end for ring setting
-    cout<<"                                                                                      "
-        << "      \r";
+    /*cout<<"                                                                                      "
+        << "      \r";*/
     if (m_setting.time_performance && m_verbose) { print_performance(); }
     //if (m_use_configuration_tracker) { m_configuration_tracker->find_unchecked(); }
     return solutions;
@@ -222,7 +222,13 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     //get engagae_path, TODO move to bombe
     ConfigurationTracker tracker = ConfigurationTracker(m_enigma, crib_n);
     //cout<<"made tracker\n";
-    vector<pair<vector<bool>, Engage_direction>> path_iterator = tracker.path_iterator();
+    const vector<pair<vector<bool>, Engage_direction>>& path_iterator          = tracker.get_path_iterator();
+    //cout<<"\npath iterator of size "<<path_iterator.size()<<"\n";
+    //vector<vector<vector<shint>>>::iterator      
+    auto                                         ring_settings_iterator_begin = tracker.get_ring_settings_iterator().begin();
+    auto                                         ring_settings_iterator = ring_settings_iterator_begin;
+    int  stop_counts = 0;
+    //cout<<"\nring_settings iterator of size "<<ring_settings_iterator.size()<<"\n";
     //cout<<"got iterator\n";
     
 
@@ -232,6 +238,8 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
         print_progress(rp, positions_count, (int) solutions.size());
         //init_enigma_encryptions(crib_n, rotor_positions, positions);
         if (m_setting.time_performance) { start_ring_setting= std::chrono::system_clock::now(); }
+        //reset ring settings iterator
+        ring_settings_iterator = ring_settings_iterator_begin;
         // for each edge in the engage path
         for (pair<vector<bool>, Engage_direction> engage_and_direction : path_iterator) {
                 //engage, connect the enigma if forward, disconnect if backward, test if stop
@@ -264,29 +272,57 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                     
                     break;
                 case Engage_direction::stop :
-                    /*cout<<"stopped\n";
+
+                    //each time a stop is met, consume a ring_settings
+                    //cout<<"stopped "<< ++stop_counts <<"\n";
+                    vector<vector<shint>> ring_settings = *ring_settings_iterator;
+
+                    
+                    /*
                     interactive_wirechecking();
                     cin.get();*/
                     //reset_diagonal_board();
-                    /*
+                    
                     // BEGIN TESTS, XXX DOES NOT WORK
                     if (check_one_wire(most_wired_letter)) {     // first test
+                        //cout<<"DING 1\n";
                         if (doublecheck_and_get_plugboard()) {   // second test
-                            if (tripplecheck(crib, ciphertext, position,
-                                             m_enigma->get_rotor_position())) {   // final test
+                            //cout<<"DING 2\n";
+                            //safe to take first from ring settinf\gs, as they are never empty
+                            if (tripplecheck_with_configuration_tracker(crib, ciphertext, ring_settings[0], initial_positions)) {   // final test
+                                //cout<<"DING 3\n";
+
                             /*cout << "\nRS:" << m_enigma->get_ring_setting_as_string() << "   RP:"
                                  << rotor_positions[rotor_positions.size() - crib.length() - 1]
                                  << "   P:" << m_enigma->get_cartridge()->get_positions_as_string()
-                                 << "\n";
-                                m_enigma->set_rotor_position(rotor_positions[0]);
-                                solutions.push_back(m_enigma->get_setting());
-                                m_enigma->set_rotor_position(rotor_positions.back());
+                                 << "\n";*/
+                                
+                                
+                                
+                                //m_enigma->set_rotor_position(rotor_positions[0]);
+                                //add all solutions
+                                for (vector<shint> ring_setting : ring_settings) {
+                                    EnigmaSetting solution = m_enigma->get_setting();
+                                    //read ring setting properly
+                                    string proper_ring_setting   = "";
+                                    string proper_rotor_position = "";
+                                    const shint* positions = m_enigma->get_positions();
+                                    for (int i = 0; i<(int) ring_setting.size(); i++) {
+                                        proper_ring_setting += (char) ((ring_setting[i]-positions[i]+m_letters)%m_letters +(shint) 'A');
+                                        //position= rotor_position-ring_setting XXX error source?
+                                        //rp == p+rs => rp = p + (ars-p) = ars (the "artificial" ring setting in this loop!!!)
+                                        solution.rotor_position = (char) (ring_setting[i] + (shint) 'A'); //this should work, I promise
+                                    }
+                                     //compute from ring setting anf d position, then to string.
+                                    solutions.push_back(solution);
+                                }
+                                //m_enigma->set_rotor_position(rotor_positions.back());
                                 if (m_setting.stop_on_first_valid) { return solutions; }
                             }
                             m_enigma->set_plugboard("");   // reset plugboard
                         }
                     } // END TESTS
-                    */
+                    ring_settings_iterator++;
                     break;
                 } //END SWITCH
         }//END FOR PATH
@@ -379,6 +415,33 @@ bool BombeUnit::tripplecheck(const string &crib, const string &ciphertext, int c
     if (m_setting.interactive_wiring_mode) { interactive_wirechecking(); }
     return (recrypt == crib);
 }
+bool BombeUnit::tripplecheck_with_configuration_tracker(const string &crib, const string &ciphertext, const vector<shint>& shifted_ring_setting, const shint* initial_positions) {
+    //store positions to reset at end
+    shint* current_positions = new shint[m_letters];
+    for(int i=0; i<m_rotor_count; i++) {current_positions[i] = m_enigma->get_positions()[i];}
+    m_enigma->set_positions(initial_positions);
+
+    // test if the given configuration encrypts the crib to plaintext
+    // get proper configuration
+    // get proper ring setting, and set position.
+    // both can be set at the same time, XXX source of error?
+    // the positions are already correct.
+
+    string proper_ring_setting  = "";
+    const shint* positions = m_enigma->get_positions();
+    for (int i = 0; i<shifted_ring_setting.size(); i++) {
+        proper_ring_setting += (char) ((shifted_ring_setting[i]-positions[i]+m_letters)%m_letters +(shint) 'A');
+    }
+    m_enigma->set_ring_setting(proper_ring_setting);
+    string recrypt= m_enigma->encrypt(ciphertext);
+    if (m_setting.interactive_wiring_mode) { interactive_wirechecking(); }
+
+    //reset positions, this mode does not care about ring settings
+    m_enigma->set_positions(current_positions);
+    delete[] current_positions; //XXX wastefull solution
+    return (recrypt == crib);
+}
+
 void BombeUnit::interactive_wirechecking() {
     cout << "--------------------INTERACTIVE WIRING MODE------------------\n";
     string input;
