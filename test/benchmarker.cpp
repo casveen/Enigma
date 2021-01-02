@@ -1,6 +1,6 @@
 // make some performance runs, recording performance for a bad crib
 //#include "bombe.h"
-int MAX_RING_SETTINGS= 1000;
+int MAX_RING_SETTINGS= 20;
 #include "bombe.hpp"
 #include "enigma.hpp"
 #include "rotors.cpp"   //all rotors,
@@ -353,6 +353,46 @@ struct BombeSetting benchmark14() {
     return bombe.get_setting();
 }
 
+void benchmark_without_CT() {
+    struct BombeSetting setting1CT= benchmark1(false);
+    printf("| 3 ROTOR SMALL CRIB       %6.2E   %6.2E   %7d |\n",
+           setting1CT.performance_ring_setting_mean, setting1CT.performance_ring_setting_var,
+           setting1CT.records_ring_setting);
+    struct BombeSetting setting2CT= benchmark2(false);
+    printf("| 3 ROTOR MEDIUM CRIB      %6.2E   %6.2E   %7d |\n",
+           setting2CT.performance_ring_setting_mean, setting2CT.performance_ring_setting_var,
+           setting2CT.records_ring_setting);
+    struct BombeSetting setting3CT= benchmark3(false);
+    printf("| 3 ROTOR LARGE CRIB       %6.2E   %6.2E   %7d |\n",
+           setting3CT.performance_ring_setting_mean, setting3CT.performance_ring_setting_var,
+           setting3CT.records_ring_setting);
+    struct BombeSetting setting4CT= benchmark4(false);
+    printf("| 3 RTR VRY LRG CRIB       %6.2E   %6.2E   %7d |\n",
+           setting4CT.performance_ring_setting_mean, setting4CT.performance_ring_setting_var,
+           setting4CT.records_ring_setting);
+    struct BombeSetting setting5CT= benchmark5(false);
+    printf("| 4 ROTOR SMALL CRIB       %6.2E   %6.2E   %7d |\n",
+           setting5CT.performance_ring_setting_mean, setting5CT.performance_ring_setting_var,
+           setting5CT.records_ring_setting);
+    struct BombeSetting setting6CT= benchmark6(false);
+    printf("| 4 ROTOR MEDIUM CRB       %6.2E   %6.2E   %7d |\n",
+           setting6CT.performance_ring_setting_mean, setting6CT.performance_ring_setting_var,
+           setting6CT.records_ring_setting);
+    struct BombeSetting setting7CT= benchmark7(false);
+    printf("| 4 ROTOR LARGE CRIB       %6.2E   %6.2E   %7d |\n",
+           setting7CT.performance_ring_setting_mean, setting7CT.performance_ring_setting_var,
+           setting7CT.records_ring_setting);
+    struct BombeSetting setting8CT= benchmark8(false);
+    printf("| 4 RTR VR LRG CRIB        %6.2E   %6.2E   %7d |\n",
+           setting8CT.performance_ring_setting_mean, setting8CT.performance_ring_setting_var,
+           setting8CT.records_ring_setting);   
+    /*struct BombeSetting setting14= benchmark13();
+    printf("| 5 ROTOR SMALL CRIB       %6.2E   %6.2E   %7d |\n",
+           setting14.performance_ring_setting_mean, setting14.performance_ring_setting_var,
+           setting14.records_ring_setting);*/
+    
+}
+
 void benchmark_CT() {
     struct BombeSetting setting1CT= benchmark1(true);
     printf("| 3 ROTOR SMALL CRIB W.CT. %6.2E   %6.2E   %7d |\n",
@@ -386,10 +426,10 @@ void benchmark_CT() {
     printf("| 4 RTR VR LRG CRIB W.CT.  %6.2E   %6.2E   %7d |\n",
            setting8CT.performance_ring_setting_mean, setting8CT.performance_ring_setting_var,
            setting8CT.records_ring_setting);   
-    struct BombeSetting setting14= benchmark14();
+    /*struct BombeSetting setting14= benchmark14();
     printf("| 5 ROTOR SMALL CRIB W.CT  %6.2E   %6.2E   %7d |\n",
            setting14.performance_ring_setting_mean, setting14.performance_ring_setting_var,
-           setting14.records_ring_setting);
+           setting14.records_ring_setting);*/
     
 }
 
@@ -400,6 +440,8 @@ int main() {
     printf("----------------------------------------------------------\n");
     printf("|                          MEAN       VAR        RECORDS |\n");
     benchmark_CT();
+    benchmark_without_CT();
+
     /*
     struct BombeSetting setting1= benchmark1(false);
     printf("| 3 ROTOR SMALL CRIB       %6.2E   %6.2E   %7d |\n",

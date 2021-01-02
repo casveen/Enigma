@@ -87,7 +87,7 @@ class BombeUnit {
     string                m_identifier= "A bombeunit";
     int                   m_letters= 26, m_rotor_count= 3;
     DiagonalBoard *       m_diagonal_board;
-    vector<int *>         m_enigma_encryptions;
+    vector<shint *>       m_enigma_encryptions;
     ConfigurationTracker *m_configuration_tracker; //XXX only uses its path...
     vector<pair<vector<bool>, Engage_direction>> engage_path;
 
@@ -126,6 +126,7 @@ class BombeUnit {
     void                         print_encryptions() const;
     void                         print_performance() const;
     bool                         doublecheck_and_get_plugboard();
+    bool                         doublecheck_thoroughly_and_get_plugboard();
     bool           tripplecheck(const string &, const string &, int, vector<string> &);
     bool           tripplecheck_with_configuration_tracker(const string &, const string &, const vector<shint>&, const shint*);
     void           interactive_wirechecking();

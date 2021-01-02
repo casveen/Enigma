@@ -3,7 +3,7 @@
 #include "configuration_tracker.hpp"
 
 using namespace std;
-typedef int shint;
+//typedef int shint;
 /*
 vector<vector<shint>> permutations(int upto, int n) {
     cout<<"im in";
@@ -144,7 +144,7 @@ void printGraph(Graph const& graph, int N)
 
 void ConfigurationTracker::initialize_position_set() {
     //if (verbose) { cout<<"\rInitializing tracker ... "; }
-    int* initial_position= new shint[m_rotor_count];
+    shint* initial_position= new shint[m_rotor_count];
     
     //XXXsloppy solution... but copies the pointer
     for(int i =0; i<m_rotor_count; i++) {
@@ -176,7 +176,7 @@ void ConfigurationTracker::initialize_position_set() {
 
 
 void ConfigurationTracker::make_tight_graph() {
-    int* initial_position= new shint[m_rotor_count]();
+    shint* initial_position= new shint[m_rotor_count]();
     
     //XXXsloppy solution... but copies the pointer
     for(int i =0; i<m_rotor_count; i++) {
@@ -199,7 +199,6 @@ void ConfigurationTracker::make_tight_graph() {
     vector<shint> current_position  = read_positions(m_enigma);
     shint previous_hash, current_hash;
 
-    shint prev_sz = 0;
     //vector<vector<bool>> notch_engage_path;
     for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
         cout<<m_enigma->get_ring_setting();
@@ -264,7 +263,7 @@ void ConfigurationTracker::make_tight_graph() {
 
 
 void ConfigurationTracker::make_wide_graph() {
-    int* initial_position= new shint[m_rotor_count];
+    shint* initial_position= new shint[m_rotor_count];
     const shint* ring_setting;
     
     //XXXsloppy solution... but copies the pointer
@@ -286,9 +285,9 @@ void ConfigurationTracker::make_wide_graph() {
     vector<shint> previous_position = read_positions(m_enigma);
     m_enigma->next_ring_setting();
     vector<shint> current_position  = read_positions(m_enigma);
-    shint previous_hash, current_hash;
+    /*shint previous_hash, current_hash;
 
-    shint prev_sz = 0;
+    shint prev_sz = 0;*/
     //vector<vector<bool>> notch_engage_path;
     for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
         //cout<<m_enigma->get_ring_setting();

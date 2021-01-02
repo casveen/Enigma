@@ -24,7 +24,7 @@ using namespace std;
 #include <utility>
 #include <vector>
 
-typedef int shint;
+typedef short int shint;
 //#inlcude "alphabet"
 
 class Rotor {
@@ -64,14 +64,14 @@ class Rotor {
     void set_verbose(bool);
     // other
     int  encrypt_in(int, int) const;
-    void encrypt_in_inplace(int *, int, int) const;
+    void encrypt_in_inplace(shint *, int, int) const;
     // void encrypt_in_inplace(int *, vector<bool> &, bool, int, int) const;
     int  encrypt_out(int, int) const;
-    void encrypt_out_inplace(int *, int, int) const;
+    void encrypt_out_inplace(shint *, int, int) const;
     void randomize();
     // void encrypt_out_inplace(int *, vector<bool> &, bool, int, int) const;
     void print() const;
-    void make_inverse(const int *in, int *out, int n) const;
+    void make_inverse(const shint *in, shint *out, int n) const;
     bool is_valid() const;
 };
 
@@ -107,7 +107,7 @@ class Plugboard {
     Plugboard &operator=(Plugboard);
     void       swap(Plugboard &) noexcept;
     int        encrypt(int) const;
-    void       encrypt_inplace(int *, int) const;
+    void       encrypt_inplace(shint *, int) const;
     void       reset();   // make identity
     // setters
     void set_wiring(const string);
@@ -131,7 +131,7 @@ class Cartridge {
     // stator, not rotor position which is the letter shown in the window of the
     // enigma. Ring setting is which input in the rotor core the A wire goes to
     // position= rotor_position-ring_setting
-    int *m_positions, *m_ring_setting;
+    shint *m_positions, *m_ring_setting;
     // if verbose, prints entire path of encryption when passing through
     // elements
     bool       m_verbose= false;
@@ -154,13 +154,13 @@ class Cartridge {
     Plugboard *          get_plugboard() const;   // hard to handle if const...
     // get values
     int          get_reflector_position() const;
-    const int *  get_ring_setting() const;
+    const shint *get_ring_setting() const;
     const string get_ring_setting_as_string() const;
-    const int *  get_positions() const;
+    const shint *get_positions() const;
     const string get_positions_as_string() const;
     const string get_rotor_position_as_string() const;   // computed, not stored
     // get other
-    void get_encryption_inplace(int *) const;
+    void get_encryption_inplace(shint *) const;
     bool get_if_trivial_stator() const;
     // SETTERS
     // set elements
@@ -169,9 +169,9 @@ class Cartridge {
     void set_rotor(int, const Rotor *);
     void set_reflector(const Reflector *);
     // set values
-    void set_positions(const int *p);
+    void set_positions(const shint *p);
     void set_rotor_position(const string in);
-    void set_ring_setting(const int *p);
+    void set_ring_setting(const shint *p);
     void set_ring_setting(const string in);
     void set_verbose(bool);
     // other
@@ -269,15 +269,15 @@ class Enigma {
     struct EnigmaSetting get_setting();
     int                  get_wires() const;
     int                  get_rotors() const;
-    const int *          get_positions() const;
+    const shint *        get_positions() const;
     const string         get_positions_as_string() const;
     // const int *            get_rotor_position() const;
     const string           get_rotor_position_as_string() const;
-    const int *            get_ring_setting() const;
+    const shint *          get_ring_setting() const;
     string                 get_ring_setting_as_string() const;
     int *                  get_encryption() const;
-    void                   get_encryption_inplace(int *) const;
-    void                   get_encryption_inplace_lazy(int *) const;
+    void                   get_encryption_inplace(shint *) const;
+    void                   get_encryption_inplace_lazy(shint *) const;
     string                 get_encryption_as_string() const;
     vector<pair<int, int>> get_encryption_onesided() const;
     Cartridge *            get_cartridge() const;
@@ -287,10 +287,10 @@ class Enigma {
     void set_coder();
     void set_verbose(bool);
     void set_cartridge_verbose(bool);
-    void set_positions(const int *);
+    void set_positions(const shint *);
     void set_rotor_position(const string);
     void set_ring_setting(const string);
-    void set_ring_setting(const int *);
+    void set_ring_setting(const shint *);
     void set_plugboard(const string);
     // other
     string indicator_procedure_early(string);

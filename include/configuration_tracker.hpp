@@ -26,7 +26,7 @@ class Graph {
 
     public:
     // Graph Constructor
-    Graph(int, shint);
+    Graph(shint, shint);
     ~Graph();
     void            add_edges(vector<Edge> const &);
     adjacency_list& get_adjacency_list();
@@ -49,6 +49,7 @@ class PointerGraph {
 
       public:
         Node();
+        virtual ~Node() {};
         void connect(pair<Node*, vector<bool>>);
         set<PointerGraphEdge> get_connections();
     };
@@ -57,6 +58,7 @@ class PointerGraph {
       private:
         vector<vector<shint>> ring_settings;
       public:
+        ~Leaf() {};
         vector<vector<shint>>& get_ring_settings();
     };
 

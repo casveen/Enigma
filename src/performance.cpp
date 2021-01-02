@@ -48,6 +48,6 @@ int main() {
     enigma.set_ring_setting("AAA");
     enigma.set_plugboard("");
     string                       ciphertext= enigma.encrypt(plaintext);
-    vector<struct EnigmaSetting> solutions = bombe.analyze(ciphertext, "SOME");
+    vector<struct EnigmaSetting> solutions = bombe.analyze(ciphertext, "SOME"); //BODY
     return 0;
 }

@@ -1,6 +1,7 @@
 #include<catch.hpp>
 #include<configuration_tracker.hpp>
 #include<stdlib.h>     /* srand, rand */
+#include "rotors.cpp" 
 
 vector<shint> engage_position(vector<shint> position, vector<bool> engages, Engage_direction direction, int rotor_count, int wires) {
     vector<shint> out(rotor_count, 0);
@@ -19,27 +20,9 @@ vector<shint> engage_position(vector<shint> position, vector<bool> engages, Enga
 
 vector<shint> follow_path_iterator(vector<pair<Engage, Engage_direction>> path_iterator, int rotor_count, int wires) {
     vector<shint> current_position(rotor_count,0);
-    //cout<<"testing if path sums to zero\n";
     for (pair<Engage, Engage_direction> engage_and_direction : path_iterator) {
-        //cout<<"e";
         current_position = engage_position(current_position, engage_and_direction.first, engage_and_direction.second, rotor_count, wires);
-        /*for(auto p:current_position) {
-            cout<<p<<" ";
-        }*/
-        
-        /*for (bool b : engage_and_direction.first ) {
-            b?cout<<"T":cout<<"F";
-        }*/
-        //cout<<"\n";
     }
-    //cout<<"current_position: \n";
-    //for(auto p:current_position) {
-    //    cout<<p<<" ";
-    //}
-    //cout<<"initial position: \n";
-    //for(auto p:initial_position) {
-    //    cout<<p<<" ";
-    //}
     return current_position;
 }
 
@@ -94,8 +77,43 @@ TEST_CASE("Testing if following path iteraator of configuration tracker ends up 
         CHECK(initial_position[i] == current_position[i]);
     }
 }
+/*
+
+SCENARIO("an enigma following the CT should have corresponding path and ring setting iterator", "[CT]") {
+    GIVEN("CT and Enigma: I, II, III, UKWR. Unsteckered") {
+        Enigma enigma({I, II, III}, UKWR);
+        string plaintext= "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        string previous_ciphertext, current_ciphertext;
+        ConfigurationTracker tracker(&enigma, (int) plaintext.size());
+        const vector<pair<vector<bool>, Engage_direction>>& path_iterator = tracker.get_path_iterator();
+        auto                                       ring_settings_iterator = tracker.get_ring_settings_iterator();
+        int rotors = 3;
+        shint* initial_positions = new shint[3];
+
+        for (int i = 0; i<rotors; i++) {
+            initial_positions[i] = enigma.get_positions()[i];
+        }
+        WHEN("plaintext encrypted with leaf ring settings from position 000") {
+            for (auto ring_settings : ring_settings_iterator) {
+                previous_ciphertext="";
+                THEN("all from same leaf should recrypt to same") {
+                    for (auto ring_setting : ring_settings) {
+                        enigma.set_ring_setting(ring_setting);
 
 
+
+                        current_ciphertext = enigma.encrypt(plaintext);
+                        CHECK(previous_ciphertext == "" || current_ciphertext == previous_ciphertext);
+                        previous_ciphertext = current_ciphertext;
+                        enigma.set_positions(initial_positions);
+                    }
+                }
+            }
+        }
+        delete initial_positions;
+    }
+    cout << "\n\n\r";
+}*/
 
 
 

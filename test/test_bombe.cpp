@@ -4,11 +4,15 @@
 #include "enigma.hpp"
 #include "rotors.cpp"   //all rotors,
 
+//checks if ANY solution fits the given criteria
 bool is_exact_setting(Enigma &enigma, vector<struct EnigmaSetting> solutions, string ring_setting,
                       string rotor_position, string correct_plugboard_string, string ciphertext,
                       string crib, int crib_pos) {
+
     unsigned int solution_count= solutions.size();
+    //check if any solution fits the given criteria
     for (struct EnigmaSetting solution : solutions) {
+        cout<<""
         bool all_correct= true;
         enigma.set_setting(solution);
         string encrypted_crib= enigma.encrypt(crib);
@@ -82,6 +86,43 @@ SCENARIO("Using custom rotors of non-standard size") {
     }
     cin.get();
 }*/
+
+
+
+SCENARIO("bombe with CT finds the configuration of an enimga", "[bombe]") {
+    cout<<"\n\ntesting with CT";
+    GIVEN("Enigma: I, II, III, UKWR. Steckered") {
+        Bombe bombe({I, II, III}, UKWR, true);
+        bombe.get_setting().stop_on_first_valid  = false;
+        bombe.get_setting().max_ring_settings    = 26*26*26;
+        bombe.get_setting().rotor_count          = 3;
+        bombe.get_setting().starting_ring_setting= "AAA";
+        bombe.get_setting().only_one_candidate   = false;
+        // struct EnigmaSetting enigma_setting;
+
+        Enigma enigma({I, II, III}, UKWR);
+        enigma.set_plugboard("AK. IE. DV. CQ. BN, MO, PJ. WR. UX");
+        // enigma.set_verbose(true);
+        // TODO withoun andisveryverylong behaves weird, cannot find
+        string plaintext= "AAAAAAAAAAAAAAAA";
+        WHEN("ciphertext encrypted with RS:WRQ, RP:DPA") {
+            enigma.set_ring_setting("WRQ");
+            enigma.set_rotor_position("DPA");
+            //position is WRQ-DPA = 
+            string ciphertext= enigma.encrypt(plaintext);
+            THEN("Running bombe with a complete crib should return the above "
+                 "setting") {
+                vector<struct EnigmaSetting> solutions= bombe.analyze(ciphertext, plaintext);
+                cout<<"\nfound "<<solutions.size()<<" solutions using the CT\n";
+                CHECK(is_exact_setting(enigma, solutions, "WRQ", "DPA",
+                                       "AK. IE. DV. CQ. BN, MO, PJ. WR. UX", ciphertext, plaintext,
+                                       0));
+            }
+        }
+    }
+    cout << "\n\n\r";
+}
+
 
 SCENARIO("bombe on concrete wikipedia example", "[bombedonitz]") {
     GIVEN("Donitz message portion, and its configuration") {
@@ -215,7 +256,7 @@ SCENARIO("bombeunit finds the configuration of an enimga", "[bombeunit]") {
 }   // SCENARIO
 
 SCENARIO("bombe finds the configuration of an enimga", "[bombe]") {
-    GIVEN("Enigma: VI, I, VI, UKWR. Steckered") {
+    GIVEN("Enigma: I II III IV, UKWR. Steckered") {
         Bombe bombe({I, II, III, IV}, UKWR);
         bombe.get_setting().stop_on_first_valid  = true;
         bombe.get_setting().max_ring_settings    = 3;
@@ -245,3 +286,7 @@ SCENARIO("bombe finds the configuration of an enimga", "[bombe]") {
     }
     cout << "\r";
 }
+
+
+
+
