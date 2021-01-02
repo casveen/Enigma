@@ -24,7 +24,7 @@ using namespace std;
 #include <utility>
 #include <vector>
 
-typedef short int shint;
+typedef unsigned char shint;
 //#inlcude "alphabet"
 
 class Rotor {
@@ -33,8 +33,8 @@ class Rotor {
     can be offset by a given mount, represented by that the rotor rotates during
     encryption.*/
   protected:
-    int *m_wiring_in, *m_wiring_out,
-        *m_notch;                // determines at which positions the next rotor is engaged
+    shint *m_wiring_in, *m_wiring_out,
+          *m_notch;                // determines at which positions the next rotor is engaged
     int    m_wires, m_notches;   // typically 26 and 1
     bool   m_verbose= false;     // prints entire encryption under encryption
     string m_name   = "CUSTOM";
@@ -50,11 +50,11 @@ class Rotor {
     virtual ~Rotor();
     // getters
     int        get_wires() const;
-    const int *get_wiring_in() const;
-    const int *get_wiring_out() const;
+    const shint *get_wiring_in() const;
+    const shint *get_wiring_out() const;
     int        get_wiring_in(int i) const;
     int        get_wiring_out(int i) const;
-    const int *get_notch() const;
+    const shint *get_notch() const;
     int        get_notch(int) const;
     int        get_notches() const;
     string     get_name() const;
@@ -96,7 +96,7 @@ class Plugboard {
     enigma*/
   private:
     int         m_wires;
-    vector<int> m_wiring;
+    vector<shint> m_wiring;
 
   public:
     Plugboard();
@@ -113,9 +113,9 @@ class Plugboard {
     void set_wiring(const string);
     void set_wiring(int, int);
     // getters
-    vector<int> &get_wiring();
-    int          get_wiring(int) const;
-    void         print() const;
+    vector<shint> &get_wiring();
+    int           get_wiring(int) const;
+    void          print() const;
 };
 
 class Cartridge {
@@ -275,7 +275,7 @@ class Enigma {
     const string           get_rotor_position_as_string() const;
     const shint *          get_ring_setting() const;
     string                 get_ring_setting_as_string() const;
-    int *                  get_encryption() const;
+    shint *                get_encryption() const;
     void                   get_encryption_inplace(shint *) const;
     void                   get_encryption_inplace_lazy(shint *) const;
     string                 get_encryption_as_string() const;

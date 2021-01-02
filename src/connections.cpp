@@ -124,8 +124,8 @@ void Bundle_connections::disconnect(int bundle_from, int wire_from, int bundle_t
 
 
     Enigma_connections::Enigma_connections(int wires) : Bundle_connections(wires, wires) {
-        for (int bundle_from;   bundle_from<wires; bundle_from++) {
-            for (int bundle_to; bundle_to  <wires; bundle_to++)   {
+        for (int bundle_from=0;   bundle_from<wires; bundle_from++) {
+            for (int bundle_to=0; bundle_to  <wires; bundle_to++)   {
                 if (bundle_from != bundle_to)                     {             
                     Bundle_connections::connect(bundle_from, bundle_to, bundle_to, bundle_from);
                 }

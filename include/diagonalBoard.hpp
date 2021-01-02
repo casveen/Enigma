@@ -29,8 +29,8 @@ class DiagonalBoard {
     void  print() const;
     void  print_live() const;
     void  print_connections() const;
-    void  connect_enigma(int *, int, int);
-    void  disconnect_enigma(int * , int, int);
+    void  connect_enigma(shint *, shint, shint);
+    void  disconnect_enigma(shint * , shint, shint);
     void  wipe();
     void  reset();
     bool  bundle_contradiction(int) const;

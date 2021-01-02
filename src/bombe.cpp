@@ -65,7 +65,7 @@ vector<struct EnigmaSetting> Bombe::analyze_unit(const string & ciphertext_subst
                                                  const string & crib,
                                                  vector<Rotor> &rotor_configuration,
                                                  Reflector &reflector, int candidate,
-                                                 int most_wired_letter) {
+                                                 shint most_wired_letter) {
     BombeUnit unit(rotor_configuration, reflector, m_use_configuration_tracker);
     vector<struct EnigmaSetting> solutions;
 
@@ -107,7 +107,7 @@ vector<struct EnigmaSetting> Bombe::analyze_unit(const string & ciphertext_subst
          << "\n";*/
     return solutions;
 }
-int Bombe::find_most_wired_letter(const string &ciphertext, const string &crib) {
+shint Bombe::find_most_wired_letter(const string &ciphertext, const string &crib) {
     // make histogram of both crib and cipher letters, find most frequent element
     int *histogram= new int[m_letters];
     for (int i= 0; i < m_letters; ++i) { histogram[i]= 0; }
@@ -115,8 +115,9 @@ int Bombe::find_most_wired_letter(const string &ciphertext, const string &crib) 
         histogram[(int)ciphertext[i] - (int)'A']++;
         histogram[(int)crib[i] - (int)'A']++;
     }
-    int max_value= 0, max_index= -1;
-    for (int i= 0; i < m_letters; ++i) {
+    int   max_value= 0;
+    shint max_index= 0;
+    for (shint i= 0; i < m_letters; ++i) {
         if (histogram[i] > max_value) {
             max_value= histogram[i];
             max_index= i;

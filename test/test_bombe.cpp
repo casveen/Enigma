@@ -12,7 +12,7 @@ bool is_exact_setting(Enigma &enigma, vector<struct EnigmaSetting> solutions, st
     unsigned int solution_count= solutions.size();
     //check if any solution fits the given criteria
     for (struct EnigmaSetting solution : solutions) {
-        cout<<""
+        cout<<" ";
         bool all_correct= true;
         enigma.set_setting(solution);
         string encrypted_crib= enigma.encrypt(crib);
@@ -88,7 +88,7 @@ SCENARIO("Using custom rotors of non-standard size") {
 }*/
 
 
-
+/*
 SCENARIO("bombe with CT finds the configuration of an enimga", "[bombe]") {
     cout<<"\n\ntesting with CT";
     GIVEN("Enigma: I, II, III, UKWR. Steckered") {
@@ -121,7 +121,7 @@ SCENARIO("bombe with CT finds the configuration of an enimga", "[bombe]") {
         }
     }
     cout << "\n\n\r";
-}
+}*/
 
 
 SCENARIO("bombe on concrete wikipedia example", "[bombedonitz]") {

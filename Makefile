@@ -1,5 +1,5 @@
 CC:= g++
-FLAGS= -Wall -pedantic -O3 -fopenmp -g -pg #openmp only needed in linking
+FLAGS= -Wall -pedantic -O3 -fopenmp -g  #openmp only needed in linking
 SRC=src
 BIN=bin
 BUILD=build
@@ -66,8 +66,9 @@ test.exe : $(TEST_DEP)
 
 #COMMANDS
 profile : performance.exe
-	valgrind --tool=callgrind ./bin/performance.exe
-	kcachegrind
+	#valgrind --tool=callgrind ./bin/performance.exe
+	valgrind --tool=massif --stacks=yes ./bin/performance.exe
+	#kcachegrind
 
 valgrind : performance.exe #enigma.exe
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./bin/performance.exe 

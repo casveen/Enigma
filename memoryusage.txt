@@ -1,0 +1,11 @@
+2021.01.02:
+shint = short int
+total heap usage: 2,908,718 allocs, 2,908,718 frees, 57,923,012 bytes allocated
+shint = int
+total heap usage: 2,908,718 allocs, 2,908,718 frees, 64,631,696 bytes allocated
+0.003306536 GB 1.309 Gi
+shint = unsigned short int
+total heap usage: 2,908,718 allocs, 2,908,718 frees, 57,922,732 bytes allocated
+shint = unsigned char 
+total heap usage: 2,908,718 allocs, 2,908,718 frees, 54,561,510 bytes allocated
+worst case memory usage snapshot 0.003112352 GB
