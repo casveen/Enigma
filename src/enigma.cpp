@@ -189,6 +189,10 @@ void Rotor::randomize() {
     }
     // now that in is randomized, make out the inverse of in
     make_inverse(m_wiring_in, m_wiring_out, m_wires);
+    //make random notches
+    for (int i = 0; i<m_notches; i++) {
+        m_notch[i] = rand() % m_wires;
+    }
 }
 void Rotor::make_inverse(const shint *in, shint *out, int n) const {
     // assumes list contains all integers from 0 to n-1
@@ -503,7 +507,7 @@ void Cartridge::set_setting(struct EnigmaSetting setting) {
     // dealloc everything
     for (int w= 0; w < m_rotor_count; w++) { delete m_rotors[w]; }
     delete[] m_rotors;
-    delete m_reflector;
+    delete m_reflector; //XXX source of error if shared, though use of set_setting copies
     delete m_plugboard;
     // alloc and set everything.
     m_rotors= new Rotor *[m_rotor_count];
@@ -513,6 +517,7 @@ void Cartridge::set_setting(struct EnigmaSetting setting) {
     set_ring_setting(setting.ring_setting);
     set_rotor_position(setting.rotor_position);
 }
+
 void Cartridge::set_plugboard(const string str) { m_plugboard->set_wiring(str); }
 void Cartridge::set_rotor(int pos, const Rotor *set) {
     m_rotors[pos]= (Rotor *)set;   // overwrites. rotor should handle it

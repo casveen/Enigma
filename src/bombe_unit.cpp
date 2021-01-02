@@ -220,6 +220,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     //vector<shint> initial_positions(m_rotor_count, 0);
     shint *encryption         = new shint[m_letters]; //used in place by enigma
     shint *initial_positions  = new shint[m_letters];
+    shint *current_positions  = new shint[m_letters];
     for(int i=0; i<m_rotor_count; i++) {initial_positions[i]=0;}
     m_enigma->set_positions(initial_positions);
     //get engagae_path, TODO move to bombe
@@ -317,21 +318,23 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                                 //m_enigma->set_rotor_position(rotor_positions[0]);
                                 //add all solutions
                                 for (vector<shint> ring_setting : ring_settings) {
+                                    //get some aspects of the solution, RS and RP are wrong, though
                                     EnigmaSetting solution = m_enigma->get_setting();
                                     //read ring setting properly
                                     string proper_ring_setting   = "";
                                     string proper_rotor_position = "";
-                                    const shint* positions = m_enigma->get_positions();
+                                    //const shint* positions = m_enigma->get_positions();
                                     for (int i = 0; i<(int) ring_setting.size(); i++) {
-                                        proper_ring_setting += (char) ((ring_setting[i]-positions[i]+m_letters)%m_letters +(shint) 'A');
-                                        //position= rotor_position-ring_setting XXX error source?
-                                        //rp == p+rs => rp = p + (ars-p) = ars (the "artificial" ring setting in this loop!!!)
-                                        solution.rotor_position = (char) (ring_setting[i] + (shint) 'A'); //this should work, I promise
+                                        current_positions [i] = m_enigma->get_positions()[i];
+                                        proper_ring_setting = (char) ((ring_setting[i]-initial_positions[i]+m_letters)%m_letters +(shint) 'A') + proper_ring_setting;
                                     }
-                                     //compute from ring setting anf d position, then to string.
+                                    m_enigma->set_ring_setting(proper_ring_setting); //analyze disregards ring setting, so this is safe
+                                    m_enigma->set_positions(initial_positions);      //reset later
+                                    solution.ring_setting   = proper_ring_setting;
+                                    solution.rotor_position = m_enigma->get_rotor_position_as_string();
                                     solutions.push_back(solution);
+                                    m_enigma->set_positions(current_positions);
                                 }
-                                //m_enigma->set_rotor_position(rotor_positions.back());
                                 if (m_setting.stop_on_first_valid) { return solutions; }
                             }
                             m_enigma->set_plugboard("");   // reset plugboard
@@ -360,6 +363,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     delete[] encryption;
     //cout<<"2\n";
     delete[] initial_positions;
+    delete[] current_positions;
     cout<<"\r                                                             "
         <<"                                                             \r";
     return solutions;
@@ -512,11 +516,8 @@ bool BombeUnit::tripplecheck_with_configuration_tracker(const string &crib, cons
     //cout<<"PROPER ROTOR POSITION: \n";
     //cout<<m_enigma->get_rotor_position_as_string()<<"\n";
 
-
-
     string recrypt= m_enigma->encrypt(ciphertext);
-    //cout<<"RECRYPTION: ";
-    //cout<<recrypt<<"\n";
+    
     if (m_setting.interactive_wiring_mode) { interactive_wirechecking(); }
 
     //reset positions, this mode does not care about ring settings

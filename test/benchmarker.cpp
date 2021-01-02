@@ -1,6 +1,6 @@
 // make some performance runs, recording performance for a bad crib
 //#include "bombe.h"
-int MAX_RING_SETTINGS= 20;
+int MAX_RING_SETTINGS= 1000;
 #include "bombe.hpp"
 #include "enigma.hpp"
 #include "rotors.cpp"   //all rotors,

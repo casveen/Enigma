@@ -4,6 +4,35 @@
 #include "enigma.hpp"
 #include "rotors.cpp"   //all rotors,
 
+
+
+
+//custom small rotors
+const int SMALL_ROTOR_COUNT = 6;
+const int SMALL_ROTOR_NOTCH_COUNT = 2;
+Rotor C0  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C1  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C2  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C3  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C4  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C5  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C6  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C7  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C8  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C9  = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C10 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C11 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C12 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C13 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C14 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C15 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C16 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C17 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C18 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Rotor C19 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
+Reflector CR = Reflector(SMALL_ROTOR_COUNT);
+
+
 //checks if ANY solution fits the given criteria
 bool is_exact_setting(Enigma &enigma, vector<struct EnigmaSetting> solutions, string ring_setting,
                       string rotor_position, string correct_plugboard_string, string ciphertext,
@@ -12,10 +41,13 @@ bool is_exact_setting(Enigma &enigma, vector<struct EnigmaSetting> solutions, st
     unsigned int solution_count= solutions.size();
     //check if any solution fits the given criteria
     for (struct EnigmaSetting solution : solutions) {
-        cout<<" ";
+        //cout<<"RP: "<<solution.rotor_position<<" --- RS: "<<solution.ring_setting<<"\n";
         bool all_correct= true;
         enigma.set_setting(solution);
+        //cout<<"\nARP: "<<enigma.get_rotor_position_as_string()<<" --- ARS: "<<enigma.get_ring_setting_as_string()<<"\n";
         string encrypted_crib= enigma.encrypt(crib);
+        //cout<<encrypted_crib<<"\n";
+        //cout<<ciphertext<<"\n";
         bool   check         = (encrypted_crib == ciphertext.substr(crib_pos, crib.length()));
         if (check == false && solution_count == 1) {
             cerr << "WRONG DECRYPTION: encrypt(" << crib << ")=" << encrypted_crib
@@ -41,6 +73,9 @@ bool is_exact_setting(Enigma &enigma, vector<struct EnigmaSetting> solutions, st
             Plugboard correct_plugboard(correct_plugboard_string, 26);
             for (int i= 0; i < 26; ++i) {
                 check= (solution.plugboard.get_wiring(i) == correct_plugboard.get_wiring(i));
+                if (check == false) {
+                    cout<<"WRONg PLUGBPARD";
+                }
                 if (check == false && solution_count == 1) {
                     cerr << "WRONG PLUGBOARD: correct_plugboard[" << i
                          << "]=" << correct_plugboard.get_wiring(i)
@@ -50,7 +85,9 @@ bool is_exact_setting(Enigma &enigma, vector<struct EnigmaSetting> solutions, st
                 all_correct= all_correct && check;
             }
         }
+
         if (all_correct) { return true; }
+        //cout<<"\n";
     }
     return false;
 }
@@ -88,40 +125,8 @@ SCENARIO("Using custom rotors of non-standard size") {
 }*/
 
 
-/*
-SCENARIO("bombe with CT finds the configuration of an enimga", "[bombe]") {
-    cout<<"\n\ntesting with CT";
-    GIVEN("Enigma: I, II, III, UKWR. Steckered") {
-        Bombe bombe({I, II, III}, UKWR, true);
-        bombe.get_setting().stop_on_first_valid  = false;
-        bombe.get_setting().max_ring_settings    = 26*26*26;
-        bombe.get_setting().rotor_count          = 3;
-        bombe.get_setting().starting_ring_setting= "AAA";
-        bombe.get_setting().only_one_candidate   = false;
-        // struct EnigmaSetting enigma_setting;
 
-        Enigma enigma({I, II, III}, UKWR);
-        enigma.set_plugboard("AK. IE. DV. CQ. BN, MO, PJ. WR. UX");
-        // enigma.set_verbose(true);
-        // TODO withoun andisveryverylong behaves weird, cannot find
-        string plaintext= "AAAAAAAAAAAAAAAA";
-        WHEN("ciphertext encrypted with RS:WRQ, RP:DPA") {
-            enigma.set_ring_setting("WRQ");
-            enigma.set_rotor_position("DPA");
-            //position is WRQ-DPA = 
-            string ciphertext= enigma.encrypt(plaintext);
-            THEN("Running bombe with a complete crib should return the above "
-                 "setting") {
-                vector<struct EnigmaSetting> solutions= bombe.analyze(ciphertext, plaintext);
-                cout<<"\nfound "<<solutions.size()<<" solutions using the CT\n";
-                CHECK(is_exact_setting(enigma, solutions, "WRQ", "DPA",
-                                       "AK. IE. DV. CQ. BN, MO, PJ. WR. UX", ciphertext, plaintext,
-                                       0));
-            }
-        }
-    }
-    cout << "\n\n\r";
-}*/
+
 
 
 SCENARIO("bombe on concrete wikipedia example", "[bombedonitz]") {
@@ -288,5 +293,75 @@ SCENARIO("bombe finds the configuration of an enimga", "[bombe]") {
 }
 
 
+SCENARIO("bombe with CT finds the configuration of an enimga, few rotors large crib", "[bombe]") {
+    //cout<<"\n\ntesting with CT";
+    GIVEN("Enigma: I, II, III, UKWR. Steckered") {
+        Bombe bombe({I, II}, UKWR, true);
+        bombe.get_setting().stop_on_first_valid  = false;
+        bombe.get_setting().max_ring_settings    = 26*26;
+        bombe.get_setting().rotor_count          = 2;
+        bombe.get_setting().starting_ring_setting= "AA";
+        bombe.get_setting().only_one_candidate   = false;
+        // struct EnigmaSetting enigma_setting;
+
+        Enigma enigma({I, II}, UKWR);
+        enigma.set_plugboard("AK. IE. DV. CQ. BN, MO, PJ. WR. UX");
+        // enigma.set_verbose(true);
+        // TODO withoun andisveryverylong behaves weird, cannot find
+        string plaintext= "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        WHEN("ciphertext encrypted with RS:WR, RP:DP") {
+            enigma.set_ring_setting("WR");
+            enigma.set_rotor_position("DP");
+            string ciphertext= enigma.encrypt(plaintext);
+            THEN("Running bombe with a complete crib should return the above "
+                 "setting") {
+                vector<struct EnigmaSetting> solutions= bombe.analyze(ciphertext, plaintext);
+                //cout<<"\nfound "<<solutions.size()<<" solutions using the CT\n";
+                CHECK(is_exact_setting(enigma, solutions, "WR", "DP",
+                                       "AK. IE. DV. CQ. BN, MO, PJ. WR. UX", ciphertext, plaintext,
+                                       0));
+            }
+        }
+    }
+    cout << "\r";
+}
+
+
+SCENARIO("bombe with CT finds the configuration of an enimga, many small rotors", "[bombe]") {
+    //cout<<"\n\ntesting with CT";
+    GIVEN("Enigma: random small motors. unsteckered") {
+        
+        C0.randomize(); C1.randomize(); C2.randomize(); C3.randomize(); C4.randomize();
+        //C0.randomize();
+        Bombe bombe({C0, C1, C2, C3, C4}, CR, true);
+        bombe.get_setting().stop_on_first_valid   = false;
+        bombe.get_setting().max_ring_settings     = (int) pow(SMALL_ROTOR_COUNT, 5);
+        bombe.get_setting().rotor_count           = 5;
+        bombe.get_setting().starting_ring_setting = "AAAAA";
+        bombe.get_setting().only_one_candidate    = false;
+        bombe.get_setting().only_one_configuration= true;
+        // struct EnigmaSetting enigma_setting;
+
+        Enigma enigma({C0, C1, C2, C3, C4}, CR);
+        //enigma.set_plugboard("AK. IE. DV. CQ. BN, MO, PJ. WR. UX");
+        // enigma.set_verbose(true);
+        // TODO withoun andisveryverylong behaves weird, cannot find
+        string plaintext= "ABCDEFABCDEFABCDEFABCDEF";
+        WHEN("ciphertext encrypted with RS:ABCDB, RP:CDBAD") {
+            enigma.set_ring_setting("ABCDB");
+            enigma.set_rotor_position("CDBAD");
+            string ciphertext= enigma.encrypt(plaintext);
+            THEN("Running bombe with a complete crib should return the above "
+                 "setting") {
+                vector<struct EnigmaSetting> solutions= bombe.analyze(ciphertext, plaintext);
+                //cout<<"\nfound "<<solutions.size()<<" solutions using the CT\n";
+                CHECK(is_exact_setting(enigma, solutions, "ABCDB", "CDBAD",
+                                       "", ciphertext, plaintext,
+                                       0));
+            }
+        }
+    }
+    cout << "\r";
+}
 
 
