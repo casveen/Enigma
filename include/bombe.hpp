@@ -85,9 +85,9 @@ struct BombeUnitSetting {
 class BombeUnit {
   private:
     string                m_identifier= "A bombeunit";
-    int                   m_letters= 26, m_rotor_count= 3;
+    shint                   m_letters= 26, m_rotor_count= 3;
     DiagonalBoard *       m_diagonal_board;
-    vector<int *>         m_enigma_encryptions;
+    vector<shint *>       m_enigma_encryptions;
     ConfigurationTracker *m_configuration_tracker; //XXX only uses its path...
     vector<pair<vector<bool>, Engage_direction>> engage_path;
 
@@ -118,15 +118,17 @@ class BombeUnit {
 
     void init_enigma_encryptions(int, vector<string> &, vector<vector<shint>> &);
     void reset_diagonal_board();
-    vector<struct EnigmaSetting> analyze(const string &, const string &, int, int);
-    vector<struct EnigmaSetting> analyze_with_configuration_tracker(const string &, const string &, int, int);
+    vector<struct EnigmaSetting> analyze(const string &, const string &, shint, int);
+    vector<struct EnigmaSetting> analyze_with_configuration_tracker(const string &, const string &, shint, int);
     void                         setup_diagonal_board(const string &, const string &);
-    bool                         check_one_wire(int);
-    bool                         bundle_contradiction(int);
+    bool                         check_one_wire(shint);
+    bool                         bundle_contradiction(shint);
     void                         print_encryptions() const;
     void                         print_performance() const;
     bool                         doublecheck_and_get_plugboard();
+    bool                         doublecheck_thoroughly_and_get_plugboard();
     bool           tripplecheck(const string &, const string &, int, vector<string> &);
+    bool           tripplecheck_with_configuration_tracker(const string &, const string &, const vector<shint>&, const shint*);
     void           interactive_wirechecking();
     vector<string> get_special_rotor_positions();
     void           print_progress(int, int, int);
@@ -155,7 +157,7 @@ struct BombeSetting {
 
 class Bombe {
   private:
-    int                   m_letters                  = 26;
+    shint                 m_letters                  = 26;
     bool                  m_verbose                  = false;
     const bool            m_using_configuration_board= true;
     vector<BombeUnit>     m_units;
@@ -174,10 +176,10 @@ class Bombe {
           const bool use_configuration_grid= DEFAULT_USE_CONFIGURATION_TRACKER);
     // Bombe(struct EnigmaSetting enigma_setting);
     vector<struct EnigmaSetting> analyze_unit(const string &, const string &, vector<Rotor> &,
-                                              Reflector &, int, int);
+                                              Reflector &, int, shint);
     vector<int>                  probable_search(const string &, const string &);
     vector<struct EnigmaSetting> analyze(const string &, const string &);
-    int                          find_most_wired_letter(const string &, const string &);
+    shint                        find_most_wired_letter(const string &, const string &);
     // void                         set_outstream(ostream &);
     string preprocess(string) const;
     // void                         banburismus(const string, const string crib);

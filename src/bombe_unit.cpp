@@ -13,11 +13,11 @@ void update_performance(double &mean, double &var, std::chrono::duration<double>
     records++;
 }
 
-void vector_from_array_inplace(vector<shint> &vec, const int *array, int length) {
+void vector_from_array_inplace(vector<shint> &vec, const shint *array, int length) {
     for (int i= 0; i < length; ++i) { vec[i]= (shint)array[i]; }
 }
 
-vector<shint> vector_from_array(const int *array, int length, bool debug= false) {
+vector<shint> vector_from_array(const shint *array, int length, bool debug= false) {
     vector<shint> vec;
     // if (debug) { cout << "READING: "; }
     for (int i= 0; i < length; ++i) {
@@ -76,7 +76,7 @@ BombeUnit::BombeUnit(struct EnigmaSetting enigma_setting,
 BombeUnit::~BombeUnit() {
     delete m_diagonal_board;
     delete m_enigma;
-    for (int *encryption : m_enigma_encryptions) { delete[] encryption; }
+    for (shint *encryption : m_enigma_encryptions) { delete[] encryption; }
     m_enigma_encryptions.clear();
     m_enigma_encryptions.shrink_to_fit();
 }
@@ -103,7 +103,7 @@ string BombeUnit::get_identifier() const { return m_identifier; }
 void BombeUnit::init_enigma_encryptions(int encryptions, vector<string> &rotor_positions,
                                         vector<vector<shint>> &positions) {
     m_enigma->set_rotor_position(m_setting.starting_rotor_positions);
-    for (int *encryption : m_enigma_encryptions) { delete[] encryption; }
+    for (shint *encryption : m_enigma_encryptions) { delete[] encryption; }
     m_enigma_encryptions.clear();
     rotor_positions.clear();
     rotor_positions.push_back(m_enigma->get_rotor_position_as_string());
@@ -119,7 +119,7 @@ void BombeUnit::init_enigma_encryptions(int encryptions, vector<string> &rotor_p
 void BombeUnit::reset_diagonal_board() { m_diagonal_board->reset(); }
 void BombeUnit::setup_diagonal_board(const string &ciphertext, const string &crib) {
     for (unsigned int j= 0; j < crib.length(); j++) {
-        int *encryption= m_enigma_encryptions.at(j);
+        shint *encryption= m_enigma_encryptions.at(j);
         m_diagonal_board->connect_enigma(encryption, (int)crib[j] - (int)'A',
                                          (int)ciphertext[j] - (int)'A');
     }
@@ -131,10 +131,10 @@ void BombeUnit::setup_diagonal_board(const string &ciphertext, const string &cri
 ciphertext:        ciphertext to crack
 crib:              corresponding crib, a plaintext that encrypts to a substring of ciphertext
 most_wired_letter: when finding a potential crib, this is the letter that is most "wired to"
-position:          XXX not used?
+position:          XXX not used? in triplecheck, but not there either
 */
 vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const string &crib,
-                                                int most_wired_letter, int position) {
+                                                shint most_wired_letter, int position) {
     //general setup
     vector<struct EnigmaSetting> solutions;
     int                          crib_n= crib.length(),
@@ -177,7 +177,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const 
             // END TESTS
             // shuffle arrays TODO make own function
             m_enigma->turn();
-            int *encryption= m_enigma_encryptions.front();
+            shint *encryption= m_enigma_encryptions.front();
             m_enigma->get_encryption_inplace(encryption);
             m_enigma_encryptions.erase(m_enigma_encryptions.begin());
             m_enigma_encryptions.push_back(encryption);
@@ -199,15 +199,17 @@ vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const 
         }
 
     }   //end for ring setting
-    cout<<"                                                                                      "
-        << "      \r";
+    /*cout<<"                                                                                      "
+        << "      \r";*/
+    cout<<"\r                                                             "
+        <<"                                                             \r";
     if (m_setting.time_performance && m_verbose) { print_performance(); }
     //if (m_use_configuration_tracker) { m_configuration_tracker->find_unchecked(); }
     return solutions;
 }
 
 vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const string &ciphertext, const string &crib,
-                                                                           int most_wired_letter, int position) {
+                                                                           shint most_wired_letter, int position) {
     //general setup
     vector<struct EnigmaSetting> solutions;
     int                          crib_n= crib.length(),
@@ -218,11 +220,19 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     //vector<shint> initial_positions(m_rotor_count, 0);
     shint *encryption         = new shint[m_letters]; //used in place by enigma
     shint *initial_positions  = new shint[m_letters];
+    shint *current_positions  = new shint[m_letters];
     for(int i=0; i<m_rotor_count; i++) {initial_positions[i]=0;}
+    m_enigma->set_positions(initial_positions);
     //get engagae_path, TODO move to bombe
     ConfigurationTracker tracker = ConfigurationTracker(m_enigma, crib_n);
     //cout<<"made tracker\n";
-    vector<pair<vector<bool>, Engage_direction>> path_iterator = tracker.path_iterator();
+    const vector<pair<vector<bool>, Engage_direction>>& path_iterator          = tracker.get_path_iterator();
+    //cout<<"\npath iterator of size "<<path_iterator.size()<<"\n";
+    //vector<vector<vector<shint>>>::iterator      
+    auto                                         ring_settings_iterator_begin = tracker.get_ring_settings_iterator().begin();
+    auto                                         ring_settings_iterator = ring_settings_iterator_begin;
+    //int  stop_counts = 0;
+    //cout<<"\nring_settings iterator of size "<<ring_settings_iterator.size()<<"\n";
     //cout<<"got iterator\n";
     
 
@@ -232,6 +242,8 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
         print_progress(rp, positions_count, (int) solutions.size());
         //init_enigma_encryptions(crib_n, rotor_positions, positions);
         if (m_setting.time_performance) { start_ring_setting= std::chrono::system_clock::now(); }
+        //reset ring settings iterator
+        ring_settings_iterator = ring_settings_iterator_begin;
         // for each edge in the engage path
         for (pair<vector<bool>, Engage_direction> engage_and_direction : path_iterator) {
                 //engage, connect the enigma if forward, disconnect if backward, test if stop
@@ -264,26 +276,44 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                     
                     break;
                 case Engage_direction::stop :
-                    //reset_diagonal_board();
+
+                    //each time a stop is met, consume a ring_settings
+                    //cout<<"stopped "<< ++stop_counts <<"\n";
+                    vector<vector<shint>> ring_settings = *ring_settings_iterator;
+
+                    
                     /*
-                    // BEGIN TESTS, XXX DOES NOT WORK
+                    interactive_wirechecking();
+                    cin.get();*/
+                    m_diagonal_board->wipe();
                     if (check_one_wire(most_wired_letter)) {     // first test
                         if (doublecheck_and_get_plugboard()) {   // second test
-                            if (tripplecheck(crib, ciphertext, position,
-                                             m_enigma->get_rotor_position())) {   // final test
-                            /*cout << "\nRS:" << m_enigma->get_ring_setting_as_string() << "   RP:"
-                                 << rotor_positions[rotor_positions.size() - crib.length() - 1]
-                                 << "   P:" << m_enigma->get_cartridge()->get_positions_as_string()
-                                 << "\n";
-                                m_enigma->set_rotor_position(rotor_positions[0]);
-                                solutions.push_back(m_enigma->get_setting());
-                                m_enigma->set_rotor_position(rotor_positions.back());
+                            if (tripplecheck_with_configuration_tracker(crib, ciphertext, ring_settings[0], initial_positions)) {   // final test
+                                //add all solutions
+                                for (vector<shint> ring_setting : ring_settings) {
+                                    //get some aspects of the solution, RS and RP are wrong, though
+                                    EnigmaSetting solution = m_enigma->get_setting();
+                                    //read ring setting properly
+                                    string proper_ring_setting   = "";
+                                    string proper_rotor_position = "";
+                                    //const shint* positions = m_enigma->get_positions();
+                                    for (int i = 0; i<(int) ring_setting.size(); i++) {
+                                        current_positions [i] = m_enigma->get_positions()[i];
+                                        proper_ring_setting = (char) ((ring_setting[i]-initial_positions[i]+m_letters)%m_letters +(shint) 'A') + proper_ring_setting;
+                                    }
+                                    m_enigma->set_ring_setting(proper_ring_setting); //analyze disregards ring setting, so this is safe
+                                    m_enigma->set_positions(initial_positions);      //reset later
+                                    solution.ring_setting   = proper_ring_setting;
+                                    solution.rotor_position = m_enigma->get_rotor_position_as_string();
+                                    solutions.push_back(solution);
+                                    m_enigma->set_positions(current_positions);
+                                }
                                 if (m_setting.stop_on_first_valid) { return solutions; }
                             }
                             m_enigma->set_plugboard("");   // reset plugboard
                         }
                     } // END TESTS
-                    */
+                    ring_settings_iterator++;
                     break;
                 } //END SWITCH
         }//END FOR PATH
@@ -302,18 +332,18 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     
     //cout<<"almost done\n";
     if (m_setting.time_performance && m_verbose) { print_performance(); }
-    //cout<<"1\n";
     delete[] encryption;
-    //cout<<"2\n";
     delete[] initial_positions;
-    cout<<"\r";
+    delete[] current_positions;
+    cout<<"\r                                                             "
+        <<"                                                             \r";
     return solutions;
 }
 
-bool BombeUnit::bundle_contradiction(int bundle) {
+bool BombeUnit::bundle_contradiction(shint bundle) {
     return m_diagonal_board->bundle_contradiction(bundle);
 }
-bool BombeUnit::check_one_wire(int most_wired_letter) {
+bool BombeUnit::check_one_wire(shint most_wired_letter) {
     m_diagonal_board->activate(most_wired_letter, min(4, m_letters - 1));
     return (!bundle_contradiction(most_wired_letter));
 }
@@ -334,18 +364,18 @@ bool BombeUnit::doublecheck_and_get_plugboard() {
         m_diagonal_board->print_connections();
         cin.get();
     }
-    for (int bundle= 0; bundle < m_letters; ++bundle) {
+    for (shint bundle= 0; bundle < m_letters; ++bundle) {
         int sum= m_diagonal_board->bundle_sum(bundle);
         if (sum == 1) {   // steckered is live
             // all other bundles should have 1 or less live wires
-            for (int bundle_2= 0; bundle_2 < m_letters; ++bundle_2) {
+            for (shint bundle_2= 0; bundle_2 < m_letters; ++bundle_2) {
                 if (m_diagonal_board->bundle_sum(bundle_2) > 1) {
                     plugboard->reset();
                     return false;
                 }
             }
             // find live wire
-            for (int wire= 0; wire < m_letters; ++wire) {
+            for (shint wire= 0; wire < m_letters; ++wire) {
                 if (m_diagonal_board->get_wire(bundle, wire)->get_live()) {
                     plugboard->set_wiring(bundle, wire);
                     plugboard->set_wiring(wire, bundle);
@@ -354,7 +384,7 @@ bool BombeUnit::doublecheck_and_get_plugboard() {
             }
         } else if (sum == m_letters - 1) {   // steckered is dead
             // find dead wire
-            for (int wire= 0; wire < m_letters; ++wire) {
+            for (shint wire= 0; wire < m_letters; ++wire) {
                 if (!m_diagonal_board->get_wire(bundle, wire)->get_live()) {
                     plugboard->set_wiring(bundle, wire);
                     plugboard->set_wiring(wire, bundle);
@@ -362,11 +392,64 @@ bool BombeUnit::doublecheck_and_get_plugboard() {
                 }
             }
         } else {   // undeterminable... try some more! TODO
-            //cout<<"\n\nbombe_unit: doublecheck: undeterminable, not implemented\n\n";
+            return doublecheck_thoroughly_and_get_plugboard();
         }
     }
     return true;
 }
+bool BombeUnit::doublecheck_thoroughly_and_get_plugboard() {
+    //cout<<"\nTHOROUGH DOUBLECHECK\n";
+    //same as doublecheck, but do for all wires activated, can be optimized if it i a bottleneck.
+    Plugboard *plugboard= m_enigma->get_cartridge()->get_plugboard();
+    int sum;
+    bool all_determined;
+    for (shint b = 0; b < m_letters; b++) {
+        for (shint w = 0; w < m_letters; w++) {
+            all_determined = true;
+            m_diagonal_board->wipe();
+            m_diagonal_board->activate(b, w);
+            for (shint bundle= 0; bundle < m_letters; ++bundle) {
+                sum = m_diagonal_board->bundle_sum(bundle);
+                //cout<<"s: "<<sum<<"\n";
+                if (sum == 1) {   // steckered is live
+                    // all other bundles should have 1 or less live wires
+                    for (shint bundle_2= 0; bundle_2 < m_letters; ++bundle_2) {
+                        if (m_diagonal_board->bundle_sum(bundle_2) > 1) {
+                            plugboard->reset();
+                            return false;
+                        }
+                    }
+                
+                    // find live wire
+                    for (shint wire= 0; wire < m_letters; ++wire) {
+                        if (m_diagonal_board->get_wire(bundle, wire)->get_live()) {
+                            plugboard->set_wiring(bundle, wire);
+                            plugboard->set_wiring(wire, bundle);
+                            break;
+                        }
+                    }
+                } else if (sum == m_letters - 1) {   // steckered is dead
+                    // find dead wire
+                    for (shint wire= 0; wire < m_letters; ++wire) {
+                        if (!m_diagonal_board->get_wire(bundle, wire)->get_live()) {
+                            plugboard->set_wiring(bundle, wire);
+                            plugboard->set_wiring(wire, bundle);
+                            break;
+                        }
+                    }
+                } else {
+                    all_determined = false;
+                }
+            }
+            if (all_determined) {
+                return true;
+            }
+        } 
+    }
+    //cout<<"\nWARNING: unable to determine validity of wiring\n";
+    return true;
+}
+
 bool BombeUnit::tripplecheck(const string &crib, const string &ciphertext, int candidate,
                              vector<string> &rotor_positions) {
     // test if the given configuration encrypts the crib to plaintext
@@ -376,10 +459,49 @@ bool BombeUnit::tripplecheck(const string &crib, const string &ciphertext, int c
     if (m_setting.interactive_wiring_mode) { interactive_wirechecking(); }
     return (recrypt == crib);
 }
+bool BombeUnit::tripplecheck_with_configuration_tracker(const string &crib, const string &ciphertext, const vector<shint>& shifted_ring_setting, const shint* initial_positions) {
+    //store positions to reset at end
+    shint* current_positions = new shint[m_letters];
+    for(int i=0; i<m_rotor_count; i++) {
+        current_positions[i] = m_enigma->get_positions()[i];
+        //cout<<(char) (current_positions[i] + (int) 'A');
+    }
+    m_enigma->set_positions(initial_positions);
+
+    // test if the given configuration encrypts the crib to plaintext
+    // get proper configuration
+    // get proper ring setting, and set position.
+    // both can be set at the same time, XXX source of error?
+    // the positions are already correct.
+
+    string proper_ring_setting  = "";
+    //const shint* positions = m_enigma->get_positions();
+    //cout<<"PROPER RING SETTING:\n";
+
+    //XXX REMEBER TO REVERSE!!!
+    for (int i = 0; i<(shint) shifted_ring_setting.size(); i++) {
+        proper_ring_setting = (char) ((shifted_ring_setting[i]-initial_positions[i]+m_letters)%m_letters +(shint) 'A') + proper_ring_setting;
+    }
+    //cout<<proper_ring_setting<<"\n";
+    m_enigma->set_ring_setting(proper_ring_setting);
+    //cout<<"PROPER ROTOR POSITION: \n";
+    //cout<<m_enigma->get_rotor_position_as_string()<<"\n";
+
+    string recrypt= m_enigma->encrypt(ciphertext);
+    
+    if (m_setting.interactive_wiring_mode) { interactive_wirechecking(); }
+
+    //reset positions, this mode does not care about ring settings
+    m_enigma->set_positions(current_positions);
+    
+    delete[] current_positions; //XXX wastefull solution
+    return (recrypt == crib);
+}
+
 void BombeUnit::interactive_wirechecking() {
     cout << "--------------------INTERACTIVE WIRING MODE------------------\n";
     string input;
-    int    bundle, wire;
+    shint    bundle, wire;
     while (true) {
         cout << "    INPUT A WIRE TO ACTIVATE(q to EXIT): ";
         cin >> input;
@@ -436,7 +558,7 @@ void BombeUnit::print_progress(int ring_setting, int max_ring_settings, int solu
 
 void BombeUnit::print_encryptions() const {
     cout << "size of encryptions: " << m_enigma_encryptions.size() << "\n";
-    for (int wire= 0; wire < m_letters; ++wire) {
+    for (shint wire= 0; wire < m_letters; ++wire) {
         cout << (char)(wire + (int)'A') << ": ";
         for (unsigned int e= 0; e < m_enigma_encryptions.size(); ++e) {
             cout << (char)(m_enigma_encryptions.at(e)[wire] + (int)'A') << " ";

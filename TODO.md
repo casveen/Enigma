@@ -119,3 +119,5 @@ When the tree is made, to analayse all
 
 -the disconnect in wire is only a pop back of the connection list. Due to the usage of the wires, this should not be a problem, 
 but while it is the absolutely fastest solution, it can easily caus problems!
+
+-in analyze, is ciphertext same length as crib? if not we have to use position

@@ -9,12 +9,12 @@ Rotor::Rotor() : Rotor(0, 0, "DEFAULTCONSTRUCTED") {
 Rotor::Rotor(int wires, int notches /*1*/, string name /*CUSTOM*/) :
     m_wires{wires}, m_notches{notches}, m_name{name} {
     // base constructor
-    m_notch= new int[m_notches];
+    m_notch= new shint[m_notches];
     // make ok spread of notched from A
     for (int j= 0; j < m_notches; ++j) { m_notch[j]= (m_wires / m_notches) * j; }
     // allocate to wiring array
-    m_wiring_in = new int[m_wires];
-    m_wiring_out= new int[m_wires];
+    m_wiring_in = new shint[m_wires];
+    m_wiring_out= new shint[m_wires];
     // make identity wiring
     for (int j= 0; j < m_wires; j++) {
         m_wiring_in[j] = j;
@@ -52,13 +52,13 @@ Rotor::Rotor(Rotor const &copy) {
     m_name= copy.m_name;
     // cout << "COPYING ROTOR; make in:"
     //     << "\n";
-    m_wiring_in= new int[m_wires];
+    m_wiring_in= new shint[m_wires];
     // cout << "COPYING ROTOR; make out:"
     //     << "\n";
-    m_wiring_out= new int[m_wires];
+    m_wiring_out= new shint[m_wires];
     // cout << "COPYING ROTOR; make notch:"
     //     << "\n";
-    m_notch= new int[m_notches];
+    m_notch= new shint[m_notches];
     // Don't need to worry about copying integers.
     // But if the object has a copy constructor then
     // it would also need to worry about throws from the copy constructor.
@@ -88,11 +88,11 @@ void Rotor::swap(Rotor &s) noexcept {
 }
 // getters
 int        Rotor::get_wires() const { return m_wires; }
-const int *Rotor::get_wiring_in() const { return m_wiring_in; }
+const shint *Rotor::get_wiring_in() const { return m_wiring_in; }
 int        Rotor::get_wiring_in(int i) const { return m_wiring_in[i]; }
-const int *Rotor::get_wiring_out() const { return m_wiring_out; }
+const shint *Rotor::get_wiring_out() const { return m_wiring_out; }
 int        Rotor::get_wiring_out(int i) const { return m_wiring_out[i]; }
-const int *Rotor::get_notch() const { return m_notch; }
+const shint *Rotor::get_notch() const { return m_notch; }
 int        Rotor::get_notch(int n) const { return m_notch[n]; }
 int        Rotor::get_notches() const { return m_notches; }
 string     Rotor::get_name() const { return m_name; }
@@ -125,7 +125,7 @@ int Rotor::encrypt_out(int i, int offset) const {
     }
     return out;
 }
-void Rotor::encrypt_in_inplace(int *plaintext, int offset, int n) const {
+void Rotor::encrypt_in_inplace(shint *plaintext, int offset, int n) const {
     for (int i= 0; i < n; ++i) {
         plaintext[i]= (m_wiring_in[(plaintext[i] + offset) % m_wires] + m_wires - offset) % m_wires;
     }
@@ -147,7 +147,7 @@ flagged, int offset, int n) const {
         }
     }
 }*/
-void Rotor::encrypt_out_inplace(int *plaintext, int offset, int n) const {
+void Rotor::encrypt_out_inplace(shint *plaintext, int offset, int n) const {
     for (int i= 0; i < n; ++i) {
         plaintext[i]=
             (m_wiring_out[(plaintext[i] + offset) % m_wires] + m_wires - offset) % m_wires;
@@ -189,8 +189,12 @@ void Rotor::randomize() {
     }
     // now that in is randomized, make out the inverse of in
     make_inverse(m_wiring_in, m_wiring_out, m_wires);
+    //make random notches
+    for (int i = 0; i<m_notches; i++) {
+        m_notch[i] = rand() % m_wires;
+    }
 }
-void Rotor::make_inverse(const int *in, int *out, int n) const {
+void Rotor::make_inverse(const shint *in, shint *out, int n) const {
     // assumes list contains all integers from 0 to n-1
     for (int i= 0; i < n; i++) { out[in[i]]= i; }
 }
@@ -259,7 +263,7 @@ Plugboard::Plugboard() {}
 Plugboard::Plugboard(int t_wires) {
     // allocate to wiring array
     m_wires = t_wires;
-    m_wiring= vector<int>(m_wires);
+    m_wiring= vector<shint>(m_wires);
     for (int i= 0; i < m_wires; i++) { m_wiring[i]= i; }
 }
 Plugboard::Plugboard(const string in, int t_wires) : Plugboard{t_wires} { set_wiring(in); }
@@ -270,7 +274,7 @@ Plugboard::~Plugboard() {
 Plugboard::Plugboard(Plugboard const &copy) {
     // cout << "COPYING PLUGBOARD\n";
     m_wires = copy.m_wires;
-    m_wiring= vector<int>(copy.m_wiring);
+    m_wiring= vector<shint>(copy.m_wiring);
 }
 Plugboard &Plugboard::operator=(Plugboard rhs) {
     // Pass by value (thus generating a copy)
@@ -285,7 +289,7 @@ void Plugboard::swap(Plugboard &s) noexcept {
     swap(this->m_wires, s.m_wires);
 }
 int  Plugboard::encrypt(int in) const { return m_wiring[in]; }
-void Plugboard::encrypt_inplace(int *plaintext, int n) const {
+void Plugboard::encrypt_inplace(shint *plaintext, int n) const {
     for (int i= 0; i < n; ++i) { plaintext[i]= m_wiring[plaintext[i]]; }
 }
 void Plugboard::reset() {
@@ -312,7 +316,7 @@ void Plugboard::set_wiring(const string in) {
     // XXX check validity
 }
 void         Plugboard::set_wiring(int pos, int set) { m_wiring[pos]= set; }
-vector<int> &Plugboard::get_wiring() { return m_wiring; }
+vector<shint> &Plugboard::get_wiring() { return m_wiring; }
 int          Plugboard::get_wiring(int i) const { return m_wiring[i]; }
 void         Plugboard::print() const {
     for (int wire= 0; wire < m_wires; wire++) { printf("%2d ", m_wiring[wire]); }
@@ -323,8 +327,8 @@ void         Plugboard::print() const {
 // Cartridge::Cartridge() {}   // XXX should really not be neccesary...
 Cartridge::Cartridge(int rotor_count, int wires) :
     m_rotor_count{rotor_count}, m_wires{wires}, m_trivial_stator(true) {
-    m_positions   = new int[rotor_count];
-    m_ring_setting= new int[rotor_count];
+    m_positions   = new shint[rotor_count];
+    m_ring_setting= new shint[rotor_count];
     // init positions
     reset_positions();
     reset_ring_setting();
@@ -347,8 +351,8 @@ Cartridge::Cartridge(const vector<Rotor> rotors, Reflector reflector,
                      const bool trivial_stator /*true*/) :
     m_rotor_count(rotors.size()),
     m_wires((rotors.begin())->get_wires()), m_trivial_stator(trivial_stator) {
-    m_positions   = new int[m_rotor_count];
-    m_ring_setting= new int[m_rotor_count];
+    m_positions   = new shint[m_rotor_count];
+    m_ring_setting= new shint[m_rotor_count];
     // init positions
     reset_positions();
     reset_ring_setting();
@@ -368,8 +372,8 @@ Cartridge::Cartridge(struct EnigmaSetting setting) : m_trivial_stator(setting.tr
     m_wires      = setting.rotors[0].get_wires();       // begin?
     // TODO set_setting instead?
     // alloc and set everything.
-    m_positions   = new int[m_rotor_count];
-    m_ring_setting= new int[m_rotor_count];
+    m_positions   = new shint[m_rotor_count];
+    m_ring_setting= new shint[m_rotor_count];
     m_rotors      = new Rotor *[m_rotor_count];
     for (int r= 0; r < m_rotor_count; ++r) { m_rotors[r]= new Rotor(setting.rotors[r]); }
     if (!setting.trivial_stator) {
@@ -447,14 +451,14 @@ const Reflector *Cartridge::get_reflector() const { return m_reflector; }
 Plugboard *      Cartridge::get_plugboard() const { return m_plugboard; }
 // GET value
 int          Cartridge::get_reflector_position() const { return m_reflector_position; }
-const int *  Cartridge::get_ring_setting() const { return m_ring_setting; }
+const shint *  Cartridge::get_ring_setting() const { return m_ring_setting; }
 const string Cartridge::get_ring_setting_as_string() const {
     // write in reverse
     string out= "";
     for (int i= m_rotor_count - 1; i >= 0; --i) { out+= (char)(m_ring_setting[i] + (int)'A'); }
     return out;
 }
-const int *  Cartridge::get_positions() const { return m_positions; }
+const shint *  Cartridge::get_positions() const { return m_positions; }
 const string Cartridge::get_positions_as_string() const {
     string out;
     out= "";
@@ -478,7 +482,7 @@ bool Cartridge::get_if_trivial_stator() const { return m_trivial_stator; }
     }
     return turn;
 }*/
-void Cartridge::get_encryption_inplace(int *encryption) const {
+void Cartridge::get_encryption_inplace(shint *encryption) const {
     // crucial that this function is optimal. Used by Bombe
     copy(&m_plugboard->get_wiring()[0], &m_plugboard->get_wiring()[m_wires], encryption);
     if (!m_trivial_stator) { m_stator->encrypt_in_inplace(encryption, 0, m_wires); }
@@ -503,7 +507,7 @@ void Cartridge::set_setting(struct EnigmaSetting setting) {
     // dealloc everything
     for (int w= 0; w < m_rotor_count; w++) { delete m_rotors[w]; }
     delete[] m_rotors;
-    delete m_reflector;
+    delete m_reflector; //XXX source of error if shared, though use of set_setting copies
     delete m_plugboard;
     // alloc and set everything.
     m_rotors= new Rotor *[m_rotor_count];
@@ -513,6 +517,7 @@ void Cartridge::set_setting(struct EnigmaSetting setting) {
     set_ring_setting(setting.ring_setting);
     set_rotor_position(setting.rotor_position);
 }
+
 void Cartridge::set_plugboard(const string str) { m_plugboard->set_wiring(str); }
 void Cartridge::set_rotor(int pos, const Rotor *set) {
     m_rotors[pos]= (Rotor *)set;   // overwrites. rotor should handle it
@@ -521,7 +526,7 @@ void Cartridge::set_rotor(int pos, const Rotor *set) {
 void Cartridge::set_reflector(const Reflector *set) {
     m_reflector= (Reflector *)set;   // overwrites. rotor should handle it properly
 }
-void Cartridge::set_positions(const int *p_in) {
+void Cartridge::set_positions(const shint *p_in) {
     for (int p= 0; p < m_rotor_count; p++) { m_positions[p]= p_in[p]; }
 }
 void Cartridge::set_rotor_position(const string rotor_positions) {
@@ -543,7 +548,7 @@ void Cartridge::set_rotor_position(const string rotor_positions) {
         m_reflector_position= (int)rotor_positions[0] - (int)'A';
     }
 }
-void Cartridge::set_ring_setting(const int *p) { m_ring_setting= (int *)p; }
+void Cartridge::set_ring_setting(const shint *p) { m_ring_setting= (shint *)p; } //XXX yikes
 void Cartridge::set_ring_setting(const string in) {
     for (int i= 0; i < m_rotor_count; ++i) {
         m_ring_setting[i]= (int)(in[m_rotor_count - i - 1]) - (int)('A');
@@ -753,7 +758,7 @@ struct EnigmaSetting Enigma::get_setting() {
 }
 int        Enigma::get_wires() const { return m_wires; }
 int        Enigma::get_rotors() const { return m_rotors_number; }
-const int *Enigma::get_positions() const { return m_cartridge->get_positions(); }
+const shint *Enigma::get_positions() const { return m_cartridge->get_positions(); }
 const string Enigma::get_positions_as_string() const { return m_cartridge->get_positions_as_string(); }
 /*const int *Enigma::get_rotor_position() const {
 return m_cartridge->get_rotor_position();
@@ -761,21 +766,21 @@ return m_cartridge->get_rotor_position();
 const string Enigma::get_rotor_position_as_string() const {
     return m_cartridge->get_rotor_position_as_string();
 }
-const int *Enigma::get_ring_setting() const { return m_cartridge->get_ring_setting(); }
+const shint *Enigma::get_ring_setting() const { return m_cartridge->get_ring_setting(); }
 string     Enigma::get_ring_setting_as_string() const {
     return m_cartridge->get_ring_setting_as_string();
 }
 
-int *Enigma::get_encryption() const {
+shint *Enigma::get_encryption() const {
     // return encryption of all letters, trying to be cache coherent
     // return value must be deleted by client.
     // get stuff from the cartridge
     // XXX take identity, encrypt in place for containment of code
     const Rotor **   rotors    = m_cartridge->get_rotors();
     const Reflector *reflector = m_cartridge->get_reflector();
-    const int *      positions = m_cartridge->get_positions();
+    const shint *    positions = m_cartridge->get_positions();
     const Plugboard *plugboard = m_cartridge->get_plugboard();
-    int *            encryption= new int[m_wires];
+    shint *          encryption= new shint[m_wires];
     for (int i= 0; i < m_wires; ++i) { encryption[i]= i; }
 
     plugboard->encrypt_inplace(encryption, m_wires);
@@ -789,13 +794,13 @@ int *Enigma::get_encryption() const {
     plugboard->encrypt_inplace(encryption, m_wires);
     return encryption;
 }
-void Enigma::get_encryption_inplace(int *encryption) const {
+void Enigma::get_encryption_inplace(shint *encryption) const {
     // return encryption of all letters, trying to be cache coherent
     // encryption is assumed to conatin m_wires integers
     // encrypts in place onto encryption, no allocation
     m_cartridge->get_encryption_inplace(encryption);
 }
-void Enigma::get_encryption_inplace_lazy(int *encryption) const {
+void Enigma::get_encryption_inplace_lazy(shint *encryption) const {
     // return encryption of all letters
     // does the same as inplace, but with one less encryption
     // if only one wheel turns, use the previous encryption
@@ -805,9 +810,9 @@ void Enigma::get_encryption_inplace_lazy(int *encryption) const {
     // XXX ignores stator, ok if trivial
     const Rotor **rotors= m_cartridge->get_rotors();
     // const Reflector *reflector= m_cartridge->get_reflector();
-    const int *      positions= m_cartridge->get_positions();
+    const shint *    positions= m_cartridge->get_positions();
     const Plugboard *plugboard= m_cartridge->get_plugboard();
-    int *            indexes  = new int[m_wires];
+    shint *          indexes  = new shint[m_wires];
     for (int i= 0; i < m_wires; ++i) { indexes[i]= i; }
     // peel away plug and rotor_0 encryption from the back(2 encryptions)
     plugboard->encrypt_inplace(encryption, m_wires);
@@ -829,12 +834,12 @@ void Enigma::get_encryption_inplace_lazy(int *encryption) const {
     plugboard->encrypt_inplace(indexes, m_wires);
     rotors[0]->encrypt_in_inplace(indexes, positions[0], m_wires);
     for (int i= 0; i < m_wires; ++i) { indexes[i]= encryption[indexes[i]]; }
-    memcpy(encryption, indexes, m_wires * sizeof(int));
+    memcpy(encryption, indexes, m_wires * sizeof(shint)); //Soruce of error
 
     delete[] indexes;
 }
 string Enigma::get_encryption_as_string() const {
-    int *  encryption= get_encryption();
+    shint *  encryption= get_encryption();
     string out       = "";
     for (int i= 0; i < m_wires; ++i) { out+= (char)(encryption[i] + (int)'A'); }
     return out;
@@ -850,7 +855,7 @@ vector<pair<int, int>> Enigma::get_encryption_onesided() const {   // TODO &
     // get stuff from the cartridge
     const Rotor **   rotors   = m_cartridge->get_rotors();
     const Reflector *reflector= m_cartridge->get_reflector();
-    const int *      positions= m_cartridge->get_positions();
+    const shint *    positions= m_cartridge->get_positions();
     // for each letter, encrypt, unless already encrypted
     int m;
     for (int i= 0; i < m_wires; i++) {
@@ -894,10 +899,10 @@ void Enigma::set_verbose(bool set) {   // XXX bretter impl
 void Enigma::set_cartridge_verbose(bool set) {   // XXX better impl
     m_cartridge->set_verbose(set);
 }
-void Enigma::set_positions(const int *in) { m_cartridge->set_positions(in); }
+void Enigma::set_positions(const shint *in) { m_cartridge->set_positions(in); }
 void Enigma::set_rotor_position(const string in) { m_cartridge->set_rotor_position(in); }
 void Enigma::set_ring_setting(const string in) { m_cartridge->set_ring_setting(in); }
-void Enigma::set_ring_setting(const int *in) { m_cartridge->set_ring_setting(in); }
+void Enigma::set_ring_setting(const shint *in) { m_cartridge->set_ring_setting(in); }
 void Enigma::set_plugboard(const string str) { m_cartridge->set_plugboard(str); }
 // other
 void Enigma::randomize() { m_cartridge->randomize(); }
@@ -1063,7 +1068,7 @@ string line_mid(int left_in, int right_in, int left_out, int right_out, int wire
     return line;
 }
 string line_end(int right_in, int right_out, int wire, int pos, int wires, int notches,
-                const int *notch, int rs) {
+                const shint *notch, int rs) {
     string line= "";
     // CHECK IF NOTCH
     bool notched= false;
@@ -1080,7 +1085,7 @@ string line_end(int right_in, int right_out, int wire, int pos, int wires, int n
     return line;
 }
 string line_all(int left_in, int right_in, int left_out, int right_out, int wire, int pos= -1,
-                int notches= 0, const int *notch= {0}, int rs= 0, int wires= 26) {
+                int notches= 0, const shint *notch= {0}, int rs= 0, int wires= 26) {
 
     return line_begin(left_in, left_out, wire, pos, wires) +
            line_mid(left_in, right_in, left_out, right_out, wire) +

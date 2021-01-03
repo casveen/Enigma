@@ -1,2 +1,8 @@
 
 ct.exe
+
+*.out
+
+*.o
+
+*.exe
