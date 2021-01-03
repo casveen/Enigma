@@ -204,8 +204,21 @@ shint hash_engages(vector<bool> in) {
     return out;
 }
 
+//is lhs (this) less than rhs?
 bool PointerGraph::PointerGraphEdge::operator<(PointerGraphEdge const& rhs) const {
-    return hash_engages(get_engages())<hash_engages(rhs.get_engages());
+    vector<bool> engage_lhs=get_engages(), 
+                 engage_rhs=rhs.get_engages();
+    for (unsigned int i = 0; i<engage_lhs.size(); i++) {
+        if (engage_lhs[i] != engage_rhs[i]) {
+            if (engage_lhs[i] < engage_rhs[i]) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+    //if reached here, lhs == rhs
+    return false;
 }
 
 /*vector<Node*> PointerGraph :: get_nodes() {

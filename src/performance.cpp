@@ -34,7 +34,7 @@ int main() {
     Bombe bombe({I, II, III}, UKWR, true);
     bombe.get_setting().starting_rotor_positions= "AAA";
     bombe.get_setting().starting_ring_setting   = "AAA";
-    bombe.get_setting().max_ring_settings       = 26;
+    bombe.get_setting().max_ring_settings       = 26*26;
     bombe.get_setting().rotor_count             = 3;
     bombe.get_setting().only_one_candidate      = true;
     bombe.get_setting().only_one_configuration  = true;
@@ -48,6 +48,6 @@ int main() {
     enigma.set_ring_setting("AAA");
     enigma.set_plugboard("");
     string                       ciphertext= enigma.encrypt(plaintext);
-    vector<struct EnigmaSetting> solutions = bombe.analyze(ciphertext, "SOME"); //BODY
+    vector<struct EnigmaSetting> solutions = bombe.analyze(ciphertext, "SOMEBODY");
     return 0;
 }

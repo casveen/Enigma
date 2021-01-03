@@ -285,29 +285,16 @@ void ConfigurationTracker::make_wide_graph() {
     vector<shint> previous_position = read_positions(m_enigma);
     m_enigma->next_ring_setting();
     vector<shint> current_position  = read_positions(m_enigma);
-    /*shint previous_hash, current_hash;
 
-    shint prev_sz = 0;*/
-    //vector<vector<bool>> notch_engage_path;
     for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
-        //cout<<m_enigma->get_ring_setting();
-        //cin;
-
         previous_position = read_positions(m_enigma);
         m_enigma->turn();
-        
         //make path
         for (int p=0; p<m_length; p++) {
             cout<<"\rtracking paths ["<<rs/pow(m_letters, m_rotor_count)*100<<"%]";
             current_position   = read_positions(m_enigma);
             notch_engages(previous_position, current_position, engaged_notches);
-            //notch_engage_path.push_back(engaged_notches);
-            
-
-            //previous_hash = hash_position(previous_position, position_set);
-            //current_hash  = hash_position(current_position,  position_set);
             edges.push_back((Edge {0, 0, engaged_notches}));
-
             previous_position  = read_positions(m_enigma);
             m_enigma->turn();
         }
@@ -357,12 +344,10 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     mode = CT_mode::none;
     
     try {
-        //cout<<"making wide graph\n";
         make_wide_graph();
         mode = CT_mode::wide;
         make_path_iterator();
         make_ring_settings_iterator(); 
-        //cout<<"made wide graph\n";
     } catch (bad_alloc &ba) {
         cout<<"unable to allocate to wide CT, trying to make tight CT\n";
         try {
@@ -370,14 +355,11 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
             make_tight_graph();
             mode = CT_mode::tight;
             make_path_iterator();
-            //cout<<"\n\n size of tight CT: "<<sizeof(path_graph->get_adjacency_list())<<"\n\n";
-            
         } catch (bad_alloc &ba) {
             cout<<"unable to allocate to tight CT, CT unusable\n";
             position_set.clear();
         }
     }
-    //cout<<"done init CT\n";
 }
 
 ConfigurationTracker::~ConfigurationTracker() {
@@ -410,13 +392,6 @@ in:
         a valid path, represented by a vector of positions(vector of shints)
 return
     valid ring settings, as a vecotr of ring settings (which is a vector of shints)
-*/
-
-
-
-
-
-/*
 vector<vector<shint>> ConfigurationTracker::get_ring_setting_from_path(vector<vector<shint>> path) {
     //translate the path to a notch engage path
     vector<bool>         engaged_notches    = vector<bool>(m_rotor_count, false);
@@ -530,8 +505,6 @@ const vector<vector<vector<shint>>>& ConfigurationTracker::get_ring_settings_ite
     return m_ring_settings_iterator;
 }
 
-
-
 void ConfigurationTracker::print_path_iterator() {
     vector<pair<Engage, Engage_direction>> iterator = m_path_iterator;
     for (auto engage_and_direction : iterator) {
@@ -540,66 +513,8 @@ void ConfigurationTracker::print_path_iterator() {
             case Engage_direction::backward: cout<<"b - "; break;
             case Engage_direction::stop:     cout<<"s - "; break;
         }
-        /*
-        for (bool b : engage_and_direction.first ) {
-            b?cout<<"T":cout<<"F";
-        }
-        cout<<"\n";*/
     }
 }
-
-/*
-#include "rotors.cpp" 
-int main() {
-    Enigma enigma= Enigma(3, 6);
-    enigma.randomize();
-    cout<<"made enigma\n";
-    ConfigurationTracker tracker(&enigma, 4);
-    cout<<"made tracker\n";
-    cout<<"initialized\n";
-    cout<<"checking iterator\n";
-    tracker.print_path_iterator();
-}
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-int main() {
-    vector<vector<shint>> result;
-    cout<<"initialized result\n";
-    result.reserve(3*3);
-    cout<<"allocated result\n";
-    result = permutations(3,2);
-    cout<<"testing permutation of 2 letters from 3\n";
-    for (vector<shint> p : result) {
-        for (shint i : p) {
-            cout<<i<<", ";
-        }
-        cout<<"\n";
-    }
-
-    cout<<"testing permutation of 3 letters from 5\n";
-    for (vector<shint> p : permutations(5,3)) {
-        for (shint i : p) {
-            cout<<i<<", ";
-        }
-        cout<<"\n";
-    }
-
-
-}*/
 
 
 

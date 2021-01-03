@@ -286,36 +286,9 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                     interactive_wirechecking();
                     cin.get();*/
                     m_diagonal_board->wipe();
-                    
-                    // BEGIN TESTS, XXX DOES NOT WORK
                     if (check_one_wire(most_wired_letter)) {     // first test
-                        //cout<<"1\n";
                         if (doublecheck_and_get_plugboard()) {   // second test
-                            //cout<<"2\n";
-                            //safe to take first from ring settinf\gs, as they are never empty
-
-                            /*for (vector<shint> ring_setting : ring_settings) {
-                                for (int i=0; i<(int)ring_setting.size(); i++) {
-                                    cout<<(char)((ring_setting[i]-initial_positions[i]+m_letters)%m_letters+(int)'A');
-                                    tripplecheck_with_configuration_tracker(crib, ciphertext, ring_setting, initial_positions);
-
-                                //}
-                                //cout<<"\n";
-                            }*/
-
-
-
                             if (tripplecheck_with_configuration_tracker(crib, ciphertext, ring_settings[0], initial_positions)) {   // final test
-                               // cout<<"3\n";
-
-                            /*cout << "\nRS:" << m_enigma->get_ring_setting_as_string() << "   RP:"
-                                 << rotor_positions[rotor_positions.size() - crib.length() - 1]
-                                 << "   P:" << m_enigma->get_cartridge()->get_positions_as_string()
-                                 << "\n";*/
-                                
-                                
-                                
-                                //m_enigma->set_rotor_position(rotor_positions[0]);
                                 //add all solutions
                                 for (vector<shint> ring_setting : ring_settings) {
                                     //get some aspects of the solution, RS and RP are wrong, though
@@ -359,9 +332,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     
     //cout<<"almost done\n";
     if (m_setting.time_performance && m_verbose) { print_performance(); }
-    //cout<<"1\n";
     delete[] encryption;
-    //cout<<"2\n";
     delete[] initial_positions;
     delete[] current_positions;
     cout<<"\r                                                             "
