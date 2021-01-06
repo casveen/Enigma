@@ -24,7 +24,7 @@ using namespace std;
 #include <utility>
 #include <vector>
 
-typedef unsigned char shint;
+typedef unsigned short int shint;
 //#inlcude "alphabet"
 
 class Rotor {
@@ -170,6 +170,7 @@ class Cartridge {
     void set_reflector(const Reflector *);
     // set values
     void set_positions(const shint *p);
+    void set_positions(int p);
     void set_rotor_position(const string in);
     void set_ring_setting(const shint *p);
     void set_ring_setting(const string in);
@@ -288,6 +289,7 @@ class Enigma {
     void set_verbose(bool);
     void set_cartridge_verbose(bool);
     void set_positions(const shint *);
+    void set_positions(int p);
     void set_rotor_position(const string);
     void set_ring_setting(const string);
     void set_ring_setting(const shint *);

@@ -145,3 +145,29 @@ CG stands for Configuration grid.
 | 4 ROTOR MEDIUM CRB W.CT. 1.83E-02   3.85E-07      1000 |                                                                
 | 4 ROTOR LARGE CRIB W.CT. 2.66E-02   2.32E-07      1000 |                                                                
 
+
+
+
+
+
+
+
+
+
+| 3 ROTOR SMALL CRIB W.CT. 1.22E-03   1.08E-01         0 |                                                                
+| 3 ROTOR MEDIUM CRIB      2.62E-03   2.23E-01         0 |                                                                
+| 3 ROTOR LARGE CRIB W.CT. 5.82E-03   4.97E-01         0 |                                                                
+| 3 RTR VRY LRG CRIB W.CT. 1.60E-02   1.36E+00         0 |                                                                
+| 4 ROTOR SMALL CRIB W.CT. 4.18E-02   3.60E+00         0 |                                                                
+| 4 ROTOR MEDIUM CRB W.CT. 3.35E-02   2.88E+00         0 |                                                                
+| 4 ROTOR LARGE CRIB W.CT. 4.16E-02   3.55E+00         0 |                                                                
+| 4 RTR VR LRG CRIB W.CT.  7.54E-02   6.41E+00         0 |              
+
+| 3 ROTOR SMALL CRIB W.CT. 9.31E-04   6.30E-01         0 |                                                                
+| 3 ROTOR MEDIUM CRIB      2.22E-03   1.50E+00         0 |                                                                
+| 3 ROTOR LARGE CRIB W.CT. 4.68E-03   3.16E+00         0 |                                                                
+| 3 RTR VRY LRG CRIB W.CT. 1.33E-02   8.97E+00         0 |                                                                
+| 4 ROTOR SMALL CRIB W.CT. 2.00E-02   1.35E+01         0 |                                                                
+| 4 ROTOR MEDIUM CRB W.CT. 1.75E-02   1.18E+01         0 |                                                                
+| 4 ROTOR LARGE CRIB W.CT. 2.58E-02   1.75E+01         0 |                                                                
+| 4 RTR VR LRG CRIB W.CT.  5.22E-02   3.53E+01         0 | 

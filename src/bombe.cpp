@@ -138,12 +138,10 @@ vector<struct EnigmaSetting> Bombe::analyze(const string &ciphertext, const stri
         rotor_configurations.erase(rotor_configurations.begin() + 1, rotor_configurations.end());
     }
 
-    //Make the engage_path
-    
-    
+    //Make the tracker
+
 
     // spawn units that analyze. For each candidate, for each configuration of rotors
-    // TODO thread unsaefe!!!
     vector<Rotor> rotor_configuration;
     unsigned int  i, j, k;
     //#pragma omp parallel for collapse(3) private(rotor_configuration, i, j, k)
@@ -160,9 +158,14 @@ vector<struct EnigmaSetting> Bombe::analyze(const string &ciphertext, const stri
                 vector<struct EnigmaSetting> solutions_unit=
                     analyze_unit(ciphertext_substring, crib, rotor_configuration, m_reflector[k],
                                  candidate, most_wired_letter);
+
+                /*#pragma omp critical(append_solutions)
+                {*/
                 for (struct EnigmaSetting solution : solutions_unit) {
                     solutions.push_back(solution);
                 }
+                //}
+
                 if (m_setting.stop_on_first_valid && solutions.size() > 0) { return solutions; }
             }
         }

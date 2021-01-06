@@ -11,6 +11,10 @@ using namespace std;
 #include <iostream>
 #include "diagonalBoard.hpp"
 #include "configuration_tracker.hpp"
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 /*
 class ConfigurationGrid {
     The Configuration grid is owned by a bombeunit, but its precomputation used for bookkeeping is
@@ -117,18 +121,17 @@ class BombeUnit {
     // other
 
     void init_enigma_encryptions(int, vector<string> &, vector<vector<shint>> &);
-    void reset_diagonal_board();
+    void reset_diagonal_board(DiagonalBoard& diagonal_board);
     vector<struct EnigmaSetting> analyze(const string &, const string &, shint, int);
     vector<struct EnigmaSetting> analyze_with_configuration_tracker(const string &, const string &, shint, int);
-    void                         setup_diagonal_board(const string &, const string &);
-    bool                         check_one_wire(shint);
-    bool                         bundle_contradiction(shint);
+    void                         setup_diagonal_board(DiagonalBoard& diagonal_board, const string &, const string &);
+    bool                         check_one_wire(DiagonalBoard&, shint);
     void                         print_encryptions() const;
     void                         print_performance() const;
-    bool                         doublecheck_and_get_plugboard();
-    bool                         doublecheck_thoroughly_and_get_plugboard();
-    bool           tripplecheck(const string &, const string &, int, vector<string> &);
-    bool           tripplecheck_with_configuration_tracker(const string &, const string &, const vector<shint>&, const shint*);
+    bool                         doublecheck_and_get_plugboard(DiagonalBoard&, Enigma&);
+    bool                         doublecheck_thoroughly_and_get_plugboard(DiagonalBoard&, Enigma&);
+    bool           tripplecheck(Enigma&, const string &, const string &, int, vector<string> &);
+    bool           tripplecheck_with_configuration_tracker(Enigma&, const string &, const string &, const vector<shint>&, int);
     void           interactive_wirechecking();
     vector<string> get_special_rotor_positions();
     void           print_progress(int, int, int);
