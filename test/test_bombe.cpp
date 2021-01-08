@@ -33,6 +33,13 @@ Rotor C19 = Rotor(SMALL_ROTOR_COUNT, SMALL_ROTOR_NOTCH_COUNT);
 Reflector CR = Reflector(SMALL_ROTOR_COUNT);
 
 
+
+
+
+
+
+
+
 //checks if ANY solution fits the given criteria
 bool is_exact_setting(Enigma &enigma, vector<struct EnigmaSetting> solutions, string ring_setting,
                       string rotor_position, string correct_plugboard_string, string ciphertext,
@@ -123,6 +130,60 @@ SCENARIO("Using custom rotors of non-standard size") {
     }
     cin.get();
 }*/
+
+
+
+
+
+
+
+SCENARIO("bombe with CT finds the configuration of an enimga", "[CTbombe]") {
+    cout<<"\n\ntesting with CT\n\n";
+    GIVEN("Enigma: I, II, III, UKWR. Steckered") {
+        Bombe bombe({I, II, III}, UKWR, true);
+        bombe.get_setting().stop_on_first_valid    = false;
+        bombe.get_setting().max_ring_settings      = 26*26*26;
+        bombe.get_setting().rotor_count            = 3;
+        bombe.get_setting().starting_ring_setting  =  "AAA";
+        bombe.get_setting().only_one_candidate     = false;
+        bombe.get_setting().only_one_configuration = true;
+        // struct EnigmaSetting enigma_setting;
+
+        Enigma enigma({I, II, III}, UKWR);
+        enigma.set_plugboard("AK. IE. DV. CQ. BN, MO, PJ. WR. UX");
+        // enigma.set_verbose(true);
+        // TODO withoun andisveryverylong behaves weird, cannot find
+        string plaintext= "HELLOMYHONEYHELLO";
+        WHEN("ciphertext encrypted with RS:OEI, RP:SEZ") {
+            enigma.set_ring_setting("OEI");
+            enigma.set_rotor_position("SEZ");
+            string ciphertext= enigma.encrypt(plaintext);
+            THEN("All solutions from the bombe should give the same encryption") {
+                vector<struct EnigmaSetting> solutions= bombe.analyze(ciphertext, plaintext);
+                //cout<<"\nfound "<<solutions.size()<<" solutions using the CT\n";
+                for (EnigmaSetting setting : solutions) {
+                    enigma.set_setting(setting);
+                    CHECK(enigma.encrypt(ciphertext) == plaintext);
+                }
+            }
+        }
+    }
+    cout << "\r";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -363,5 +424,4 @@ SCENARIO("bombe with CT finds the configuration of an enimga, many small rotors"
     }
     cout << "\r";
 }
-
 
