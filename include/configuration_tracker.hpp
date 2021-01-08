@@ -105,6 +105,11 @@ class ConfigurationTracker {
     PointerGraph*                          path_graph_wide;
     vector<pair<Engage, Engage_direction>> m_path_iterator;
     vector<vector<vector<shint>>>          m_ring_settings_iterator;
+    vector<shint*>                         m_positions_iterator;
+    //flags for deterining what parts were made
+    bool made_path_iterator=false, 
+         made_ring_settings_iterator=false, 
+         made_position_iterator=false;
     
 
   public:
@@ -115,17 +120,19 @@ class ConfigurationTracker {
     void initialize_position_set();
     void make_tight_graph();
     void make_wide_graph();
-
+    
     //interface for moving around in the graph
     
     //iterator of engaged notches, includes the whole path, ie going backwards to.
     //Edge next(); //XXX important, tell if going backwards.
     //bool is_leaf();
     //vector<vector<shint>> get_ring_setting_from_path(vector<vector<shint>> path);
+    void                                          make_positions_iterator();
+    void                                          make_ring_settings_iterator();
     void                                          make_path_iterator();
     const vector<pair<Engage, Engage_direction>>& get_path_iterator();
-    void                                          make_ring_settings_iterator();
     const vector<vector<vector<shint>>>&          get_ring_settings_iterator();
+    const vector<shint*>&                         get_positions_iterator();
 
     void print_path_iterator();
 };

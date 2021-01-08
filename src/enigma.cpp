@@ -35,13 +35,13 @@ Rotor::Rotor(const string in, const string notch, string name) :
 }
 
 Rotor::~Rotor() {
-    // cout << "somewhere, a rotor died(" << get_wiring_in(0) << ") \n";
+    //cout << "somewhere, a rotor died(" << get_wiring_in(0) << ") \n";
     delete[] m_wiring_in;
     delete[] m_wiring_out;
     delete[] m_notch;
 }
 Rotor::Rotor(Rotor const &copy) {
-    // cout << "COPYING ROTOR\n";
+    //cout << "COPYING ROTOR\n";
     // Copy constructor, very important, assures there is no shallow copy
     // src::https://stackoverflow.com/questions/255612/dynamically-allocating-an-array-of-objects
     // cout << "COPYING ROTOR; m_wires:" << copy.m_wires << "\n";
@@ -127,7 +127,11 @@ int Rotor::encrypt_out(int i, int offset) const {
 }
 void Rotor::encrypt_in_inplace(shint *plaintext, int offset, int n) const {
     for (int i= 0; i < n; ++i) {
+        //cout<<i<<"x";
+        //cout<<plaintext[i];
+        //cout<<m_wiring_in[(plaintext[i] + offset) % m_wires];
         plaintext[i]= (m_wiring_in[(plaintext[i] + offset) % m_wires] + m_wires - offset) % m_wires;
+        //cout<<"\n";
     }
 }
 // NO PERFORMANCE GAIN
@@ -381,6 +385,7 @@ Cartridge::Cartridge(struct EnigmaSetting setting) : m_trivial_stator(setting.tr
         m_stator= new Rotor(setting.stator);
     }
     m_reflector= new Reflector(setting.reflector);
+    m_reflector_position = 0; //TODO, store in setting
     m_plugboard= new Plugboard(setting.plugboard);
     set_ring_setting(setting.ring_setting);
     set_rotor_position(setting.rotor_position);
@@ -482,6 +487,8 @@ bool Cartridge::get_if_trivial_stator() const { return m_trivial_stator; }
     }
     return turn;
 }*/
+
+//BOTTLENECK
 void Cartridge::get_encryption_inplace(shint *encryption) const {
     // crucial that this function is optimal. Used by Bombe
     copy(&m_plugboard->get_wiring()[0], &m_plugboard->get_wiring()[m_wires], encryption);
@@ -529,6 +536,13 @@ void Cartridge::set_reflector(const Reflector *set) {
 void Cartridge::set_positions(const shint *p_in) {
     for (int p= 0; p < m_rotor_count; p++) { m_positions[p]= p_in[p]; }
 }
+void Cartridge::set_positions(int p_in) {
+    int rest = p_in;
+    for (int p= 0; p < m_rotor_count; p++) { 
+        m_positions[p]= rest%m_wires;
+        rest = rest / (int) m_wires;
+    }
+}
 void Cartridge::set_rotor_position(const string rotor_positions) {
     // rotor positions are the letters shown in the window of the enigma
     // actually sets positions, which depend on the ring setting
@@ -543,12 +557,16 @@ void Cartridge::set_rotor_position(const string rotor_positions) {
     for (int p= 0; p < m_rotor_count; p++) {
         m_positions[p]=
             (((int)rotor_positions[n - p - 1] - (int)'A') - m_ring_setting[p] + m_wires) % m_wires;
+        //cout<<rotor_positions[p]<<":";
     }
     if (n == (unsigned int)m_rotor_count + 1) {
         m_reflector_position= (int)rotor_positions[0] - (int)'A';
     }
 }
-void Cartridge::set_ring_setting(const shint *p) { m_ring_setting= (shint *)p; } //XXX yikes
+void Cartridge::set_ring_setting(const shint *t_ring_setting) { 
+    for (int p= 0; p < m_rotor_count; p++) { 
+        m_ring_setting[p]= t_ring_setting[p]; } 
+}
 void Cartridge::set_ring_setting(const string in) {
     for (int i= 0; i < m_rotor_count; ++i) {
         m_ring_setting[i]= (int)(in[m_rotor_count - i - 1]) - (int)('A');
@@ -715,6 +733,7 @@ void Cartridge::print() const {
     printf("  ");
     printf("  P ");
     for (int rotor= 0; rotor < m_rotor_count; rotor++) { printf("  W%d", rotor); }
+    printf("  R");
     for (int wire= 0; wire < m_wires; wire++) {
         printf("\n%2d: ", wire);
         // print plugboard
@@ -722,6 +741,7 @@ void Cartridge::print() const {
         for (int rotor= 0; rotor < m_rotor_count; rotor++) {
             printf("%2d  ", m_rotors[rotor]->get_wiring_in(wire));
         }
+        printf("%2d  ", m_reflector->get_wiring_in(wire));
     }
     printf("\n");
     return;
@@ -900,6 +920,7 @@ void Enigma::set_cartridge_verbose(bool set) {   // XXX better impl
     m_cartridge->set_verbose(set);
 }
 void Enigma::set_positions(const shint *in) { m_cartridge->set_positions(in); }
+void Enigma::set_positions(int p_in) { m_cartridge->set_positions(p_in); }
 void Enigma::set_rotor_position(const string in) { m_cartridge->set_rotor_position(in); }
 void Enigma::set_ring_setting(const string in) { m_cartridge->set_ring_setting(in); }
 void Enigma::set_ring_setting(const shint *in) { m_cartridge->set_ring_setting(in); }

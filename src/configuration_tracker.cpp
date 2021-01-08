@@ -177,7 +177,7 @@ void ConfigurationTracker::initialize_position_set() {
 
 void ConfigurationTracker::make_tight_graph() {
     shint* initial_position= new shint[m_rotor_count]();
-    
+    cerr<<"TIGHT GRAPH DOES NOT MAKE A POSITION ITERATOR";
     //XXXsloppy solution... but copies the pointer
     for(int i =0; i<m_rotor_count; i++) {
         initial_position[i] = m_enigma->get_positions()[i];
@@ -348,6 +348,7 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
         mode = CT_mode::wide;
         make_path_iterator();
         make_ring_settings_iterator(); 
+        //make_positions_iterator();
     } catch (bad_alloc &ba) {
         cout<<"unable to allocate to wide CT, trying to make tight CT\n";
         try {
@@ -355,6 +356,7 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
             make_tight_graph();
             mode = CT_mode::tight;
             make_path_iterator();
+            //make_positions_iterator();
         } catch (bad_alloc &ba) {
             cout<<"unable to allocate to tight CT, CT unusable\n";
             position_set.clear();
@@ -373,6 +375,7 @@ ConfigurationTracker::~ConfigurationTracker() {
         case(CT_mode::none) :
             break;
     }
+    m_positions_iterator.clear();
 }
 
 const Graph* ConfigurationTracker::get_graph() {
@@ -468,9 +471,32 @@ vector<vector<shint>> ConfigurationTracker::get_ring_setting_from_path(vector<ve
 }
 */
 
+//must be called before get_position_iterator()
+//XXX might need compression
+void ConfigurationTracker:: make_positions_iterator() {
+    //make absolutely all permutations of m_rotors elements from {0,..m_letters-1}.
+    //ordering of elements (in iterator) does not matter
+    m_positions_iterator.clear(); //XXX should delete elements as well
+    shint* positions;
+    for (int i = 0; i<pow(m_rotor_count, m_letters); i++) {
+        positions = new shint[m_rotor_count];
+        for(int p=0; p<m_rotor_count; p++) {
+            positions[p] = i%((int) pow(m_letters, p));
+            if (i<10) {
+                cout<<positions[p]<<" ";
+            }
+        }
+        if (i<10) {
+            cout<<"\n";
+        }
+        m_positions_iterator.push_back(positions);
+    }
+    cout<<"made positions iterator\n\n\n";
+}
 
-
-
+const vector<shint*>& ConfigurationTracker::get_positions_iterator() {
+    return m_positions_iterator;
+}
 
 void ConfigurationTracker::make_path_iterator() {
     vector<pair<Engage, Engage_direction>> out;
@@ -488,6 +514,7 @@ void ConfigurationTracker::make_path_iterator() {
 const vector<pair<Engage, Engage_direction>>& ConfigurationTracker::get_path_iterator() {
     return m_path_iterator;
 }
+
 
 void ConfigurationTracker::make_ring_settings_iterator() {
     vector<vector<vector<shint>>> out;

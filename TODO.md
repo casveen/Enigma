@@ -121,3 +121,13 @@ When the tree is made, to analayse all
 but while it is the absolutely fastest solution, it can easily caus problems!
 
 -in analyze, is ciphertext same length as crib? if not we have to use position
+
+-THREADING
+--the ring settings iterator is shared, and will lead tom some sloshing for small cribs, 
+--for large cribs(>12 letters) the effect should be negligible
+
+
+
+
+--PLUGBOARDS FROM BOMBE ARE ALL WRONG!!!
+--CAN MAKE CYCLES!
