@@ -231,6 +231,9 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     //use the indirect copy constructor
     Enigma enigma(m_enigma->get_setting());
     DiagonalBoard diagonal_board(m_letters);
+    Memoizer<int, shint*> memoizer;
+    memoizer.initialize(tracker.get_position_set_as_vector_of_hashes()); //makes hashes (thread_num) times, but should be negligible    
+    
     //private thread iterators
     //for small cribs there will be some sloshing of the ring settings iterator
     auto                                           ring_settings_iterator_begin = tracker.get_ring_settings_iterator().begin();
@@ -239,7 +242,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     //other
     shint *encryption         = new shint[m_letters]; //used in place by enigma
     shint current_positions;
-    int path_i = 0, position_count=0;
+    int path_i = 0, position_count=0, position_hash = 0;
     #ifdef _OPENMP
     if (m_setting.time_performance) { start_ring_setting= omp_get_wtime(); }
     #endif
@@ -258,9 +261,21 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                 case Engage_direction::forward :
                     //connect
                     enigma.turn_manually(engage_and_direction.first, true);
-                    enigma.get_encryption_inplace(encryption);
+
+
+                    //hash positions
+                    int position_hash;
+                    //use memoizer
+                    if (memoizer.is_memoized(position_hash)) {
+                        memoizer.get();
+                    } else {
+                        enigma.get_encryption_inplace(encryption);
+                        memoizer.memoize(encryption);
+                    }
+
+
                     diagonal_board.connect_enigma(encryption, 
-                                                     (int)crib[path_i] - (int)'A',
+                                                     (int)crib[path_i]       - (int)'A',
                                                      (int)ciphertext[path_i] - (int)'A');
                     path_i++;
                     break;
@@ -336,6 +351,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                     break;
                 } //END SWITCH
         }//END FOR PATH
+        memoizer.advance();
     } //END FOR POSITION
 
     if (m_setting.time_performance && m_verbose) { print_performance(); }

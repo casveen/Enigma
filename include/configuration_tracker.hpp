@@ -117,6 +117,7 @@ class ConfigurationTracker {
     ~ConfigurationTracker();
     //vector<pair<Edge, Engage>> out;
     const Graph* get_graph();
+    const vector<int> get_position_set_as_vector_of_hashes();
     void initialize_position_set();
     void make_tight_graph();
     void make_wide_graph();

@@ -11,6 +11,7 @@ using namespace std;
 #include <iostream>
 #include "diagonalBoard.hpp"
 #include "configuration_tracker.hpp"
+#include "memoizer.hpp"
 
 #ifdef _OPENMP
 #include <omp.h>

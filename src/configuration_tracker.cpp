@@ -543,6 +543,19 @@ void ConfigurationTracker::print_path_iterator() {
     }
 }
 
+const vector<int> ConfigurationTracker::get_position_set_as_vector_of_hashes() {
+    vector out;
+    int hash;
+    for (vector<shint> position : position_set) {
+        hash = 0;
+        for(int i =m_rotor_count-1; i>=0; i--) {
+            hash *= m_letters;
+            hash += position[i]; 
+        }
+        out.push_back(hash);
+    }
+    return out;
+}
 
 
 

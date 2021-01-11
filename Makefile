@@ -1,5 +1,5 @@
 CC:= g++
-FLAGS= -Wall -pedantic -Ofast #-fopenmp #openmp only needed in linking
+FLAGS= -Wall -pedantic -Ofast -fopenmp #openmp only needed in linking
 SRC=src
 BIN=bin
 BUILD=build
@@ -16,7 +16,7 @@ OBJECT_FILES     = $(SOURCE_NAME:%.cpp=$(BUILD)/%.o)
 ##DEPENDENCIES
 ENIGMA_DEP_NAMES = enigma.o rotors.o
 ENIGMA_DEP       = $(ENIGMA_DEP_NAMES:%=$(BUILD)/%)
-BOMBE_DEP_NAMES = $(ENIGMA_DEP_NAMES) bombe.o diagonal_board.o wire.o configuration_tracker.o bombe_unit.o graph.o
+BOMBE_DEP_NAMES = $(ENIGMA_DEP_NAMES) bombe.o diagonal_board.o wire.o configuration_tracker.o bombe_unit.o graph.o memoizer.o
 BOMBE_DEP       = $(BOMBE_DEP_NAMES:%=$(BUILD)/%)
 TEST_DEP_NAMES   = $(BOMBE_DEP_NAMES) test.o test_configuration_tracker.o test_enigma.o test_connections.o connections.o test_bombe.o 
 TEST_DEP         = $(TEST_DEP_NAMES:%=$(BUILD)/%)
