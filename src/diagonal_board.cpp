@@ -49,11 +49,11 @@ void DiagonalBoard::disconnect(int t_bundle_1, int t_wire_1, int t_bundle_2, int
     get_wire(t_bundle_1, t_wire_1)->disconnect(get_wire(t_bundle_2, t_wire_2));
     get_wire(t_bundle_2, t_wire_2)->disconnect(get_wire(t_bundle_1, t_wire_1));
 }
-void DiagonalBoard::connect_enigma(shint *encryption, shint t_from, shint t_to) {
+void DiagonalBoard::connect_enigma(const shint *encryption, shint t_from, shint t_to) {
     int m_letters= m_bundles.size();
     for (int i= 0; i < m_letters; i++) { connect(t_from, i, t_to, encryption[i]); }
 }
-void DiagonalBoard::disconnect_enigma(shint *encryption, shint t_from, shint t_to) {
+void DiagonalBoard::disconnect_enigma(const shint *encryption, shint t_from, shint t_to) {
     int m_letters= m_bundles.size();
     for (int i= 0; i < m_letters; i++) { disconnect(t_from, i, t_to, encryption[i]); }
 }

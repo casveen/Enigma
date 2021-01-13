@@ -344,11 +344,13 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     mode = CT_mode::none;
     
     try {
+        initialize_position_set(); //for memoizing
         make_wide_graph();
         mode = CT_mode::wide;
         make_path_iterator();
-        make_ring_settings_iterator(); 
-        //make_positions_iterator();
+        make_ring_settings_iterator();
+        make_relative_positions_hash_iterator();
+        //cout<<"\nmade wide graph of "<<path_graph_wide->count_nodes()<<" nodes\n";
     } catch (bad_alloc &ba) {
         cout<<"unable to allocate to wide CT, trying to make tight CT\n";
         try {
@@ -356,10 +358,11 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
             make_tight_graph();
             mode = CT_mode::tight;
             make_path_iterator();
+            make_relative_positions_hash_iterator();
             //make_positions_iterator();
         } catch (bad_alloc &ba) {
             cout<<"unable to allocate to tight CT, CT unusable\n";
-            position_set.clear();
+            //position_set.clear();
         }
     }
 }
@@ -376,6 +379,7 @@ ConfigurationTracker::~ConfigurationTracker() {
             break;
     }
     m_positions_iterator.clear();
+    m_relative_positions_hash_iterator.clear();
 }
 
 const Graph* ConfigurationTracker::get_graph() {
@@ -495,7 +499,20 @@ void ConfigurationTracker:: make_positions_iterator() {
 }
 
 const vector<shint*>& ConfigurationTracker::get_positions_iterator() {
+    
     return m_positions_iterator;
+}
+
+int ConfigurationTracker::count_unique_positions() {
+    int out = 0;
+    if        (mode == CT_mode::wide) {
+        out = path_graph_wide->count_nodes();
+    } else if (mode == CT_mode::tight) {
+        cout<<"ERROR counting unique positions not implemented for tight mode\n";
+    } else {
+        cout<<"ERROR requesting iterator without valid mode\n";
+    }
+    return out;
 }
 
 void ConfigurationTracker::make_path_iterator() {
@@ -528,6 +545,19 @@ void ConfigurationTracker::make_ring_settings_iterator() {
     m_ring_settings_iterator = out;
 }
 
+
+void ConfigurationTracker::make_relative_positions_hash_iterator() {
+    vector<int> out;
+    if        (mode == CT_mode::wide) {
+        out = path_graph_wide->relative_positions_hash_iterator();
+    } else if (mode == CT_mode::tight) {
+        cerr << "ERROR relative positions hash iterator not implemented for tight mode\n";
+    } else {
+        cerr << "ERROR requesting iterator without valid mode\n";
+    }
+    m_relative_positions_hash_iterator = out;
+}
+
 const vector<vector<vector<shint>>>& ConfigurationTracker::get_ring_settings_iterator() {
     return m_ring_settings_iterator;
 }
@@ -543,17 +573,26 @@ void ConfigurationTracker::print_path_iterator() {
     }
 }
 
+const vector<int>& ConfigurationTracker::get_relative_positions_hash_iterator() {
+    return m_relative_positions_hash_iterator;
+}
+
 const vector<int> ConfigurationTracker::get_position_set_as_vector_of_hashes() {
-    vector out;
+    vector<int> out;
     int hash;
-    for (vector<shint> position : position_set) {
+    cout<<"hashing position set --- ";
+    cout<<"size "<<position_set.size()<<" --- ";
+    for (auto it = position_set.begin(); it!=position_set.end(); ++it) {
         hash = 0;
         for(int i =m_rotor_count-1; i>=0; i--) {
             hash *= m_letters;
-            hash += position[i]; 
+            hash += (*it)[i]; 
         }
+        cout<<hash;
+        cin.get();
         out.push_back(hash);
     }
+    cout<<"DONE";
     return out;
 }
 

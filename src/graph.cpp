@@ -72,6 +72,36 @@ vector<pair<Engage, Engage_direction>> Graph :: path_iterator_inner(shint from, 
     return out;
 }
 
+vector<int> Graph :: relative_positions_hash_iterator() {
+    //from start node.
+    int positions_hash = 0;
+    vector<int> out;
+    out = relative_positions_hash_iterator_inner(root, 0, positions_hash); //should be 0?
+    return out; //XXX store in configurationtracker.
+}
+
+vector<int> Graph :: relative_positions_hash_iterator_inner(shint from, shint depth, int& positions_hash) {
+    //from start node.
+    vector<int> out;
+    int my_hash = positions_hash;
+    for (auto to_and_engages : adjList.at(from)) {
+        if (depth<=m_depth) { //XXX and more than 0?
+            //in
+            out.push_back(my_hash);
+            positions_hash++;
+            append(out, relative_positions_hash_iterator_inner(to_and_engages.first, depth+1, positions_hash));
+        }
+    }
+    out.push_back(my_hash);
+    return out;
+}
+
+
+
+
+
+
+
 void Graph::print_adjacency_list() {
     int i=0;
     cout<<"\n";
@@ -162,6 +192,9 @@ shint PointerGraph::count_edges_inner(Node* n) {
     return sum;
 }
 
+int PointerGraph::count_nodes() const {
+    return nodeList.size();
+}
 
 
 
@@ -204,7 +237,8 @@ shint hash_engages(vector<bool> in) {
     return out;
 }
 
-//is lhs (this) less than rhs?
+
+
 bool PointerGraph::PointerGraphEdge::operator<(PointerGraphEdge const& rhs) const {
     vector<bool> engage_lhs=get_engages(), 
                  engage_rhs=rhs.get_engages();
@@ -221,36 +255,13 @@ bool PointerGraph::PointerGraphEdge::operator<(PointerGraphEdge const& rhs) cons
     return false;
 }
 
-/*vector<Node*> PointerGraph :: get_nodes() {
-    //from start node.
-    vector<Node*> out;
-    out = get_nodes_inner(root);
-    return out; //XXX store in configurationtracker.
-}
 
-vector<Node*> PointerGraph :: get_nodes_inner(Node* from) {
-    //from start node.
-    vector<Node*> out(0);
-    for (PointerGraphEdge edge : from->get_connections()) {
-        if (depth<m_depth) {
-            //in
-            out.push_back(make_pair(edge.get_engages(), Engage_direction::forward));
-            append(out, path_iterator_inner(edge.get_node(), depth+1));
-        //out
-            out.push_back(make_pair(edge.get_engages(), Engage_direction::backward));
-        }
-    }
-    if (depth == m_depth) {
-        out.push_back(make_pair(vector<bool>(m_rotor_count, false), Engage_direction::stop));
-    }
-    return out;
-}*/
 
 vector<pair<Engage, Engage_direction>> PointerGraph :: path_iterator() {
     //from start node.
     vector<pair<Engage, Engage_direction>> out;
     out = path_iterator_inner(root, 0);
-    return out; //XXX store in configurationtracker.
+    return out; 
 }
 
 vector<pair<Engage, Engage_direction>> PointerGraph :: path_iterator_inner(Node* from, shint depth) {
@@ -261,7 +272,7 @@ vector<pair<Engage, Engage_direction>> PointerGraph :: path_iterator_inner(Node*
             //in
             out.push_back(make_pair(edge.get_engages(), Engage_direction::forward));
             append(out, path_iterator_inner(edge.get_node(), depth+1));
-        //out
+            //out
             out.push_back(make_pair(edge.get_engages(), Engage_direction::backward));
         }
     }
@@ -270,6 +281,8 @@ vector<pair<Engage, Engage_direction>> PointerGraph :: path_iterator_inner(Node*
     }
     return out;
 }
+
+
 
 vector<vector<vector<shint>>> PointerGraph :: ring_settings_iterator() {
     //from start node.
@@ -289,5 +302,37 @@ vector<vector<vector<shint>>>  PointerGraph :: ring_settings_iterator_inner(Node
     if (depth == m_depth) {
         out.push_back(((PointerGraph::Leaf *) from)->get_ring_settings());
     }
+    return out;
+}
+
+vector<int> PointerGraph :: relative_positions_hash_iterator() {
+    //from start node.
+    int positions_hash = 0;
+    vector<int> out;
+    out = relative_positions_hash_iterator_inner(root, 0, positions_hash); //should be 0?
+    return out; //XXX store in configurationtracker.
+}
+
+vector<int> PointerGraph :: relative_positions_hash_iterator_inner(Node* from, shint depth, int& positions_hash) {
+    //from start node.
+    vector<int> out;
+    int my_hash = positions_hash;
+
+    for (PointerGraphEdge edge : from->get_connections()) {
+        if (depth<m_depth) {
+            //in
+            out.push_back(my_hash); //XXX hope this copis, and does not take the reference
+            positions_hash++;
+            append(out, relative_positions_hash_iterator_inner(edge.get_node(), depth+1, positions_hash));
+            //append(out, path_iterator_inner(edge.get_node(), depth+1));
+            //out
+            //out.push_back(make_pair(edge.get_engages(), Engage_direction::backward));
+        }
+    }
+    out.push_back(my_hash);
+    /*if (depth == m_depth) {
+        positions_hash++;
+        out.push_back(my_hash);
+    }*/
     return out;
 }

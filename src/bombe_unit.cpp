@@ -1,5 +1,6 @@
 #include "bombe.hpp"
 const int PROGRESS_BAR_WIDTH= 50;
+//#define MEMOIZE
 #include <cmath>
 
 
@@ -224,25 +225,38 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
      #ifdef _OPENMP
     double total_time_start = omp_get_wtime();
     #endif
-    #pragma omp parallel reduction(+: mean_time) firstprivate(ciphertext, crib, most_wired_letter)
+
+    /*cout<<"relative positions hash: \n";
+    for (int i : tracker.get_relative_positions_hash_iterator()) {
+        cout<<i<<"->";
+    }*/
+
+
+
+    #pragma omp parallel reduction(+: mean_time) firstprivate(ciphertext, crib, most_wired_letter) num_threads(1)
     {
     double start_ring_setting;
     //each thread makes its own copy of m_enigma, and stores it in the original pointer, also makes its own diagonal board
     //use the indirect copy constructor
-    Enigma enigma(m_enigma->get_setting());
+    Enigma        enigma(m_enigma->get_setting());
     DiagonalBoard diagonal_board(m_letters);
-    Memoizer<int, shint*> memoizer;
-    memoizer.initialize(tracker.get_position_set_as_vector_of_hashes()); //makes hashes (thread_num) times, but should be negligible    
+    Memoizer      memoizer(m_letters);
     
     //private thread iterators
     //for small cribs there will be some sloshing of the ring settings iterator
     auto                                           ring_settings_iterator_begin = tracker.get_ring_settings_iterator().begin();
     auto                                                 ring_settings_iterator = ring_settings_iterator_begin;
     const vector<pair<vector<bool>, Engage_direction>>&           path_iterator = tracker.get_path_iterator();
+    const vector<int>&                         relative_positions_hash_iterator = tracker.get_relative_positions_hash_iterator();
+    //initialize memoizer
+    memoizer.initialize(tracker.count_unique_positions()); //makes hashes (thread_num) times, but should be negligible    
     //other
     shint *encryption         = new shint[m_letters]; //used in place by enigma
     shint current_positions;
     int path_i = 0, position_count=0, position_hash = 0;
+    pair<vector<bool>, Engage_direction> engage_and_direction;
+    int relative_positions_hash;
+    int max_hash = pow(m_letters, m_rotor_count);
     #ifdef _OPENMP
     if (m_setting.time_performance) { start_ring_setting= omp_get_wtime(); }
     #endif
@@ -255,41 +269,80 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
         //reset ring settings iterator
         ring_settings_iterator = ring_settings_iterator_begin;
         // for each edge in the engage path
-        for (pair<vector<bool>, Engage_direction> engage_and_direction : path_iterator) {
+        auto relative_positions_hash = relative_positions_hash_iterator.begin(); //XXX declare outside
+        for (unsigned int e = 0; e<path_iterator.size(); e++) {
+            engage_and_direction    = path_iterator[e];
+        //for (pair<vector<bool>, Engage_direction> engage_and_direction : path_iterator) {
                 //engage, connect the enigma if forward, disconnect if backward, test if stop
                 switch (engage_and_direction.second) {
-                case Engage_direction::forward :
+                case Engage_direction::forward:
                     //connect
+                    //cout<<"connecting (";
                     enigma.turn_manually(engage_and_direction.first, true);
-
-
-                    //hash positions
-                    int position_hash;
                     //use memoizer
-                    if (memoizer.is_memoized(position_hash)) {
-                        memoizer.get();
+
+
+                    #ifdef MEMOIZE
+                    if (memoizer.is_memoized(*(++relative_positions_hash))) {
+                        diagonal_board.connect_enigma(memoizer.get(), 
+                                                     (int)crib[path_i]       - (int)'A',
+                                                     (int)ciphertext[path_i] - (int)'A');
                     } else {
                         enigma.get_encryption_inplace(encryption);
                         memoizer.memoize(encryption);
-                    }
-
-
-                    diagonal_board.connect_enigma(encryption, 
+                        diagonal_board.connect_enigma(encryption, 
                                                      (int)crib[path_i]       - (int)'A',
                                                      (int)ciphertext[path_i] - (int)'A');
+                    }         
+                    #else
+                    enigma.get_encryption_inplace(encryption);
+                    diagonal_board.connect_enigma(encryption, 
+                                                 (int)crib[path_i]       - (int)'A',
+                                                 (int)ciphertext[path_i] - (int)'A');
+                    #endif
+
+
+
+
                     path_i++;
+                    //cout<<" --- at layer "<<path_i<<"\n";
                     break;
+
+
+
+
                 case Engage_direction::backward :
                     //disconnect
                     path_i--;
+                    //cout<<"disconnecting (";
                     enigma.turn_manually(engage_and_direction.first, false);
+                     //use memoizer
+                    #ifdef MEMOIZE 
+                    if (memoizer.is_memoized(*(relative_positions_hash++))) {
+                        diagonal_board.connect_enigma(memoizer.get(), 
+                                                     (int)crib[path_i]       - (int)'A',
+                                                     (int)ciphertext[path_i] - (int)'A');
+                    } else {
+                        enigma.get_encryption_inplace(encryption);
+                        memoizer.memoize(encryption);
+                        diagonal_board.disconnect_enigma(encryption, 
+                                                     (int)crib[path_i]       - (int)'A',
+                                                     (int)ciphertext[path_i] - (int)'A');
+                    }   
+                    #else
                     enigma.get_encryption_inplace(encryption);
-                    diagonal_board.disconnect_enigma(encryption, 
-                                                        (int)crib[path_i] - (int)'A',
-                                                        (int)ciphertext[path_i] - (int)'A');
-                    
+                    diagonal_board.connect_enigma(encryption, 
+                                                 (int)crib[path_i]       - (int)'A',
+                                                 (int)ciphertext[path_i] - (int)'A');
+                    #endif  
+                    //cout<<") at layer "<<path_i<<"\n";
                     break;
+
+
+
+
                 case Engage_direction::stop :
+                    //cout<<"stop\n";
                     //each time a stop is met, consume a ring_setting
                     vector<vector<shint>> ring_settings = *ring_settings_iterator;
 

@@ -34,6 +34,9 @@ class Graph {
     shint           count_edges();
     vector<pair<Engage, Engage_direction>> path_iterator();
     vector<pair<Engage, Engage_direction>> path_iterator_inner(shint from, shint depth);
+    vector<int>                            relative_positions_hash_iterator();
+    vector<int>                            relative_positions_hash_iterator_inner(shint from, shint depth, int& positions_hash);
+
     void print_adjacency_list();
 };
 
@@ -82,10 +85,13 @@ class PointerGraph {
     void            add_edges(vector<Edge> const &, vector<shint>);
     shint           count_edges();
     shint           count_edges_inner(Node *);
+    int             count_nodes() const;
     vector<pair<Engage, Engage_direction>> path_iterator();
     vector<pair<Engage, Engage_direction>> path_iterator_inner(Node* from, shint depth);
     vector<vector<vector<shint>>>          ring_settings_iterator();
     vector<vector<vector<shint>>>          ring_settings_iterator_inner(Node* from, shint depth);
+    vector<int>                            relative_positions_hash_iterator();
+    vector<int>                            relative_positions_hash_iterator_inner(Node* from, shint depth, int& positions_hash);
 };
 
 class ConfigurationTracker {
@@ -106,6 +112,8 @@ class ConfigurationTracker {
     vector<pair<Engage, Engage_direction>> m_path_iterator;
     vector<vector<vector<shint>>>          m_ring_settings_iterator;
     vector<shint*>                         m_positions_iterator;
+    vector<int>                            m_relative_positions_hash_iterator;
+    
     //flags for deterining what parts were made
     bool made_path_iterator=false, 
          made_ring_settings_iterator=false, 
@@ -121,6 +129,7 @@ class ConfigurationTracker {
     void initialize_position_set();
     void make_tight_graph();
     void make_wide_graph();
+    int  count_unique_positions();
     
     //interface for moving around in the graph
     
@@ -131,9 +140,11 @@ class ConfigurationTracker {
     void                                          make_positions_iterator();
     void                                          make_ring_settings_iterator();
     void                                          make_path_iterator();
+    void                                          make_relative_positions_hash_iterator();
     const vector<pair<Engage, Engage_direction>>& get_path_iterator();
     const vector<vector<vector<shint>>>&          get_ring_settings_iterator();
     const vector<shint*>&                         get_positions_iterator();
+    const vector<int>&                            get_relative_positions_hash_iterator();
 
     void print_path_iterator();
 };
