@@ -216,13 +216,14 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     vector<struct EnigmaSetting> solutions;
     int                          crib_n= crib.length(),
                                  //total_permutations = m_enigma->compute_total_permutations_brute_force() + crib_n - 1,
-                                 positions_count = min((int)pow(m_letters, m_rotor_count), m_setting.max_ring_settings);
+                                 positions_count = min((int)pow(m_letters, m_rotor_count), m_setting.max_ring_settings),
+                                 solutions_count = 0;
 
     //get engagae_path, shared among threads
     ConfigurationTracker tracker      = ConfigurationTracker(m_enigma, crib_n);
 
-    double total_time = 0, mean_time = 0;
-     #ifdef _OPENMP
+    double total_time, mean_time;
+    #ifdef _OPENMP
     double total_time_start = omp_get_wtime();
     #endif
 
@@ -233,9 +234,9 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
 
 
 
-    #pragma omp parallel reduction(+: mean_time) firstprivate(ciphertext, crib, most_wired_letter) num_threads(1)
+    #pragma omp parallel reduction(+: mean_time) firstprivate(ciphertext, crib, most_wired_letter)
     {
-    double start_ring_setting;
+    double start_ring_setting = 0;
     //each thread makes its own copy of m_enigma, and stores it in the original pointer, also makes its own diagonal board
     //use the indirect copy constructor
     Enigma        enigma(m_enigma->get_setting());
@@ -253,10 +254,10 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     //other
     shint *encryption         = new shint[m_letters]; //used in place by enigma
     shint current_positions;
-    int path_i = 0, position_count=0, position_hash = 0;
+    int path_i = 0, position_count=0;// position_hash = 0;
     pair<vector<bool>, Engage_direction> engage_and_direction;
-    int relative_positions_hash;
-    int max_hash = pow(m_letters, m_rotor_count);
+    //int relative_positions_hash;
+    //int max_hash = pow(m_letters, m_rotor_count);
     #ifdef _OPENMP
     if (m_setting.time_performance) { start_ring_setting= omp_get_wtime(); }
     #endif
@@ -269,10 +270,10 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
         //reset ring settings iterator
         ring_settings_iterator = ring_settings_iterator_begin;
         // for each edge in the engage path
+        #ifdef MEMOIZE
         auto relative_positions_hash = relative_positions_hash_iterator.begin(); //XXX declare outside
-        for (unsigned int e = 0; e<path_iterator.size(); e++) {
-            engage_and_direction    = path_iterator[e];
-        //for (pair<vector<bool>, Engage_direction> engage_and_direction : path_iterator) {
+        #endif
+        for (pair<vector<bool>, Engage_direction> engage_and_direction : path_iterator) {
                 //engage, connect the enigma if forward, disconnect if backward, test if stop
                 switch (engage_and_direction.second) {
                 case Engage_direction::forward:
@@ -319,9 +320,9 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                      //use memoizer
                     #ifdef MEMOIZE 
                     if (memoizer.is_memoized(*(relative_positions_hash++))) {
-                        diagonal_board.connect_enigma(memoizer.get(), 
-                                                     (int)crib[path_i]       - (int)'A',
-                                                     (int)ciphertext[path_i] - (int)'A');
+                        diagonal_board.disconnect_enigma(memoizer.get(), 
+                                                        (int)crib[path_i]       - (int)'A',
+                                                        (int)ciphertext[path_i] - (int)'A');
                     } else {
                         enigma.get_encryption_inplace(encryption);
                         memoizer.memoize(encryption);
@@ -331,7 +332,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                     }   
                     #else
                     enigma.get_encryption_inplace(encryption);
-                    diagonal_board.connect_enigma(encryption, 
+                    diagonal_board.disconnect_enigma(encryption, 
                                                  (int)crib[path_i]       - (int)'A',
                                                  (int)ciphertext[path_i] - (int)'A');
                     #endif  
@@ -389,7 +390,8 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
 
                                     //TODO, reduce later, not here.
                                     
-                                    solutions.push_back(solution);
+                                    //solutions.push_back(solution);
+                                    solutions_count++;
                                 }//END for every solution
                                 }//END critical region
                                 enigma.set_positions(current_positions);
@@ -404,7 +406,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                     break;
                 } //END SWITCH
         }//END FOR PATH
-        memoizer.advance();
+        //memoizer.advance();
     } //END FOR POSITION
 
     if (m_setting.time_performance && m_verbose) { print_performance(); }
@@ -428,7 +430,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     m_setting.performance_ring_setting_mean = mean_time;
     //clear command line
     cout<<"\r                                                             "
-        <<"                                                             \r";
+        <<"                                                                soultions found: "<<solutions_count<<"\r";
     return solutions;
 }
 
@@ -504,7 +506,7 @@ bool BombeUnit::doublecheck_and_get_plugboard(DiagonalBoard& diagonal_board, Eni
                         return false;
                     }
                     
-                    /*for (shint _2= 0; bundle_2 < m_letters; ++bundle_2) {
+                    for (shint _2= 0; bundle_2 < m_letters; ++bundle_2) {
                         if (diagonal_board.bundle_sum(bundle_2) > 1) {
                             plugboard->reset();
                             return false;
@@ -523,7 +525,7 @@ bool BombeUnit::doublecheck_and_get_plugboard(DiagonalBoard& diagonal_board, Eni
 
                     //if the sum is increaded by more than one, we have a contradiction
                     
-                    /*
+                    
                     if (diagonal_board.bundle_sum(bundle)>sum+1) {
                         plugboard->reset();
                         return false;
