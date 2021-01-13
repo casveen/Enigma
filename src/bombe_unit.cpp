@@ -1,6 +1,6 @@
 #include "bombe.hpp"
 const int PROGRESS_BAR_WIDTH= 50;
-//#define MEMOIZE
+#define MEMOIZE
 #include <cmath>
 
 
@@ -406,7 +406,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                     break;
                 } //END SWITCH
         }//END FOR PATH
-        //memoizer.advance();
+        memoizer.advance();
     } //END FOR POSITION
 
     if (m_setting.time_performance && m_verbose) { print_performance(); }
