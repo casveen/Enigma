@@ -12,6 +12,7 @@ using namespace std;
 #include "diagonalBoard.hpp"
 #include "configuration_tracker.hpp"
 #include "memoizer.hpp"
+#include <chrono>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -80,11 +81,18 @@ struct BombeUnitSetting {
     string     starting_ring_setting        = "AAAA";   // TODO should adapt to more rotors
     string     starting_rotor_positions     = "AAAA";
     bool       interactive_wiring_mode      = false;
-    const bool time_performance             = true;   // XXX can only be set in code...
-    double     performance_ring_setting_mean= 0;      // performance of a rs run
-    double     performance_ring_setting_var = 0;
-    int        records_ring_setting         = 0;
+    //const bool time_performance             = true;   // XXX can only be set in code...
+    //double     performance_ring_setting_mean= 0;      // performance of a rs run
+    //double     performance_ring_setting_var = 0;
+    //int        records_ring_setting         = 0;
     const bool debug_doublecheck_show_wiring= false;
+};
+
+struct BombeUnitTiming {
+    double tracking_time  = 0;
+    double total_run_time = 0;
+    double mean_run_time  = 0;
+    int    runs           = 0;
 };
 
 class BombeUnit {
@@ -102,6 +110,7 @@ class BombeUnit {
     // rotor positions
     // track encryptions
     struct BombeUnitSetting m_setting;
+    struct BombeUnitTiming  m_timing;
     // this object is used to keep track of enigma settings explored
 
   public:
@@ -118,6 +127,7 @@ class BombeUnit {
     void set_rotor_position(const string);
     // getters
     struct BombeUnitSetting &get_setting();
+    struct BombeUnitTiming&  get_timing();
     string                   get_identifier() const;
     // other
 
@@ -145,18 +155,29 @@ struct BombeSetting {
     // bool   verbose;
     bool       only_one_candidate           = false;
     bool       only_one_configuration       = false;
-    int        max_ring_settings            = 26 * 26 * 26 * 26;
+    int        max_ring_settings            = 26 * 26 * 26;
     int        rotor_count                  = 3;
     string     starting_ring_setting        = "EPEL";   // TODO should adapt to more rotors
     string     starting_rotor_positions     = "AAAA";
-    const bool time_performance             = true;   // XXX can only be set in code...
+    /*const bool time_performance             = true;   // XXX can only be set in code...
     double     performance_ring_setting_mean= 0;      // performance of a rs run
     double     performance_ring_setting_var = 0;
     int        records_ring_setting         = 0;
     int        records_bombeunits           = 0;
     double     performance_unit_run_mean    = 0;
     double     performance_unit_run_var     = 0;
-    int        records_unit_run             = 0;
+    int        records_unit_run             = 0;*/
+};
+
+struct BombeTiming {
+    double total_run_time      = 0;
+    double total_battery_time  = 0;
+    double total_tracking_time = 0;
+    double mean_run_time       = 0;
+    double mean_battery_time   = 0;
+    double mean_tracking_time  = 0;
+    int    runs                = 0;
+    int    batteries           = 0;
 };
 
 class Bombe {
@@ -172,6 +193,7 @@ class Bombe {
     // ofstream                m_outstream;
     struct BombeSetting     m_setting;
     struct BombeUnitSetting m_unit_setting;
+    struct BombeTiming      m_timing;
  
   public:
     Bombe(const initializer_list<Rotor> rotors, const Reflector reflector,
@@ -188,7 +210,8 @@ class Bombe {
     string preprocess(string) const;
     // void                         banburismus(const string, const string crib);
     // float index_of_coincidence(const string, const string);
-    struct BombeSetting &get_setting();
+    struct BombeSetting& get_setting();
+    struct BombeTiming&  get_timing();
 };
 
 

@@ -1,6 +1,6 @@
 #include "bombe.hpp"
 const int PROGRESS_BAR_WIDTH= 50;
-#define MEMOIZE
+//#define MEMOIZE
 #include <cmath>
 
 
@@ -95,6 +95,11 @@ void BombeUnit::set_identifier(string identifier) { m_identifier = identifier; }
 struct BombeUnitSetting &BombeUnit::get_setting() {
     return m_setting;
 }
+
+struct BombeUnitTiming &BombeUnit::get_timing() {
+    return m_timing;
+}
+
 string BombeUnit::get_identifier() const { return m_identifier; }
 
 
@@ -152,7 +157,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const 
     for (int rs= 0; rs < ring_settings; ++rs) {
         print_progress(rs, ring_settings, (int)solutions.size());
         init_enigma_encryptions(crib_n, rotor_positions, positions);
-        if (m_setting.time_performance) { start_ring_setting= std::chrono::system_clock::now(); }
+        //if (m_setting.time_performance) { start_ring_setting= std::chrono::system_clock::now(); }
         // for each rotor position
         for (int j= 0; j < total_permutations - 1; j++) {
             reset_diagonal_board(diagonal_board);
@@ -193,19 +198,21 @@ vector<struct EnigmaSetting> BombeUnit::analyze(const string &ciphertext, const 
 
         m_enigma->next_ring_setting();
 
-        if (m_setting.time_performance) {
+        /*if (m_setting.time_performance) {
             auto stop_ring_setting= std::chrono::system_clock::now();
             update_performance(
                 m_setting.performance_ring_setting_mean, m_setting.performance_ring_setting_var,
                 stop_ring_setting - start_ring_setting, m_setting.records_ring_setting);
-        }
+        }*/
 
     }   //end for ring setting
     /*cout<<"                                                                                      "
         << "      \r";*/
     cout<<"\r                                                             "
         <<"                                                             \r";
-    if (m_setting.time_performance && m_verbose) { print_performance(); }
+    
+    
+    //if (m_setting.time_performance && m_verbose) { print_performance(); }
     //if (m_use_configuration_tracker) { m_configuration_tracker->find_unchecked(); }
     return solutions;
 }
@@ -220,12 +227,18 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                                  solutions_count = 0;
 
     //get engagae_path, shared among threads
+    auto tracking_start = chrono::high_resolution_clock::now();
     ConfigurationTracker tracker      = ConfigurationTracker(m_enigma, crib_n);
+    m_timing.tracking_time  = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - tracking_start).count()/(double) 1000000;
+    //tracker.print_log();
+    //cout<<"\n";
 
-    double total_time, mean_time;
+    /*double total_time, mean_time;
     #ifdef _OPENMP
     double total_time_start = omp_get_wtime();
-    #endif
+    #else
+    double total_time_start = 0;
+    #endif*/
 
     /*cout<<"relative positions hash: \n";
     for (int i : tracker.get_relative_positions_hash_iterator()) {
@@ -233,10 +246,9 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     }*/
 
 
-
-    #pragma omp parallel reduction(+: mean_time) firstprivate(ciphertext, crib, most_wired_letter)
+    double total_time = 0, mean_time = 0;
+    #pragma omp parallel reduction(+: total_time) firstprivate(ciphertext, crib, most_wired_letter) num_threads(8)
     {
-    double start_ring_setting = 0;
     //each thread makes its own copy of m_enigma, and stores it in the original pointer, also makes its own diagonal board
     //use the indirect copy constructor
     Enigma        enigma(m_enigma->get_setting());
@@ -250,16 +262,20 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
     const vector<pair<vector<bool>, Engage_direction>>&           path_iterator = tracker.get_path_iterator();
     const vector<int>&                         relative_positions_hash_iterator = tracker.get_relative_positions_hash_iterator();
     //initialize memoizer
-    memoizer.initialize(tracker.count_unique_positions()); //makes hashes (thread_num) times, but should be negligible    
+    memoizer.initialize(tracker.get_hashed_positions()); //makes hashes (thread_num) times, but should be negligible    
+    memoizer.set_log_requests(path_iterator.size());
+    /*cout<<"\n";
+    memoizer.print_log();
+    cout<<"\n";*/
     //other
     shint *encryption         = new shint[m_letters]; //used in place by enigma
     shint current_positions;
     int path_i = 0, position_count=0;// position_hash = 0;
     pair<vector<bool>, Engage_direction> engage_and_direction;
-    //int relative_positions_hash;
-    //int max_hash = pow(m_letters, m_rotor_count);
+
+    double stop_time  = 0, start_time = 0;
     #ifdef _OPENMP
-    if (m_setting.time_performance) { start_ring_setting= omp_get_wtime(); }
+    start_time= omp_get_wtime();
     #endif
 
     #pragma omp for schedule(guided)
@@ -273,12 +289,13 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
         #ifdef MEMOIZE
         auto relative_positions_hash = relative_positions_hash_iterator.begin(); //XXX declare outside
         #endif
+        //cin.get();
         for (pair<vector<bool>, Engage_direction> engage_and_direction : path_iterator) {
                 //engage, connect the enigma if forward, disconnect if backward, test if stop
                 switch (engage_and_direction.second) {
                 case Engage_direction::forward:
                     //connect
-                    //cout<<"connecting (";
+                    //cout<<"previous hash: "<<*relative_positions_hash<<" --- ";
                     enigma.turn_manually(engage_and_direction.first, true);
                     //use memoizer
 
@@ -307,6 +324,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
 
                     path_i++;
                     //cout<<" --- at layer "<<path_i<<"\n";
+                    //cout<<"using hash: "<<*relative_positions_hash<<"\n";
                     break;
 
 
@@ -316,6 +334,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                     //disconnect
                     path_i--;
                     //cout<<"disconnecting (";
+                    //cout<<"using hash: "<<*relative_positions_hash<<"\n";
                     enigma.turn_manually(engage_and_direction.first, false);
                      //use memoizer
                     #ifdef MEMOIZE 
@@ -391,6 +410,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
                                     //TODO, reduce later, not here.
                                     
                                     //solutions.push_back(solution);
+                                    #pragma omp critical
                                     solutions_count++;
                                 }//END for every solution
                                 }//END critical region
@@ -409,25 +429,24 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
         memoizer.advance();
     } //END FOR POSITION
 
-    if (m_setting.time_performance && m_verbose) { print_performance(); }
-    delete[] encryption;
-    if (m_setting.time_performance) {
-        #ifdef _OPENMP
-        double stop_ring_setting= omp_get_wtime();
-        mean_time += (stop_ring_setting-start_ring_setting);
-        #else
-        mean_time = 0;
-        #endif
-    }
-    }//END PARALLEL REGION
+
+    if (m_verbose) { print_performance(); }
     
     #ifdef _OPENMP
-    double total_time_end = omp_get_wtime();
-    m_setting.performance_ring_setting_var = total_time_end-total_time_start;
+    stop_time= omp_get_wtime();
+    #else
+    stop_time = 0;
     #endif
+    total_time += (stop_time-start_time);
 
-    mean_time = mean_time/positions_count;
-    m_setting.performance_ring_setting_mean = mean_time;
+    delete[] encryption;
+    }//END PARALLEL REGION
+
+    //update timing
+    m_timing.total_run_time = total_time;
+    //cout<<"\n\n"<<start_time<<" --- "<<stop_time<<"\n\n";
+    m_timing.mean_run_time  = total_time/ (double) positions_count;
+    m_timing.runs           = positions_count;
     //clear command line
     cout<<"\r                                                             "
         <<"                                                                soultions found: "<<solutions_count<<"\r";
@@ -760,11 +779,11 @@ void BombeUnit::print_encryptions() const {
 }
 void BombeUnit::print_performance() const {
     // ring_setting
-    cout<<"printingggg performance\n";
+    /*cout<<"printingggg performance\n";
     printf("1---------------------------------------------------\n");
     printf("2|                   MEAN       VAR        RECORDS |\n");
     printf("3| RING-SETTING      %6.2E   %6.2E   %7d |\n", m_setting.performance_ring_setting_mean,
            m_setting.performance_ring_setting_var, m_setting.records_ring_setting);
     printf("4---------------------------------------------------\n");
-    cout<<"printed performance\n";
+    cout<<"printed performance\n";*/
 }

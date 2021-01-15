@@ -61,6 +61,12 @@ vector<int> Bombe::probable_search(const string &ciphertext, const string &crib)
     }
     return candidates;
 }
+
+
+
+
+
+
 vector<struct EnigmaSetting> Bombe::analyze_unit(const string & ciphertext_substring,
                                                  const string & crib,
                                                  vector<Rotor> &rotor_configuration,
@@ -69,37 +75,43 @@ vector<struct EnigmaSetting> Bombe::analyze_unit(const string & ciphertext_subst
     BombeUnit unit(rotor_configuration, reflector, m_use_configuration_tracker);
     vector<struct EnigmaSetting> solutions;
 
-    auto      start_unit_run= std::chrono::system_clock::now();
     unit.set_identifier(unit.get_identifier() + " position " + to_string(candidate) + " ");
     // translate settings
-    unit.get_setting().performance_ring_setting_mean= m_setting.performance_ring_setting_mean;
-    unit.get_setting().performance_ring_setting_var = m_setting.performance_ring_setting_var;
-    unit.get_setting().records_ring_setting         = m_setting.records_ring_setting;
+    //unit.get_setting().performance_ring_setting_mean= m_setting.performance_ring_setting_mean;
+    //unit.get_setting().performance_ring_setting_var = m_setting.performance_ring_setting_var;
+    //unit.get_setting().records_ring_setting         = m_setting.records_ring_setting;
     unit.get_setting().only_one_candidate           = m_setting.only_one_candidate;
     unit.get_setting().max_ring_settings            = m_setting.max_ring_settings;
     unit.get_setting().starting_ring_setting        = m_setting.starting_ring_setting;
     unit.get_setting().starting_rotor_positions     = m_setting.starting_rotor_positions;
     unit.get_setting().only_one_candidate           = m_setting.only_one_candidate;
     unit.get_setting().stop_on_first_valid          = m_setting.stop_on_first_valid;
-    if (m_setting.time_performance) { start_unit_run= std::chrono::system_clock::now(); }
-
+    
+    auto start_unit_battery= std::chrono::system_clock::now(); 
     if (m_use_configuration_tracker) {
         solutions= unit.analyze_with_configuration_tracker(ciphertext_substring, crib, most_wired_letter, candidate);
     } else {
         solutions=
         unit.analyze(ciphertext_substring, crib, most_wired_letter, candidate);
     }
-    if (m_setting.time_performance) {
-        auto stop_unit_run= std::chrono::system_clock::now();
-        update_performance_2(m_setting.performance_unit_run_mean, m_setting.performance_unit_run_var,
+    //translate timing back from unit
+    auto stop_unit_battery= std::chrono::system_clock::now();
+    m_timing.total_battery_time  += chrono::duration_cast<chrono::microseconds>(stop_unit_battery - start_unit_battery).count();
+    m_timing.total_run_time      += unit.get_timing().total_run_time;
+    m_timing.total_tracking_time += unit.get_timing().tracking_time;
+    m_timing.mean_run_time       += unit.get_timing().mean_run_time;
+    m_timing.mean_tracking_time  += unit.get_timing().tracking_time;
+    m_timing.runs                += unit.get_timing().runs;
+
+    /*update_performance_2(m_setting.performance_unit_run_mean, m_setting.performance_unit_run_var,
                            stop_unit_run - start_unit_run, m_setting.records_unit_run);
         // std::chrono::duration<double> measurement= (stop_unit_run - start_unit_run);
         // cout << " unit run: " << measurement.count();
-    }
+    }*/
     // update perofrmance timing
-    m_setting.performance_ring_setting_mean= unit.get_setting().performance_ring_setting_mean;
-    m_setting.performance_ring_setting_var = unit.get_setting().performance_ring_setting_var;
-    m_setting.records_ring_setting         = unit.get_setting().records_ring_setting;
+    //m_setting.performance_ring_setting_mean= unit.get_setting().performance_ring_setting_mean;
+    //m_setting.performance_ring_setting_var = unit.get_setting().performance_ring_setting_var;
+    //m_setting.records_ring_setting         = unit.get_setting().records_ring_setting;
     // int tid                                = omp_get_thread_num();
     /*cout << "\n"
          << "thread " << tid << " finished " << unit.get_identifier() << " found "
@@ -128,6 +140,7 @@ shint Bombe::find_most_wired_letter(const string &ciphertext, const string &crib
 }
 
 vector<struct EnigmaSetting> Bombe::analyze(const string &ciphertext, const string &crib) {
+    int configurations = 0;
     vector<struct EnigmaSetting> solutions;
     // find candidates
     vector<int> candidates= probable_search(ciphertext, crib);
@@ -137,10 +150,6 @@ vector<struct EnigmaSetting> Bombe::analyze(const string &ciphertext, const stri
     if (m_setting.only_one_configuration) {
         rotor_configurations.erase(rotor_configurations.begin() + 1, rotor_configurations.end());
     }
-
-    //Make the tracker
-
-
     // spawn units that analyze. For each candidate, for each configuration of rotors
     vector<Rotor> rotor_configuration;
     unsigned int  i, j, k;
@@ -158,23 +167,29 @@ vector<struct EnigmaSetting> Bombe::analyze(const string &ciphertext, const stri
                 vector<struct EnigmaSetting> solutions_unit=
                     analyze_unit(ciphertext_substring, crib, rotor_configuration, m_reflector[k],
                                  candidate, most_wired_letter);
-
-                /*#pragma omp critical(append_solutions)
-                {*/
                 for (struct EnigmaSetting solution : solutions_unit) {
                     solutions.push_back(solution);
                 }
-                //}
 
+                configurations++;
                 if (m_setting.stop_on_first_valid && solutions.size() > 0) { return solutions; }
             }
         }
     }
+    //compute mean times
+    m_timing.mean_battery_time  = m_timing.mean_battery_time/configurations;
+    m_timing.mean_run_time      = m_timing.mean_run_time/configurations;
+    m_timing.mean_tracking_time = m_timing.mean_tracking_time/configurations;
+    m_timing.batteries          = configurations;
     return solutions;
 }
 
 struct BombeSetting &Bombe::get_setting() {
     return m_setting;
+}
+
+struct BombeTiming &Bombe::get_timing() {
+    return m_timing;
 }
 
 string Bombe::preprocess(string in) const {

@@ -96,6 +96,12 @@ class PointerGraph {
 
 class ConfigurationTracker {
   private:
+    struct Log {
+        int nodes = 0;
+        int edges = 0;
+        double compression = 0;
+    };
+
     bool verbose=true;
     shint    m_length;
     Enigma*  m_enigma;
@@ -103,6 +109,7 @@ class ConfigurationTracker {
     shint    m_rotor_count;
     shint    m_start_node; //hash of starting node, probably 0
     shint    current_position; //XXXmight overshadow?
+    int      m_hashed_positions = 0;
     set<vector<shint>> position_set;
     CT_mode  mode;
     //tight
@@ -119,12 +126,15 @@ class ConfigurationTracker {
          made_ring_settings_iterator=false, 
          made_position_iterator=false;
     
+    Log log;
+    
 
   public:
     ConfigurationTracker(Enigma *, const int);
     ~ConfigurationTracker();
     //vector<pair<Edge, Engage>> out;
     const Graph* get_graph();
+    int          get_hashed_positions();
     const vector<int> get_position_set_as_vector_of_hashes();
     void initialize_position_set();
     void make_tight_graph();
@@ -147,5 +157,14 @@ class ConfigurationTracker {
     const vector<int>&                            get_relative_positions_hash_iterator();
 
     void print_path_iterator();
+    void print_log();
 };
+
+
+
+
+
+
+
+
 #endif

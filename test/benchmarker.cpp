@@ -1,9 +1,67 @@
 // make some performance runs, recording performance for a bad crib
 //#include "bombe.h"
-int MAX_RING_SETTINGS= 26*26;
+int MAX_RING_SETTINGS= 26*26*26;
 #include "bombe.hpp"
 #include "enigma.hpp"
 #include "rotors.cpp"   //all rotors,
+
+
+struct BombeTiming benchmark_3(bool use_configuration_tracker, bool use_memoizer, string crib) {
+    // make up a setting and use bombe on something completely unrelated,
+    // record the performance
+    Bombe bombe({I, VII, III}, UKWR, use_configuration_tracker);
+    bombe.get_setting().starting_rotor_positions= "AAA";
+    bombe.get_setting().starting_ring_setting   = "AAA";
+    bombe.get_setting().max_ring_settings       = MAX_RING_SETTINGS;
+    bombe.get_setting().only_one_candidate      = true;
+    bombe.get_setting().only_one_configuration  = true;
+    bombe.get_setting().stop_on_first_valid     = false;
+    // bombe.get_setting().time_performance        = true;
+    // bombe.get_setting().stop_on_first_valid= true;
+    Enigma enigma({IV, V, VI}, UKWR);
+    // enigma.set_verbose(true);
+    string plaintext= "THISISAPLAINTEXTTOBEENCRYPTEDWITHTHEENIGMAANDISVERYVERYLONG";
+    enigma.set_rotor_position("AAA");
+    enigma.set_ring_setting("AAA");
+    enigma.set_plugboard("");
+    string                       ciphertext= enigma.encrypt(plaintext);
+    vector<struct EnigmaSetting> solutions = bombe.analyze(ciphertext, crib);
+    return bombe.get_timing();
+}
+
+void benchmark() {
+    struct BombeTiming timing;
+    printf("----------------------------------------------------------------\n");
+    printf("|                      PARTIAL RUNS                            |\n");
+    printf("----------------------------------------------------------------\n");
+    printf("|  R |  C | CT | MEM | RUN TOTAL  RUN MEAN   TRACKING   RECORDS|\n");
+    for(bool use_configuration_tracker : {true, false}) {
+        for(bool use_memoizer : {true, false}) {
+            for(string crib : {"SOMEBODY", "SOMEBODYONCETOLD", "SOMEBODYONCETOLDMETHE", "SOMEBODYONCETOLDMETHEWORLDWASGON"}) {
+                timing = benchmark_3(use_configuration_tracker, use_memoizer, crib);
+                printf("| %2d | %2d |  %s |  %s  | %6.2E   %6.2E   %6.2E   %7d |\n",
+                       3, (int) crib.size(), use_configuration_tracker?"T":"F", use_memoizer?"T":"F",  
+                       timing.total_run_time, timing.mean_run_time, timing.mean_tracking_time, timing.runs);
+            }
+        }           
+    }
+}
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 struct BombeSetting benchmark1(bool use_configuration_tracker) {
     // make up a setting and use bombe on something completely unrelated,
@@ -352,7 +410,8 @@ struct BombeSetting benchmark14() {
     vector<struct EnigmaSetting> solutions = bombe.analyze(ciphertext, "UNRELATEDTEXT");
     return bombe.get_setting();
 }
-
+*/
+/*
 void benchmark_without_CT() {
     struct BombeSetting setting1CT= benchmark1(false);
     printf("| 3 ROTOR SMALL CRIB       %6.2E   %6.2E   %7d |\n",
@@ -386,10 +445,10 @@ void benchmark_without_CT() {
     printf("| 4 RTR VR LRG CRIB        %6.2E   %6.2E   %7d |\n",
            setting8CT.performance_ring_setting_mean, setting8CT.performance_ring_setting_var,
            setting8CT.records_ring_setting);   
-    /*struct BombeSetting setting14= benchmark13();
+    struct BombeSetting setting14= benchmark13();
     printf("| 5 ROTOR SMALL CRIB       %6.2E   %6.2E   %7d |\n",
            setting14.performance_ring_setting_mean, setting14.performance_ring_setting_var,
-           setting14.records_ring_setting);*/
+           setting14.records_ring_setting);
     
 }
 
@@ -426,21 +485,16 @@ void benchmark_CT() {
     printf("| 4 RTR VR LRG CRIB W.CT.  %6.2E   %6.2E   %7d |\n",
            setting8CT.performance_ring_setting_mean, setting8CT.performance_ring_setting_var,
            setting8CT.records_ring_setting);   
-    /*struct BombeSetting setting14= benchmark14();
+    struct BombeSetting setting14= benchmark14();
     printf("| 5 ROTOR SMALL CRIB W.CT  %6.2E   %6.2E   %7d |\n",
            setting14.performance_ring_setting_mean, setting14.performance_ring_setting_var,
-           setting14.records_ring_setting);*/
+           setting14.records_ring_setting);
     
 }
-
+*/
 
 int main() {
-    printf("----------------------------------------------------------\n");
-    printf("|                      PARTIAL RUNS                      |\n");
-    printf("----------------------------------------------------------\n");
-    printf("|                          MEAN       VAR        RECORDS |\n");
-    benchmark_CT();
-    benchmark_without_CT();
+    benchmark();
 
     /*
     struct BombeSetting setting1= benchmark1(false);

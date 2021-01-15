@@ -52,7 +52,17 @@ void Memoizer::initialize(int num_hashes) {
         temp = new shint[memo_length];
         memoized.insert(make_pair(i, make_pair(temp, !valid_flag)));
     }
+
+    log.memoizations = memoized.size();
+    log.requests     = 1; //ct::log.nodes
+    log.compression  = log.memoizations/log.requests;
+    
     return;
+}
+
+void Memoizer::set_log_requests(int requests) {
+    log.requests = requests;
+    log.compression = log.memoizations / (double) log.requests;
 }
 
 //note the lack of input, returns the value found in is_memoized, for efficiency
@@ -88,4 +98,8 @@ void Memoizer::memoize(const shint* value) {
 //invert valid flag, so that all currently mmoized are invalid and must be memoized again
 void Memoizer::advance() {
     valid_flag = !valid_flag;
+}
+
+void Memoizer::print_log() {
+    printf("MEM log: %4d memoizations, %4d requests, compression rate %4.2E", log.memoizations, log.requests, log.compression);
 }

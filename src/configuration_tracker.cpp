@@ -145,7 +145,7 @@ void printGraph(Graph const& graph, int N)
 void ConfigurationTracker::initialize_position_set() {
     //if (verbose) { cout<<"\rInitializing tracker ... "; }
     shint* initial_position= new shint[m_rotor_count];
-    
+    string initial_ring_setting = m_enigma->get_ring_setting_as_string();
     //XXXsloppy solution... but copies the pointer
     for(int i =0; i<m_rotor_count; i++) {
         initial_position[i] = m_enigma->get_positions()[i];
@@ -159,7 +159,6 @@ void ConfigurationTracker::initialize_position_set() {
     position_set.insert(position); //init in header
     //set<vector<shint>>::iterator it;
     for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
-        //cout<<"\rmaking position set ["<<rs/pow(m_letters, m_rotor_count)*100<<"%]";
         //make length steps and record all positions
         for (int step = 0; step<m_length; step++) {
             m_enigma->turn();
@@ -170,6 +169,8 @@ void ConfigurationTracker::initialize_position_set() {
         //advance ring_setting, odometer style
         m_enigma->next_ring_setting();
     }
+    //reset the enigma
+    m_enigma->set_ring_setting(initial_ring_setting);
     delete[] initial_position;
 }
 
@@ -280,43 +281,40 @@ void ConfigurationTracker::make_wide_graph() {
     //track paths of given length
     //store enigma setting
     //notch engages
+    int settings = pow(m_letters,m_rotor_count);
+
+    //#pragma omp parallel
+    {
+    Enigma        enigma(m_enigma->get_setting());
     vector<bool> engaged_notches(m_rotor_count, false);
     vector<Edge> edges;
-    vector<shint> previous_position = read_positions(m_enigma);
+    vector<shint> previous_position = read_positions(&enigma);
     m_enigma->next_ring_setting();
-    vector<shint> current_position  = read_positions(m_enigma);
-
-    for (int rs = 0; rs < pow(m_letters,m_rotor_count); rs++) {
-        previous_position = read_positions(m_enigma);
-        m_enigma->turn();
+    vector<shint> current_position  = read_positions(&enigma);
+    
+    //#pragma omp for schedule(guided)
+    for (int rs = 0; rs < settings; rs++) {
+        previous_position = read_positions(&enigma);
+        enigma.turn();
         //make path
         for (int p=0; p<m_length; p++) {
-            cout<<"\rtracking paths ["<<rs/pow(m_letters, m_rotor_count)*100<<"%]";
-            current_position   = read_positions(m_enigma);
+            cout<<"\rtracking paths ["<<rs/settings*100<<"%]";
+            current_position   = read_positions(&enigma);
             notch_engages(previous_position, current_position, engaged_notches);
             edges.push_back((Edge {0, 0, engaged_notches}));
-            previous_position  = read_positions(m_enigma);
-            m_enigma->turn();
+            previous_position  = read_positions(&enigma);
+            enigma.turn();
         }
-        //cout<<"made a path\n";
-        //prev_sz = path_graph_wide->count_edges();
-        //cout<<"counted\n";
         ring_setting = m_enigma->get_ring_setting();
+        #pragma omp critical
         path_graph_wide->add_edges(edges, vector<shint>{ring_setting, ring_setting+m_rotor_count});
-        //cout<<"added edges\n";
-        //cout<< "  ---  "<<edges.size()<<" edges "<<(path_graph->count_edges()-prev_sz)<<" of which are new";
         edges.clear();
-        //cout<<"cleared edges\n";
-        //edges.shrink_to_fit();
-        //translate to tracker structure
-        //this.add_path(notch_engage_path);
         //reset enigma POSITION
-        m_enigma->set_positions(initial_position); //safe pointer
+        enigma.set_positions(initial_position); //safe pointer
         //advance ring_setting, odometer style
-        m_enigma->next_ring_setting();
-        //notch_engage_path.clear();
+        enigma.next_ring_setting();
     }
-    //cout<<"\rmade a ptah graph of "<<path_graph_wide->count_edges()<<" edges";
+    }
     delete[] initial_position;
 }
 
@@ -344,12 +342,15 @@ ConfigurationTracker::ConfigurationTracker(Enigma *enigma, const int length) {
     mode = CT_mode::none;
     
     try {
-        initialize_position_set(); //for memoizing
+        //initialize_position_set(); //for memoizing
         make_wide_graph();
         mode = CT_mode::wide;
         make_path_iterator();
         make_ring_settings_iterator();
         make_relative_positions_hash_iterator();
+        log.nodes       = path_graph_wide->count_nodes();
+        log.edges       = path_graph_wide->count_edges();
+        log.compression = log.nodes/pow(m_letters, m_rotor_count);
         //cout<<"\nmade wide graph of "<<path_graph_wide->count_nodes()<<" nodes\n";
     } catch (bad_alloc &ba) {
         cout<<"unable to allocate to wide CT, trying to make tight CT\n";
@@ -546,15 +547,46 @@ void ConfigurationTracker::make_ring_settings_iterator() {
 }
 
 
+//assumes make_path_iterator was succesfull
 void ConfigurationTracker::make_relative_positions_hash_iterator() {
     vector<int> out;
-    if        (mode == CT_mode::wide) {
+    Enigma enigma_copy(m_enigma->get_setting());
+    if (mode == CT_mode::wide) {
+        //make position set so as to hash properly
+        initialize_position_set();
+        //go through each position in path, and give a proper hash
+        for (pair<vector<bool>, Engage_direction> engage_and_direction : m_path_iterator) {
+            //engage
+            switch(engage_and_direction.second) {
+                case Engage_direction::forward:
+                    //find hash of positions according to positions set
+                    out.push_back(hash_position(read_positions(&enigma_copy), position_set));
+                    enigma_copy.turn_manually(engage_and_direction.first, true);
+                    break;
+                case Engage_direction::backward:
+                    
+                    //find hash of positions according to positions set
+                    out.push_back(hash_position(read_positions(&enigma_copy), position_set));
+                    enigma_copy.turn_manually(engage_and_direction.first, false);
+                    break;
+                case Engage_direction::stop:  
+                    //enigma.turn_manually(engage_and_direction.first, true);
+                    break;
+            }
+        }
+        //position set not needed after this
+        m_hashed_positions = position_set.size();
+        position_set.clear();
+    } else {
+        cerr << "ERROR requesting iterator without valid mode\n";
+    }
+    /*if        (mode == CT_mode::wide) {
         out = path_graph_wide->relative_positions_hash_iterator();
     } else if (mode == CT_mode::tight) {
         cerr << "ERROR relative positions hash iterator not implemented for tight mode\n";
     } else {
         cerr << "ERROR requesting iterator without valid mode\n";
-    }
+    }*/
     m_relative_positions_hash_iterator = out;
 }
 
@@ -598,5 +630,14 @@ const vector<int> ConfigurationTracker::get_position_set_as_vector_of_hashes() {
 
 
 
+
+
+void ConfigurationTracker::print_log() {
+    printf("CT  log: %4d nodes, %4d edges, compression rate %4.2E", log.nodes, log.edges, log.compression);
+}
+
+int ConfigurationTracker::get_hashed_positions() {
+    return m_hashed_positions;
+}
 //g++ -O3 -o ct.exe src/configuration_tracker.cpp src/enigma.cpp -I include
 //christian@christian-Yoga-Slim-7-14ARE05:~/Documents/Code/Enigma$ ./ct.exe
