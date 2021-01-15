@@ -284,12 +284,12 @@ void ConfigurationTracker::make_wide_graph() {
     int settings = pow(m_letters,m_rotor_count);
 
     //#pragma omp parallel
-    {
+    
     Enigma        enigma(m_enigma->get_setting());
     vector<bool> engaged_notches(m_rotor_count, false);
     vector<Edge> edges;
     vector<shint> previous_position = read_positions(&enigma);
-    m_enigma->next_ring_setting();
+    enigma.next_ring_setting();
     vector<shint> current_position  = read_positions(&enigma);
     
     //#pragma omp for schedule(guided)
@@ -298,15 +298,15 @@ void ConfigurationTracker::make_wide_graph() {
         enigma.turn();
         //make path
         for (int p=0; p<m_length; p++) {
-            cout<<"\rtracking paths ["<<rs/settings*100<<"%]";
+            printf("\rCT: tracking paths [%3.0f%%]", rs/((double) settings)*100 );
             current_position   = read_positions(&enigma);
             notch_engages(previous_position, current_position, engaged_notches);
             edges.push_back((Edge {0, 0, engaged_notches}));
             previous_position  = read_positions(&enigma);
             enigma.turn();
         }
-        ring_setting = m_enigma->get_ring_setting();
-        #pragma omp critical
+        ring_setting = enigma.get_ring_setting();
+        //#pragma omp critical
         path_graph_wide->add_edges(edges, vector<shint>{ring_setting, ring_setting+m_rotor_count});
         edges.clear();
         //reset enigma POSITION
@@ -314,7 +314,7 @@ void ConfigurationTracker::make_wide_graph() {
         //advance ring_setting, odometer style
         enigma.next_ring_setting();
     }
-    }
+    
     delete[] initial_position;
 }
 

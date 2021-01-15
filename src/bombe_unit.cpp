@@ -1,6 +1,6 @@
 #include "bombe.hpp"
 const int PROGRESS_BAR_WIDTH= 50;
-//#define MEMOIZE
+#define MEMOIZE
 #include <cmath>
 
 
@@ -247,7 +247,7 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
 
 
     double total_time = 0, mean_time = 0;
-    #pragma omp parallel reduction(+: total_time) firstprivate(ciphertext, crib, most_wired_letter) num_threads(8)
+    #pragma omp parallel reduction(+: total_time) firstprivate(ciphertext, crib, most_wired_letter)
     {
     //each thread makes its own copy of m_enigma, and stores it in the original pointer, also makes its own diagonal board
     //use the indirect copy constructor
@@ -291,6 +291,8 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
         #endif
         //cin.get();
         for (pair<vector<bool>, Engage_direction> engage_and_direction : path_iterator) {
+                //cout<<enigma.get_positions_as_string()<<"\n";
+                //cin.get();
                 //engage, connect the enigma if forward, disconnect if backward, test if stop
                 switch (engage_and_direction.second) {
                 case Engage_direction::forward:
@@ -409,9 +411,11 @@ vector<struct EnigmaSetting> BombeUnit::analyze_with_configuration_tracker(const
 
                                     //TODO, reduce later, not here.
                                     
-                                    //solutions.push_back(solution);
                                     #pragma omp critical
+                                    {
+                                    solutions.push_back(solution);
                                     solutions_count++;
+                                    }
                                 }//END for every solution
                                 }//END critical region
                                 enigma.set_positions(current_positions);

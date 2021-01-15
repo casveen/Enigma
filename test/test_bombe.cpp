@@ -47,14 +47,19 @@ bool is_exact_setting(Enigma &enigma, vector<struct EnigmaSetting> solutions, st
 
     unsigned int solution_count= solutions.size();
     //check if any solution fits the given criteria
+    if (solutions.size() == 0) {
+        cerr<<"\n\nERROR: no solutions!!!\n\n";
+        return false;
+    }
+
     for (struct EnigmaSetting solution : solutions) {
-        //cout<<"RP: "<<solution.rotor_position<<" --- RS: "<<solution.ring_setting<<"\n";
+        //cout<<"RP: "<<solution.rotor_position<<" --- RS: "<<solution.ring_setting<<" --- ";
         bool all_correct= true;
         enigma.set_setting(solution);
-        //cout<<"\nARP: "<<enigma.get_rotor_position_as_string()<<" --- ARS: "<<enigma.get_ring_setting_as_string()<<"\n";
+        //cout<<"\nARP: "<<enigma.get_rotor_position_as_string()<<" --- ARS: "<<enigma.get_ring_setting_as_string()<<"   (";
         string encrypted_crib= enigma.encrypt(crib);
-        //cout<<encrypted_crib<<"\n";
-        //cout<<ciphertext<<"\n";
+        //cout<<encrypted_crib<<" =?= ";
+        //cout<<ciphertext.substr(crib_pos, crib.length())<<")\n";
         bool   check         = (encrypted_crib == ciphertext.substr(crib_pos, crib.length()));
         if (check == false && solution_count == 1) {
             cerr << "WRONG DECRYPTION: encrypt(" << crib << ")=" << encrypted_crib
@@ -138,7 +143,7 @@ SCENARIO("Using custom rotors of non-standard size") {
 
 
 SCENARIO("bombe with CT finds the configuration of an enimga", "[CTbombe]") {
-    cout<<"\n\ntesting with CT\n\n";
+    //cout<<"\n\ntesting with CT\n\n";
     GIVEN("Enigma: I, II, III, UKWR. Steckered") {
         Bombe bombe({I, II, III}, UKWR, true);
         bombe.get_setting().stop_on_first_valid    = false;
