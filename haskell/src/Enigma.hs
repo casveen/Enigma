@@ -30,7 +30,7 @@ monadicPolyEncrypt
 import Data.Maybe ( fromMaybe, isJust, isNothing )
 import Numeric.LinearAlgebra (Matrix, tr, det, (><), toLists, fromList, toList, (#>))
 import Data.Functor.Identity
-import Control.Monad.Writer
+--import Control.Monad.Writer
 
 --data Pair a b  = Pa a b 
 
