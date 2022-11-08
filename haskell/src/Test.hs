@@ -6,7 +6,10 @@ module Test (
     inverse,
     validRotor
 ) where
-
+import Rotor(Rotor(..))
+import Transform(Transform(..))
+import Numeric.LinearAlgebra (det, tr)
+import Data.Maybe ( fromMaybe, isJust, isNothing )
 
 -----------------------------------------------
 --              TESTING                      --
@@ -31,8 +34,8 @@ inverse (Transform t _) = Transform (tr t)
 --validRotor :: Rotor -> Bool
 validRotor (Rotor t no) = isOnto t &&
 --                                    all (== 1) (map (\m) t) 
-                                      noRepeats no &&
-                                      all (< n) no
+                          noRepeats no &&
+                          all (< n) no
     where
         n = length no
 validRotor (Reflector t no) = validRotor (Rotor t no)

@@ -1,6 +1,11 @@
 module Parts where
 
 import Enigma --(transformFromLanguage, readLetters, English, Minimal, Plugboard, Rotor, Enigma, Cartridge)
+import Rotor
+import Plugboard
+import Transform
+import Language
+
 -----------------------------------------------------------------------
 --                          ENIGMA WHEELS                            --
 -----------------------------------------------------------------------

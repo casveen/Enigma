@@ -1,9 +1,9 @@
 module Rotor (
 Rotor(..)
 ) where
-import Transform (Transform)
-import Language (Language, HasLanguage)
-import Cipher (Cipher)
+import Transform (Transform(..))
+import Language (Language(..), HasLanguage(..))
+import Cipher (Cipher(..))
 ----------------------------------------------
 --              ROTOR                       --
 ----------------------------------------------    
@@ -22,10 +22,11 @@ instance Cipher Rotor where
     decrypt (Rotor t _)     = decrypt t
     decrypt (Reflector t _) = decrypt t
 
+----------------------------------------------
+--          HELPER FUNCTIONS                --
+----------------------------------------------  
+pad0 n x = take ( n - length sx) (cycle "0") ++ sx
+    where sx = show x
 
-transformFromLanguage ls l = Transform ((n><n) mat) l
-    where
-        n                           = letters l
-        mat                         = elementsFromLanguage ls
-        elementsFromLanguage []     = []
-        elementsFromLanguage (l:ls) = unitRow (fromEnum l) n ++ elementsFromLanguage ls
+--fpow 0 f = id
+--fpow n f = f . fpow (n-1) f

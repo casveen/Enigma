@@ -15,5 +15,5 @@ class Cipher c where
 class PolyalphabeticCipher c where
     polyEncrypt :: (Language l, Enum e) => c e l -> c e l
     polyDecrypt :: (Language l, Enum e) => c e l -> c e l
-    encryptText :: (Traversable t, Monad (c (t e))) => c (t e) l -> c (t e) l 
-    encryptText text = mapM polyEncrypt text
+    --encryptText :: (Traversable t, Monad (c (t e))) => c (t e) l -> c (t e) l 
+    --encryptText text = mapM polyEncrypt text

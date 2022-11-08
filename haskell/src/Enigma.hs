@@ -1,27 +1,16 @@
 module Enigma (
 Enigma,
-Plugboard(..),
-Cartridge(..),
-Rotor(..),
-English(..),
-Minimal(..),
-Letter(..),
-Language(..),
 mkEnigma,
 step,
-transformFromLanguage,
-readLetters,
-monadicEncrypt,
-encrypt,
-encryptText,
-monadicPolyEncrypt
+encryptText
 ) where
 
-import Data.Maybe ( fromMaybe, isJust, isNothing )
 import Control.Monad.State
-import Language
-import Cipher (PolyalphabeticCipher)
-import Cartridge (Cartridge)
+import Language 
+import Cipher (Cipher(..), PolyalphabeticCipher(..))
+import Cartridge (Cartridge(..), stepCartridge)
+import Plugboard (Plugboard(..))
+import Rotor(Rotor(..))
 
 ----------------------------------------------
 --              ENIGMA                      --
@@ -50,22 +39,39 @@ getCartridge = state $ \e@(Enigma _ c) -> (c, e)
 step :: (Language l) => Enigma () l
 step = state $ \(Enigma plugging c) -> ((), Enigma plugging (stepCartridge c))
 
-instance PolyalphabeticCipher Enigma where
-    polyEncrypt :: (Language l) => o -> Enigma o l
-    polyEncrypt plaintext = do 
-        step 
-        plugboard  <- getPlugboard
-        cartridge  <- getCartridge
-        return $ 
-                decrypt plugboard 
-                (encrypt cartridge 
-                (encrypt plugboard (Identity plaintext)))
+--instance PolyalphabeticCipher Enigma where
+enc :: (Language l, Enum o) => o -> Enigma o l
+enc plaintext = do 
+    step 
+    plugboard  <- getPlugboard
+    cartridge  <- getCartridge
+    return $ 
+            decrypt plugboard 
+            (encrypt cartridge 
+            (encrypt plugboard plaintext))
+--encryptText :: (Traversable t) => Enigma (t o) l
+encryptText (x:xs) = do
+    c <-  enc x
+    cs <- encryptText xs
+    return (c:cs)
+encryptText [] = do return []
 
-encryptText = mapM polyEncrypt
+mkEnigma :: (Language l) => 
+    Plugboard l -> 
+    [Rotor l] -> 
+    Rotor l -> 
+    String -> 
+    String -> 
+    Maybe (EnigmaState l)
+mkEnigma plugBoard rotors reflector rss rps = do
+    rssRead <- safelyReadLetters rss
+    rpsRead <- safelyReadLetters rps
+    return $ let 
+        rssList = map fromEnum rssRead
+        rpsList = map fromEnum rpsRead
+        n       = letters . getLanguage $ plugBoard
+        positions = reverse $ (\x y -> mod (x-y) n) <$> rpsList <*> rssList 
+        in 
+            Enigma plugBoard (Cartridge rotors reflector positions)
         
-mkEnigma plugBoard rotors reflector rss rps = Enigma plugBoard (Cartridge rotors reflector positions)
-    where
-        n = letters . getLanguage $ plugBoard
-        rssList   = map fromEnum $ readLetters rss
-        rpsList   = map fromEnum $ readLetters rps
-        positions = reverse $ (\x y -> mod (x-y) n) <$> rpsList <*> rssList
+

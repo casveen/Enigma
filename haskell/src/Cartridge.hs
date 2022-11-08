@@ -1,11 +1,11 @@
 module Cartridge (
-    Cartridge,
+    Cartridge(..),
     getNotchesFromCartridge,
     stepCartridge
 ) where 
-import Language (Language, HasLanguage)
-import Rotor (Rotor)
-import Cipher (Cipher)
+import Language (Language(..), HasLanguage(..), shiftLetter)
+import Rotor (Rotor(..))
+import Cipher (Cipher(..))
 
 ----------------------------------------------
 --              CARTRIDGE                   --
@@ -20,19 +20,19 @@ instance (Language l) => Show (Cartridge l) where
                                 (zip3 [0..] rs ps)) ++
                                 "Re:      " ++ show rf
 instance Cipher Cartridge where
-    monadicEncrypt c@(Cartridge rotors reflector positions) = total rotors positions
+    encrypt c@(Cartridge rotors reflector positions) = total rotors positions
         where
             n = letters . getLanguage $ c
             --total :: (Cipher s) => [s] -> (Letter -> Letter)
-            total [] _  = monadicEncrypt reflector
+            total [] _  = encrypt reflector
             --total [] __ = monadicEncrypt reflector ---XXX WRONG!
-            total _ []  = monadicEncrypt reflector ---XXX WRONG!
+            total _ []  = encrypt reflector ---XXX WRONG!
             total (r:rs) (p:ps) = eout . total rs ps . ein
                 where
-                    ein  = \x -> monadicShiftLetter (monadicEncrypt r $ monadicShiftLetter x p n) (-p) n
-                    eout = \x -> monadicShiftLetter (monadicDecrypt r $ monadicShiftLetter x p n) (-p) n
+                    ein  = \x -> shiftLetter (encrypt r $ shiftLetter x p n) (-p) n
+                    eout = \x -> shiftLetter (decrypt r $ shiftLetter x p n) (-p) n
             --might step wrong way!
-    monadicDecrypt = monadicEncrypt
+    decrypt = encrypt
 
 getNotchesFromRotors [] = []
 getNotchesFromRotors ((Rotor _ notches):rs) = notches:getNotchesFromRotors rs
@@ -49,3 +49,6 @@ stepCartridge c@(Cartridge rotors reflector positions) = Cartridge rotors reflec
             if elem p ns || carry==1
                 then mod (p+1) n:stepHelper ps nss (if p `elem` ns then 1 else 0)
                 else p:stepHelper ps nss 0
+
+pad0 n x = take ( n - length sx) (cycle "0") ++ sx
+    where sx = show x

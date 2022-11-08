@@ -1,9 +1,9 @@
 module Plugboard (
-Plugboard(..)
+    Plugboard(..)
 ) where
 import Transform (Transform)
-import Language (Language, HasLanguage)
-import Cipher (Cipher)
+import Language (Language(..), HasLanguage(..))
+import Cipher (Cipher(..))
 ------------------------------------------------
 --            PLUGBOARD                       --
 ------------------------------------------------  
