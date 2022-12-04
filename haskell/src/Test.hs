@@ -3,14 +3,15 @@ module Test (
     findValue, 
     noRepeats,
     isOnto,
-    inverse,
     validRotor
 ) where
 import Rotor(Rotor(..))
 import Transform(Transform(..))
+import Cipher
 import Numeric.LinearAlgebra (det, tr)
 import Data.Maybe ( fromMaybe, isJust, isNothing )
-
+import Test.HUnit
+import Data.List (isPrefixOf)
 -----------------------------------------------
 --              TESTING                      --
 ----------------------------------------------- 
@@ -26,14 +27,18 @@ findIndex xs i = safeHead (dropWhile (/= i) xs)
 noRepeats [] = True
 noRepeats (x:xs) = not (findValue xs x) && noRepeats xs
 
---a transform is onto if each row has exactly one element(ie, the value 1)
-isOnto (Transform m _) = det m /= 0
 
-inverse (Transform t _) = Transform (tr t)
+class Surjection f where 
+    isSurjective :: f -> Bool
+    isOnto :: f -> Bool 
+    isOnto = isSurjective
+
+instance (Ord e, Enum e) => Surjection (Transform e) where 
+    isSurjective tr@(Transform bi) = 
+        isPrefixOf (fmap toEnum [0..]) $ (fmap (encrypt tr) (fmap toEnum [0..]))
 
 --validRotor :: Rotor -> Bool
 validRotor (Rotor t no) = isOnto t &&
---                                    all (== 1) (map (\m) t) 
                           noRepeats no &&
                           all (< n) no
     where

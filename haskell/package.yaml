@@ -23,6 +23,13 @@ dependencies:
 - base >= 4.7 && < 5
 - hmatrix
 - mtl
+- diagrams-lib
+- diagrams-svg
+- diagrams-contrib
+- HUnit 
+- hspec
+- QuickCheck
+- bimap
 
 ghc-options:
 - -Wall

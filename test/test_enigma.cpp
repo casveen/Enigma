@@ -192,10 +192,12 @@ TEST_CASE("Testing a concrete example; encryption of a sample of the Donitz "
     // test if the enigma can encrypt/decrypt a portion of the Karl donitz
     // message
     // Reflector ThinReflectorC= Reflector("RDOBJNTKVEHMLFCWZAXGYIPSUQ");
+    cout<<"DONITZ!!!";
     Enigma enigma({VIII, VI, V, BETA}, THINREFLECTORC);
     enigma.set_plugboard("AE.BF.CM.DQ.HU.JN.LX.PR.SZ.VW");
     enigma.set_ring_setting("EPEL");
     enigma.set_rotor_position("CDSZ");
+    enigma.set_verbose(true);
     string encryption=
         enigma.encrypt("LANOTCTOUARBBFPMHPHGCZXTDYGAHGUFXGEWKBLKGJWLQXXTGPJJAVTOCKZFSLPPQIHZFX"
                        "OEBWIIEKFZLCLOAQJULJOYHSSMBBGWHZANVOIIPYRBRTDJQDJJOQKCXWDNBBTYVXLYTAPG"
