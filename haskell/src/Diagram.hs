@@ -27,8 +27,8 @@ rw :: Double
 rw = 10.0
 
 
-drawRotor :: (Enum e, Ord e) => Rotor e -> Int -> Int -> Diagram B
-drawRotor (Rotor transform notches) wireIn wireOut =
+drawRotor :: (Enum e, Ord e) => Rotor e -> Int -> Int -> Int -> Diagram B
+drawRotor (Rotor transform notches) wireIn wireOut offset =
     let
         n = letters transform
         --entirety :: [Int]
@@ -37,8 +37,10 @@ drawRotor (Rotor transform notches) wireIn wireOut =
         inverseEntirety = map (fromEnum . decrypt transform . toEnum) [0..(n-1)]
         allWires = zip [0..] entirety
         drawWire :: Int -> Int -> Diagram B
-        drawWire from to =
+        drawWire ff tt =
             let
+                from = mod (ff-offset) n 
+                to = mod (tt-offset) n 
                 f = wd*(fromIntegral from-(fromIntegral n - 1)/2)
                 t = wd*(fromIntegral to-(fromIntegral n - 1)/2)
                 outerLeftVertices = map p2 [(-rw-1.0,f),(-rw,f)]
@@ -62,7 +64,7 @@ drawRotor (Rotor transform notches) wireIn wireOut =
         rect (2*rw) (wd*(fromIntegral n)) <> drawAllWires
                                       <> rect (2*rw) (wd*(fromIntegral n)) # fc lightgray
                                       
-drawRotor (Reflector transform notches) wireIn wireOut =
+drawRotor (Reflector transform notches) wireIn wireOut offset =
     let
         n = letters transform
         entirety :: [Int]
@@ -78,8 +80,10 @@ drawRotor (Reflector transform notches) wireIn wireOut =
 
         allWires =  nonRepeatingEntiretyBuilder $ zip [0..] entirety
         drawWire :: Int -> Int -> Diagram B
-        drawWire from to =
+        drawWire ff tt =
             let
+                from = mod (ff-offset) n 
+                to = mod (tt-offset) n 
                 f = wd*(fromIntegral from-(fromIntegral n - 1)/2)
                 t = wd*(fromIntegral to-(fromIntegral n - 1)/2)
                 outerLeftVertices = map p2 [(-rw-1,t),(-rw,t)]
@@ -133,6 +137,6 @@ drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) acti
                 Debug.Trace.trace (show $ map (\(x,y) -> (fromEnum x, fromEnum y)) rout) $ (pout, rout, refout))
         (plugboardInOut, rotorsInOut, (reflectorIn, reflectorOut)) = inOut $ encryptionPath
     in
-        hsep 0.0 [hsep 0.0 $ zipWith (curry
-            (\(rotor, (wireIn, wireOut)) -> drawRotor rotor (fromEnum wireIn) (fromEnum wireOut))) rotors rotorsInOut,
-            drawRotor reflector (fromEnum reflectorIn) (fromEnum reflectorOut)]
+        hsep 0.0 [hsep 0.0 $ zipWith3 ( curry . curry
+            (\(rotor, ((wireIn, wireOut), pos)) -> drawRotor rotor (fromEnum wireIn) (fromEnum wireOut) pos)) rotors rotorsInOut positions,
+            drawRotor reflector (fromEnum reflectorIn) (fromEnum reflectorOut) 0]
