@@ -5,6 +5,7 @@ import Rotor
 import Plugboard
 import Transform
 import Language
+import Cartridge
 
 -----------------------------------------------------------------------
 --                          ENIGMA WHEELS                            --
@@ -57,9 +58,16 @@ ukwm6  = Reflector (transformFromLanguage [F, E, D, C, B, A] ) [0]
 
 e = mkEnigma (Plugboard idTransform) [ic, iic, iiic] ukw "AAA" "AAA"
 em =  mkEnigma (Plugboard mplug) [im] ukwm "AAAAAAAAAA" "AAAAAAAAAA"
-e6 =  mkEnigma (Plugboard mplug6) [im6] ukwm6 "AAAAAAAAAA" "AAAAAAAAAA"
+e6 =  mkEnigma (Plugboard mplug6) [im6, iim6, iiim6] ukwm6 "AAAAAAAAAA" "AAAAAAAAAA"
 
 m3Navy = mkEnigma (Plugboard idTransform) [i, ii, iii] reflectorB "AAA" "AAA"
+
+donitz = 
+    let 
+        cartridge = Cartridge [viii,vi,v,beta] thinReflectorC [0,0,0,0]
+        plugboard = mkPlugboard [(A,E),(B,F),(C,M),(D,Q),(H,U),(J,N),(L,X),(P,R),(S,Z),(V,W),(G,G),(I,I),(K,K),(O,O),(T,T),(Y,Y)]
+    in 
+        Enigma plugboard cartridge
 
 donitzPlugboard = Plugboard (transformFromLanguage (readLetters "EFMQABGUINKXCJORDPZTHWVLYS") )
 donitzRotors = [ii,iii,v,v,i,iii,iv,ii,iii,i,ii] --NO

@@ -12,6 +12,7 @@ import Cipher
 import Language
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
+import Debug.Trace
 
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE FlexibleContexts          #-}
@@ -49,7 +50,7 @@ drawRotor (Rotor transform notches) wireIn wireOut =
                     (rw, t)]
                 color
                   | from == wireIn = red
-                  | to == wireOut = red
+                  | from == wireOut = red
                   | otherwise = gray
             in
                 fromVertices outerRightVertices # lc color # lwO 9 <>
@@ -92,7 +93,7 @@ drawRotor (Reflector transform notches) wireIn wireOut =
 
                 color
                   | from == wireIn = red
-                  | to == wireOut = red
+                  | from == wireOut = red
                   | otherwise = gray
             in
                 fromVertices outerRightVertices # lc color # lwO 9 <>
@@ -111,12 +112,17 @@ drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) acti
         letter                    = toEnum activeWire
         --initWriter                = writer (letter, [letter]) 
         encryptionPathWriter      = evalState (tracedEncryptEnigma letter) enigma
-        (cipher, encryptionPath)  = runWriter encryptionPathWriter
+        (cipher, encryptionPat)  = runWriter encryptionPathWriter
+        encryptionPath =  Debug.Trace.trace (show $ map fromEnum encryptionPat) $ encryptionPat
 
         --tupleAsList :: (e,e) -> [e]
         --tupleAsList (x,y) = [x,y] 
         --crimp :: (Enum e, Ord e) => [e] -> [(e,e)] --"folds" in the middle
-        crimp xs = take (rotornum+2) (zip xs (reverse xs))
+        crimp xs = 
+            let 
+                it = take (rotornum+2) (zip xs (reverse xs))
+            in
+                Debug.Trace.trace (show $ map (\(x,y) -> (fromEnum x, fromEnum y)) it) $ it
         --inOut :: (Enum e, Ord e) => [e] -> ((e,e),[(e,e)],(e,e)) -- TODO to int int, since thats how used in drawrotoer
         inOut xs =
             (let
@@ -124,7 +130,7 @@ drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) acti
                 rout           = take rotornum crimped
                 refout         = head $ drop rotornum crimped --unsafe
             in
-                (pout, rout, refout))
+                Debug.Trace.trace (show $ map (\(x,y) -> (fromEnum x, fromEnum y)) rout) $ (pout, rout, refout))
         (plugboardInOut, rotorsInOut, (reflectorIn, reflectorOut)) = inOut $ encryptionPath
     in
         hsep 0.0 [hsep 0.0 $ zipWith (curry

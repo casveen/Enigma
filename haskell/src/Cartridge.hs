@@ -77,6 +77,6 @@ tracedEncryptCartridge c@(Cartridge rotors reflector positions) m =
                 --wein :: (Enum e, Ord e, Monoid w) => Writer w e -> Writer w e
                 wein  y =  writer (ein y, return $ ein y)
                 --weout :: (Enum e, Ord e, Monoid w) => Writer w e -> Writer w e
-                weout y = writer (eout y, return $ ein y)
+                weout y = writer (eout y, return $ eout y)
     in
         total rotors positions m
