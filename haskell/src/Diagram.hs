@@ -22,27 +22,28 @@ import Diagrams.Prelude
 import Diagrams.Backend.SVG.CmdLine
 
 wd :: Double
-wd = 3.0
+wd = 2.0
 rw :: Double
 rw = 10.0
 
-
-drawRotor :: (Enum e, Ord e) => Rotor e -> Int -> Int -> Int -> Diagram B
-drawRotor (Rotor transform notches) wireIn wireOut offset =
+--remember that the enigma offsets the notches as well with the ring setting!
+drawRotor :: (Enum e, Ord e, Show e) => Rotor e -> e -> e -> Int -> Diagram B
+drawRotor (Rotor transform notches) wireInEnum wireOutEnum offset =
     let
-        n = letters transform
-        --entirety :: [Int]
-        entirety        = map (fromEnum . encrypt transform . toEnum) [0..(n-1)]
-        --inverseEntirety :: [Int]
-        inverseEntirety = map (fromEnum . decrypt transform . toEnum) [0..(n-1)]
-        allWires = zip [0..] entirety
-        drawWire :: Int -> Int -> Diagram B
-        drawWire ff tt =
+        wireIn   = fromEnum wireInEnum
+        wireOut  = fromEnum wireOutEnum
+        n        = letters transform
+        ni       = fromIntegral n
+        entirety = map (encrypt transform . toEnum) [0..(n-1)]
+        allWires = zip (map toEnum [0..]) entirety
+        drawAllWires = mconcat $ map (uncurry drawWire) allWires
+        drawWire :: (Enum e, Show e) => e -> e -> Diagram B
+        drawWire fe te =
             let
-                from = mod (ff-offset) n 
-                to = mod (tt-offset) n 
-                f = wd*(fromIntegral from-(fromIntegral n - 1)/2)
-                t = wd*(fromIntegral to-(fromIntegral n - 1)/2)
+                from = mod (fromEnum fe-offset) n 
+                to = mod (fromEnum te-offset) n 
+                f = wd*(fromIntegral from-(ni - 1)/2)
+                t = wd*(fromIntegral to-(ni - 1)/2)
                 outerLeftVertices = map p2 [(-rw-1.0,f),(-rw,f)]
                 outerRightVertices = map p2 [(rw+1.0,t),(rw,t)]
                 innerVertices = map p2 [
@@ -54,23 +55,28 @@ drawRotor (Rotor transform notches) wireIn wireOut offset =
                   | from == wireIn = red
                   | from == wireOut = red
                   | otherwise = gray
+
+                bindType :: a -> b -> b
+                bindType x y = y
             in
+                text (show fe) # translateX (-rw-1.0) # translateY (wd*(fromIntegral (fromEnum fe) - (ni-1)/2)) <>
                 fromVertices outerRightVertices # lc color # lwO 9 <>
                 fromVertices outerLeftVertices # lc color # lwO 9 <>
-                bspline innerVertices # lc color #lwO 3
-                --(fromVertices $ map p2 [(2.0,f),(-2.0,t)]) # lc color
-        drawAllWires = mconcat $ map (uncurry drawWire) allWires
+                bspline innerVertices # lc color # lwO 3 <>
+                fromVertices [p2 (-rw,f+wd/2), p2 (rw,f+wd/2)] # lcA (black `withOpacity` 0.3) 
+                
     in
-        rect (2*rw) (wd*(fromIntegral n)) <> drawAllWires
-                                      <> rect (2*rw) (wd*(fromIntegral n)) # fc lightgray
+        rect (2*rw) (wd*ni) <> drawAllWires
+                            <> rect (2*rw) (wd*ni) # fc lightgray
                                       
-drawRotor (Reflector transform notches) wireIn wireOut offset =
+drawRotor (Reflector transform notches) wireInEnum wireOutEnum offset =
     let
-        n = letters transform
+        wireIn   = fromEnum wireInEnum 
+        wireOut  = fromEnum wireOutEnum
+        n        = letters transform
+        ni       = fromIntegral n
         entirety :: [Int]
         entirety        = map (fromEnum . encrypt transform . toEnum) [0..(n-1)]
-        inverseEntirety :: [Int]
-        inverseEntirety = map (fromEnum . decrypt transform . toEnum) [0..(n-1)]
 
         nonRepeatingEntiretyBuilder ((x,y):xs) =
             if x `elem` (map snd xs)
@@ -80,10 +86,10 @@ drawRotor (Reflector transform notches) wireIn wireOut offset =
 
         allWires =  nonRepeatingEntiretyBuilder $ zip [0..] entirety
         drawWire :: Int -> Int -> Diagram B
-        drawWire ff tt =
+        drawWire fe te =
             let
-                from = mod (ff-offset) n 
-                to = mod (tt-offset) n 
+                from = mod (fromEnum fe-offset) n 
+                to = mod (fromEnum te-offset) n 
                 f = wd*(fromIntegral from-(fromIntegral n - 1)/2)
                 t = wd*(fromIntegral to-(fromIntegral n - 1)/2)
                 outerLeftVertices = map p2 [(-rw-1,t),(-rw,t)]
@@ -91,8 +97,8 @@ drawRotor (Reflector transform notches) wireIn wireOut offset =
 
                 innerVertices i = map p2 [
                     (-rw,f),
-                    (-rw+0.5 + (rw*1.5)*(i/fromIntegral n), f),
-                    (-rw+0.5 + (rw*1.5)*(i/fromIntegral n), t),
+                    (-rw+0.5 + (rw*2)*(i/fromIntegral n), f),
+                    (-rw+0.5 + (rw*2)*(i/fromIntegral n), t),
                     (-rw, t)]
 
                 color
@@ -100,6 +106,7 @@ drawRotor (Reflector transform notches) wireIn wireOut offset =
                   | from == wireOut = red
                   | otherwise = gray
             in
+                text (show fe) # translateX (-rw-1.0) # translateY (wd*(fromIntegral (fromEnum fe) - (ni-1)/2)) <>
                 fromVertices outerRightVertices # lc color # lwO 9 <>
                 fromVertices outerLeftVertices # lc color # lwO 9 <>
                 bspline (innerVertices (fromIntegral from)) # lc color #lwO 3
@@ -109,19 +116,15 @@ drawRotor (Reflector transform notches) wireIn wireOut offset =
         rect (2*rw) (wd*(fromIntegral n)) <> drawAllWires
                                       <> rect (2*rw) (wd*(fromIntegral n)) # fc lightgray
 
-drawEnigma :: (Enum e, Ord e) => EnigmaState e -> Int -> Diagram B
+drawEnigma :: (Enum e, Ord e, Show e) => EnigmaState e -> Int -> Diagram B
 drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) activeWire =
     let
         rotornum                  = length rotors
         letter                    = toEnum activeWire
-        --initWriter                = writer (letter, [letter]) 
         encryptionPathWriter      = evalState (tracedEncryptEnigma letter) enigma
         (cipher, encryptionPat)  = runWriter encryptionPathWriter
         encryptionPath =  Debug.Trace.trace (show $ map fromEnum encryptionPat) $ encryptionPat
 
-        --tupleAsList :: (e,e) -> [e]
-        --tupleAsList (x,y) = [x,y] 
-        --crimp :: (Enum e, Ord e) => [e] -> [(e,e)] --"folds" in the middle
         crimp xs = 
             let 
                 it = take (rotornum+2) (zip xs (reverse xs))
@@ -138,5 +141,5 @@ drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) acti
         (plugboardInOut, rotorsInOut, (reflectorIn, reflectorOut)) = inOut $ encryptionPath
     in
         hsep 0.0 [hsep 0.0 $ zipWith3 ( curry . curry
-            (\(rotor, ((wireIn, wireOut), pos)) -> drawRotor rotor (fromEnum wireIn) (fromEnum wireOut) pos)) rotors rotorsInOut positions,
-            drawRotor reflector (fromEnum reflectorIn) (fromEnum reflectorOut) 0]
+            (\(rotor, ((wireIn, wireOut), pos)) -> drawRotor rotor wireIn wireOut pos)) rotors rotorsInOut positions,
+            drawRotor reflector reflectorIn reflectorOut 0] # bgFrame 1.0 orange

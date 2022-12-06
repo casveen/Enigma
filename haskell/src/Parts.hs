@@ -64,7 +64,7 @@ m3Navy = mkEnigma (Plugboard idTransform) [i, ii, iii] reflectorB "AAA" "AAA"
 
 donitz = 
     let 
-        cartridge = Cartridge [viii,vi,v,beta] thinReflectorC [1,2,3,4]
+        cartridge = Cartridge [viii,vi,v,beta] thinReflectorC [5,2,6,3]
         plugboard = mkPlugboard [(A,E),(B,F),(C,M),(D,Q),(H,U),(J,N),(L,X),(P,R),(S,Z),(V,W),(G,G),(I,I),(K,K),(O,O),(T,T),(Y,Y)]
     in 
         Enigma plugboard cartridge
