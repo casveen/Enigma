@@ -17,6 +17,12 @@ class Cipher c where
     encrypt ::(Ord e, Enum e) => c e -> e -> e
     decrypt ::(Ord e, Enum e) => c e -> e -> e
     letters :: c e -> Int
+    encryptEntirety :: (Ord e, Enum e) => c e -> [e]
+    encryptEntirety c = map (encrypt c . toEnum) [0..(letters c-1)]
+    decryptEntirety :: (Ord e, Enum e) => c e -> [e]
+    decryptEntirety c = map (encrypt c . toEnum) [0..(letters c-1)]
+
+
 
 class (Cipher c) => MonadCipher c where
     monadicEncrypt :: (Ord e, Enum e, Monad m) => c e -> m e -> m e
@@ -37,15 +43,15 @@ class PolyalphabeticCipher c where
 class (PolyalphabeticCipher c) => PolyalphabeticMonoidCipher c where
     polyMonoidEncrypt :: (Monoid m) => c m e -> c m e
     polyMonoidDecrypt :: (Monoid m) => c m e -> c m e
-     
+
     --encryptText :: (Traversable t, Monad (c (t e))) => c (t e) l -> c (t e) l 
     --encryptText text = mapM polyEncrypt text
 
 --class (PolyalphabeticCipher c, Monad m) => MonadicPolyalphabeticCipher c m where
 --    monadicPolyEncrypt :: (Language l, Enum e, Monad m) => c (m e) l -> c (m e) l
 --    monadicPolyEncrypt cipher = 
-        
-        
+
+
 --        do
 --         mEncrypted <- polyEncrypt
 

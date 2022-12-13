@@ -22,6 +22,7 @@ import Plugboard (Plugboard(..))
 import Rotor(Rotor(..))
 import Control.Monad.Writer.Strict
 import Debug.Trace
+import Transform
 ----------------------------------------------
 --              ENIGMA                      --
 ----------------------------------------------    
@@ -37,6 +38,9 @@ instance (Show l) => Show (EnigmaState l) where
                         show p ++ "\n" ++
                         show c
 
+--composeTransforms =
+--getTransformFromEnigma (Enigma p c) = composeTransforms (getTransformFromCartridge c) p
+
 ----------------------------------------------
 --           STATEFUL ACTIONS               --
 ----------------------------------------------
@@ -48,6 +52,9 @@ getPlugboard = state $ \e@(Enigma p _) -> (p, e)
 
 getCartridge :: Enigma l (Cartridge l)
 getCartridge = state $ \e@(Enigma _ c) -> (c, e)
+
+--getTransform :: Enigma l (Transform l)
+--getTransform = state $ \e -> (getTransformFromEnigma e, e)
 
 step :: Enigma l ()
 step = state $ \(Enigma plugging c) -> ((), Enigma plugging (stepCartridge c))

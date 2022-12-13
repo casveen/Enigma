@@ -47,6 +47,7 @@ library
     , QuickCheck
     , base >=4.7 && <5
     , bimap
+    , criterion
     , diagrams-contrib
     , diagrams-lib
     , diagrams-svg
@@ -67,6 +68,7 @@ executable enigma-exe
     , QuickCheck
     , base >=4.7 && <5
     , bimap
+    , criterion
     , diagrams-contrib
     , diagrams-lib
     , diagrams-svg
@@ -89,6 +91,30 @@ test-suite enigma-test
     , QuickCheck
     , base >=4.7 && <5
     , bimap
+    , criterion
+    , diagrams-contrib
+    , diagrams-lib
+    , diagrams-svg
+    , enigma
+    , hmatrix
+    , hspec
+    , mtl
+  default-language: Haskell2010
+
+benchmark enigma-benchmark
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  other-modules:
+      Paths_enigma
+  hs-source-dirs:
+      benchmarks
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit
+    , QuickCheck
+    , base >=4.7 && <5
+    , bimap
+    , criterion
     , diagrams-contrib
     , diagrams-lib
     , diagrams-svg
