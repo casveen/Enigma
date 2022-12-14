@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Diagram(
     drawRotor,
     drawEnigma
@@ -7,18 +8,68 @@ import Enigma
 import Cartridge
 import Plugboard
 import Rotor
-import Transform
 import Cipher
-import Language
-import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
 import Debug.Trace
+import Data.Bifunctor()
 
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE TypeFamilies              #-}
 
-import Diagrams.Prelude
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+import Diagrams.Prelude hiding (offset, to, from, transform)
 import Diagrams.Backend.SVG.CmdLine
 
 wd :: Double
@@ -39,8 +90,8 @@ drawPlugboard (Plugboard transform) wireInEnum wireOutEnum =
         drawWire :: (Enum e, Show e) => e -> e -> Diagram B
         drawWire fe te =
             let
-                from = mod (fromEnum fe) n 
-                to = mod (fromEnum te) n 
+                from = mod (fromEnum fe) n
+                to = mod (fromEnum te) n
                 f = wd*(fromIntegral from-(ni - 1)/2)
                 t = wd*(fromIntegral to-(ni - 1)/2)
                 outerLeftVertices = map p2 [(-rw-1.0,f),(-rw,f)]
@@ -48,7 +99,7 @@ drawPlugboard (Plugboard transform) wireInEnum wireOutEnum =
                 innerVertices = map p2 [
                     (-rw,f),
                     (-0.5*rw, f),
-                    ((0.5*rw), t),
+                    (0.5*rw, t),
                     (rw, t)]
                 color
                   | from == wireIn = red
@@ -59,15 +110,13 @@ drawPlugboard (Plugboard transform) wireInEnum wireOutEnum =
                 fromVertices outerRightVertices # lc color # lwO 9 <>
                 fromVertices outerLeftVertices # lc color # lwO 9 <>
                 bspline innerVertices # lc color # lwO 3 <>
-                fromVertices [p2 (-rw,f+wd/2), p2 (rw,f+wd/2)] # lcA (black `withOpacity` 0.3) 
-                
+                fromVertices [p2 (-rw,f+wd/2), p2 (rw,f+wd/2)] # lcA (black `withOpacity` 0.3)
     in
         rect (2*rw) (wd*ni) <> drawAllWires
                             <> rect (2*rw) (wd*ni) # fc lightgray
 
---remember that the enigma offsets the notches as well with the ring setting!
 drawRotor :: (Enum e, Ord e, Show e) => Rotor e -> e -> e -> Int -> Diagram B
-drawRotor (Rotor transform notches) wireInEnum wireOutEnum offset =
+drawRotor (Rotor transform _) wireInEnum wireOutEnum offset =
     let
         wireIn   = fromEnum wireInEnum
         wireOut  = fromEnum wireOutEnum
@@ -79,8 +128,8 @@ drawRotor (Rotor transform notches) wireInEnum wireOutEnum offset =
         drawWire :: (Enum e, Show e) => e -> e -> Diagram B
         drawWire fe te =
             let
-                from = mod (fromEnum fe-offset) n 
-                to = mod (fromEnum te-offset) n 
+                from = mod (fromEnum fe-offset) n
+                to = mod (fromEnum te-offset) n
                 f = wd*(fromIntegral from-(ni - 1)/2)
                 t = wd*(fromIntegral to-(ni - 1)/2)
                 outerLeftVertices = map p2 [(-rw-1.0,f),(-rw,f)]
@@ -88,7 +137,7 @@ drawRotor (Rotor transform notches) wireInEnum wireOutEnum offset =
                 innerVertices = map p2 [
                     (-rw,f),
                     (-0.5*rw, f),
-                    ((0.5*rw), t),
+                    (0.5*rw, t),
                     (rw, t)]
                 color
                   | from == wireIn = red
@@ -99,15 +148,14 @@ drawRotor (Rotor transform notches) wireInEnum wireOutEnum offset =
                 fromVertices outerRightVertices # lc color # lwO 9 <>
                 fromVertices outerLeftVertices # lc color # lwO 9 <>
                 bspline innerVertices # lc color # lwO 3 <>
-                fromVertices [p2 (-rw,f+wd/2), p2 (rw,f+wd/2)] # lcA (black `withOpacity` 0.3) 
-                
+                fromVertices [p2 (-rw,f+wd/2), p2 (rw,f+wd/2)] # lcA (black `withOpacity` 0.3)
     in
         rect (2*rw) (wd*ni) <> drawAllWires
                             <> rect (2*rw) (wd*ni) # fc lightgray
-                                      
-drawRotor (Reflector transform notches) wireInEnum wireOutEnum offset =
+
+drawRotor (Reflector transform _) wireInEnum wireOutEnum offset =
     let
-        wireIn   = fromEnum wireInEnum 
+        wireIn   = fromEnum wireInEnum
         wireOut  = fromEnum wireOutEnum
         n        = letters transform
         ni       = fromIntegral n
@@ -115,7 +163,7 @@ drawRotor (Reflector transform notches) wireInEnum wireOutEnum offset =
         entirety        = map (fromEnum . encrypt transform . toEnum) [0..(n-1)]
 
         nonRepeatingEntiretyBuilder ((x,y):xs) =
-            if x `elem` (map snd xs)
+            if x `elem` map snd xs
                 then (x,y):nonRepeatingEntiretyBuilder xs
                 else nonRepeatingEntiretyBuilder xs
         nonRepeatingEntiretyBuilder [] = []
@@ -124,8 +172,8 @@ drawRotor (Reflector transform notches) wireInEnum wireOutEnum offset =
         drawWire :: Int -> Int -> Diagram B
         drawWire fe te =
             let
-                from = mod (fromEnum fe-offset) n 
-                to = mod (fromEnum te-offset) n 
+                from = mod (fromEnum fe-offset) n
+                to = mod (fromEnum te-offset) n
                 f = wd*(fromIntegral from-(fromIntegral n - 1)/2)
                 t = wd*(fromIntegral to-(fromIntegral n - 1)/2)
                 outerLeftVertices = map p2 [(-rw-1,t),(-rw,t)]
@@ -133,8 +181,8 @@ drawRotor (Reflector transform notches) wireInEnum wireOutEnum offset =
 
                 innerVertices i = map p2 [
                     (-rw,f),
-                    (-rw+0.5 + (rw*2)*(i/fromIntegral n), f),
-                    (-rw+0.5 + (rw*2)*(i/fromIntegral n), t),
+                    (-rw+0.5 + rw*2*(i/fromIntegral n), f),
+                    (-rw+0.5 + rw*2*(i/fromIntegral n), t),
                     (-rw, t)]
 
                 color
@@ -146,39 +194,37 @@ drawRotor (Reflector transform notches) wireInEnum wireOutEnum offset =
                 fromVertices outerRightVertices # lc color # lwO 9 <>
                 fromVertices outerLeftVertices # lc color # lwO 9 <>
                 bspline (innerVertices (fromIntegral from)) # lc color #lwO 3
-                --(fromVertices $ map p2 [(2.0,f),(-2.0,t)]) # lc color
         drawAllWires = mconcat $ map (uncurry drawWire) allWires
     in
-        rect (2*rw) (wd*(fromIntegral n)) <> drawAllWires
-                                      <> rect (2*rw) (wd*(fromIntegral n)) # fc lightgray
+        rect (2*rw) (wd*fromIntegral n) <> drawAllWires
+                                      <> rect (2*rw) (wd*fromIntegral n) # fc lightgray
 
---draw labels between rotors
 --
-
+--TODO: draw labels between rotors
+--
 
 drawEnigma :: (Enum e, Ord e, Show e) => EnigmaState e -> Int -> Diagram B
 drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) activeWire =
     let
         rotornum                  = length rotors
         letter                    = toEnum activeWire
-        encryptionPathWriter      = evalState (tracedEncryptEnigma letter) enigma
-        (cipher, encryptionPat)  = runWriter encryptionPathWriter
-        encryptionPath =  Debug.Trace.trace (show $ map fromEnum encryptionPat) $ encryptionPat
+        encryptionPathWriter      = tracedEncrypt enigma letter
+        (_, encryptionPat)           = runWriter encryptionPathWriter
+        encryptionPath =  Debug.Trace.trace (show $ map fromEnum encryptionPat) encryptionPat
 
-        crimp xs = 
-            let 
+        crimp xs =
+            let
                 it = take (rotornum+2) (zip xs (reverse xs))
             in
-                Debug.Trace.trace (show $ map (\(x,y) -> (fromEnum x, fromEnum y)) it) $ it
-        --inOut :: (Enum e, Ord e) => [e] -> ((e,e),[(e,e)],(e,e)) -- TODO to int int, since thats how used in drawrotoer
+                Debug.Trace.trace (show $ map (bimap fromEnum fromEnum) it) it
         inOut xs =
             (let
                 (pout:crimped) = crimp xs
                 rout           = take rotornum crimped
-                refout         = head $ drop rotornum crimped --unsafe
+                refout         = (crimped !! max 0 rotornum) --unsafe
             in
-                Debug.Trace.trace (show $ map (\(x,y) -> (fromEnum x, fromEnum y)) rout) $ (pout, rout, refout))
-        ((plugboardIn, plugboardOut), rotorsInOut, (reflectorIn, reflectorOut)) = inOut $ encryptionPath
+                Debug.Trace.trace (show $ map (bimap fromEnum fromEnum) rout) (pout, rout, refout))
+        ((plugboardIn, plugboardOut), rotorsInOut, (reflectorIn, reflectorOut)) = inOut encryptionPath
     in
         hsep 0.0 [
             drawPlugboard plugboard plugboardIn plugboardOut,

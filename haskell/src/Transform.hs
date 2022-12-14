@@ -15,6 +15,9 @@ import Data.Bimap
 --data Transform l = Transform Permute l
 newtype Transform l = Transform (Bimap l l) deriving (Eq)
 
+
+
+
 instance (Show l) => Show (Transform l) where
     show (Transform m) = show $ toList m --foldr1 (++) (fmap show (keys m))
 --for example 

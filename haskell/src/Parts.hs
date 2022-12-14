@@ -1,11 +1,13 @@
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 module Parts where
 
-import Enigma --(transformFromLanguage, readLetters, , , Plugboard, Rotor, Enigma, Cartridge)
-import Rotor
-import Plugboard
-import Transform
-import Language
-import Cartridge
+import Enigma ( mkEnigma, EnigmaState(Enigma) ) --(transformFromLanguage, readLetters, , , Plugboard, Rotor, Enigma, Cartridge)
+import Rotor ( Rotor(Reflector, Rotor) )
+import Plugboard ( Plugboard(Plugboard), mkPlugboard )
+import Transform ( transformFromLanguage )
+import Language( readLetters, Letter(..) )
+import Cartridge ( Cartridge(Cartridge) )
 
 -----------------------------------------------------------------------
 --                          ENIGMA WHEELS                            --
@@ -74,9 +76,9 @@ donitzRotors = [ii,iii,v,v,i,iii,iv,ii,iii,i,ii] --NO
 donitzRingSetting = "AAAAAAAAAAA" --NO
 donitzRotorPosition = "AAAAAAAAAA" --no
 
-identityPlugboard = (Plugboard idTransform)
+identityPlugboard = Plugboard idTransform
 
-allPlugboards26 = [(Plugboard idTransform)]
+allPlugboards26 = [Plugboard idTransform]
 allRotors26 = [i, ii, iii, iv, v, vi, vii, viii, ic, iic, iiic, beta, gamma]
 allReflectors26 = [ukw, reflectorA, reflectorB, reflectorC, thinReflectorB, thinReflectorC]
 allRotors4 = [im, iim, iiim, ukwm]

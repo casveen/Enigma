@@ -1,11 +1,10 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Enigma (
 Enigma,
 EnigmaState(..),
 mkEnigma,
 step,
-enc,
 encryptText,
-tracedEncryptEnigma,
 getPlugboard,
 getCartridge,
 getRotorPosition, 
@@ -15,14 +14,12 @@ initialize
 
 --import Control.Monad.State
 import Control.Monad.State.Strict
-import Language
-import Cipher (Cipher(..), PolyalphabeticCipher(..))
-import Cartridge (Cartridge(..), stepCartridge, tracedEncryptCartridge)
+import Language ( safelyReadLetters )
+import Cipher (Cipher(..), TraceableCipher(..), logTrace)
+import Cartridge (Cartridge(..), stepCartridge)
 import Plugboard (Plugboard(..))
 import Rotor(Rotor(..))
-import Control.Monad.Writer.Strict
-import Debug.Trace
-import Transform
+--import Control.Monad.Writer.Strict
 ----------------------------------------------
 --              ENIGMA                      --
 ----------------------------------------------    
@@ -32,7 +29,7 @@ data EnigmaState l = Enigma (Plugboard l) (Cartridge l) deriving (Eq)
 {-instance HasLanguage EnigmaState where
     getLanguage (Enigma p c) = getLanguage c-}
 instance (Show l) => Show (EnigmaState l) where
-    show e@(Enigma p c) = "Enigma(" ++ ")\n" ++
+    show (Enigma p c) = "Enigma(" ++ ")\n" ++
                         "ID  POS                                 NOTCH\n" ++
                         "          ABCDEFGHIJKLMNOPQRSTUVWXYZ\n" ++
                         show p ++ "\n" ++
@@ -63,12 +60,9 @@ step = state $ \(Enigma plugging c) -> ((), Enigma plugging (stepCartridge c))
 enc :: (Enum l, Ord l) => l -> Enigma l l
 enc plaintext = do
     step
-    rp <- getRotorPosition
     plugboard  <- getPlugboard
     cartridge  <- getCartridge
     return $
-            --writer ()
-
             decrypt plugboard
             (encrypt cartridge
             (encrypt plugboard plaintext))
@@ -78,6 +72,7 @@ getRotorPosition = state $ \e@(Enigma _ (Cartridge _ _ rotorPosition)) -> (rever
 
 
 
+displace :: Int -> Rotor e -> Int -> Rotor e
 displace n (Rotor t is) j     = Rotor t $ map (\i -> mod (i-j) n) is
 displace n (Reflector t is) j = Reflector t $ map (\i -> mod (i-j) n) is
 
@@ -90,9 +85,9 @@ setRotorPosition ringSetting rotorPosition = do
     let nrs = zipWith (\rs rp -> mod (fromEnum rp - fromEnum rs) n) ringSetting rotorPosition
     let displacedRotors = zipWith (displace n) rotors (map fromEnum (reverse ringSetting)) 
     state $ \(Enigma plugging (Cartridge _ rf _)) -> ((), Enigma plugging (Cartridge displacedRotors rf (reverse nrs)))
-
-
-
+----------------------------------------------
+--                   Instances              --
+----------------------------------------------
 instance Cipher EnigmaState where
     encrypt (Enigma plugboard cartridge) plaintext =
             decrypt plugboard
@@ -101,11 +96,16 @@ instance Cipher EnigmaState where
     decrypt = encrypt
     letters (Enigma _ cartridge) = letters cartridge
 
---instance Cipher (State (EnigmaState l)) where 
+instance TraceableCipher EnigmaState where 
+    tracedEncrypt (Enigma plugboard cartridge) plaintext = 
+        do --in the writer monad
+            res <- logTrace   plaintext
+            res <- logTrace $ encrypt plugboard res
+            res <- tracedEncrypt cartridge res  
+            logTrace $ encrypt plugboard res 
 
 
---tracedEncrypt :: (Language l, Enum o) => o -> MonadWriter (Enigma o l) a
-
+{-
 tracedEncryptEnigma :: (Enum e, Ord e, Monoid (w e), Monad w) => e -> Enigma e (Writer (w e) e)
 tracedEncryptEnigma plaintext = do --enigma context
     --step
@@ -119,7 +119,7 @@ tracedEncryptEnigma plaintext = do --enigma context
         let decryption = encrypt plugboard res 
         writer (decryption, return decryption)
         
-        
+        -}
         
         
 
@@ -141,6 +141,7 @@ tracedEncryptEnigma plaintext = do --enigma context
     polyMonoidDecrypt = polyMonoidEncrypt-}
 
 --encryptText :: (Traversable t) => Enigma (t o) l
+encryptText :: (Enum a, Ord a) => [a] -> Enigma a [a]
 encryptText (x:xs) = do
     c <-  enc x
     cs <- encryptText xs
@@ -148,7 +149,7 @@ encryptText (x:xs) = do
 encryptText [] = do return []
 
 
-mkEnigma :: (Enum e, Ord e) =>
+mkEnigma :: 
     Plugboard e ->
     [Rotor e] ->
     Rotor e ->

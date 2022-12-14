@@ -8,6 +8,10 @@ import Cipher (Cipher(..))
 --              ROTOR                       --
 ----------------------------------------------    
 data Rotor e = Rotor (Transform e) [Int] | Reflector (Transform e) [Int] deriving(Eq)
+
+-----------------------------------------------
+--             INSTANCES                     --
+-----------------------------------------------
 instance (Show e) => Show (Rotor e) where
     show (Rotor t ns) = "|" ++ show t ++ "| - "
                      ++ show (map (pad0 2) ns)
@@ -25,12 +29,6 @@ instance Cipher Rotor where
 ----------------------------------------------
 --          HELPER FUNCTIONS                --
 ----------------------------------------------  
+pad0 :: Show p => Int -> p -> [Char]
 pad0 n x = take ( n - length sx) (cycle "0") ++ sx
     where sx = show x
-
---fpow 0 f = id
---fpow n f = f . fpow (n-1) f
-
------------------------------------------------
---             INSTANCES                     --
------------------------------------------------
