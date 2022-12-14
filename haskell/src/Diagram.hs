@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 module Diagram(
     drawRotor,
     drawEnigma
@@ -16,98 +17,128 @@ import Data.Bifunctor()
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE TypeFamilies              #-}
-import Diagrams.Prelude hiding (offset, to, from, transform)
+import Diagrams.Prelude hiding (offset, to, from, transform, sep, width, height, lineWidth)
 import Diagrams.Backend.SVG.CmdLine
+import Control.Monad.Reader (Reader, asks, ask, runReader)
+import Language (shiftLetter)
 
-wd :: Double
-wd = 2.0
-rw :: Double
-rw = 10.0
+--wd :: Double
+--wd = 2.0
+--rw :: Double
+--rw = 10.0
 
-drawPlugboard :: (Enum e, Ord e, Show e) => Plugboard e -> e -> e -> Diagram B
-drawPlugboard (Plugboard transform) wireInEnum wireOutEnum =
+data TransformShape = TransformShape {
+    transformWidth :: Double,
+    transformHeight :: Double,
+    transformLineWidth :: Double,
+    transformOuterLineWidth :: Double,
+    transformDeadZoneWidth :: Double,
+    transformBezierSmoothness :: Double, --1 very smooth, 0 very sharp
+    transformLetterSize :: Double,
+    transformLetterOffset :: Double,
+    transformSepLineColor :: AlphaColour Double,
+    transformActiveWireColor :: AlphaColour Double,
+    transformInactiveWireColor :: AlphaColour Double,
+    transformBgColor :: AlphaColour Double
+}
+
+defaultShape :: TransformShape
+defaultShape = TransformShape 10.0 26.0 3.0 9.0 4.0 0.5 2.0 1.0 (black `withOpacity` 0.1) (red `withOpacity` 1.0) (darkgray `withOpacity` 1.0) (lightgray `withOpacity` 1.0)
+
+drawRotorWire :: (Eq e, Enum e, Show e) => e -> e -> e -> e -> Int -> Int -> Reader TransformShape (Diagram B)
+drawRotorWire from to wireIn wireOut n offset = do
+    (TransformShape width height lineWidth outerLineWidth deadZoneWidth smoothness _ letterOffset sepLineColor activeWireColor inactiveWireColor _) <- ask
+
     let
-        wireIn   = fromEnum wireInEnum
-        wireOut  = fromEnum wireOutEnum
-        n        = letters transform
-        ni       = fromIntegral n
+        fromShifted = shiftLetter from (-offset) n
+        sep = height / fromIntegral n
+        f = sep*fromIntegral (mod (fromEnum from-offset) n)
+        t = sep*fromIntegral (mod (fromEnum to-offset) n)
+        outerLeftVertices = map p2 [
+            (-(width + deadZoneWidth)/2,f),
+            (-width/2,f)
+            ]
+        outerRightVertices = map p2 [
+            ((width + deadZoneWidth)/2,t),
+            (width/2,t)
+            ]
+        innerVertices = map p2 [
+            (-width/2,f),
+            (-width/2*smoothness,f),
+            (width/2*smoothness,t),
+            (width/2,t)
+            ]
+        color
+            | fromShifted == wireIn  = activeWireColor
+            | fromShifted == wireOut = activeWireColor
+            | otherwise              = inactiveWireColor
+    return $
+        text (show fromShifted) # translateX (-width/2-letterOffset)
+                                # translateY f                           <>
+        fromVertices outerRightVertices # lcA color # lwO outerLineWidth <>
+        fromVertices outerLeftVertices # lcA color # lwO outerLineWidth  <>
+        bspline innerVertices # lcA color # lwO lineWidth                <>
+        fromVertices [p2 (-width/2,f+sep/2), p2 (width/2,f+sep/2)] # lcA sepLineColor # lwO 1.0
+
+drawReflectorWire :: (Eq e, Enum e, Show e) => e -> e -> e -> e -> Int -> Int -> Reader TransformShape (Diagram B)
+drawReflectorWire from to wireIn wireOut n offset = do
+    (TransformShape width height lineWidth outerLineWidth deadZoneWidth _ _ letterOffset sepLineColor activeWireColor inactiveWireColor _) <- ask
+    let
+        fromShifted = shiftLetter from (-offset) n
+        sep = height / fromIntegral n
+        f = sep*fromIntegral (mod (fromEnum from-offset) n)
+        t = sep*fromIntegral (mod (fromEnum to-offset) n)
+        outerLeftVertices = map p2 [
+            (-(width + deadZoneWidth)/2,f),
+            (-width/2,f)
+            ]
+        outerRightVertices = map p2 [
+            (-(width + deadZoneWidth)/2,t),
+            (-width/2,t)
+            ]
+        innerVertices = map p2 [
+            (-width/2,f),
+            (-width/2+fromIntegral (fromEnum from)/fromIntegral n*width, f),
+            (-width/2+fromIntegral (fromEnum from)/fromIntegral n*width, t),
+            (-width/2,t)
+            ]
+        color
+            | fromShifted == wireIn  = activeWireColor
+            | fromShifted == wireOut = activeWireColor
+            | otherwise       = inactiveWireColor
+    return $
+        text (show fromShifted) # translateX (-width/2-letterOffset)
+                                # translateY f                           <>
+        fromVertices outerRightVertices # lcA color # lwO outerLineWidth <>
+        fromVertices outerLeftVertices # lcA color # lwO outerLineWidth  <>
+        bspline innerVertices # lcA color # lwO lineWidth                <>
+        fromVertices [p2 (-width/2,f+sep/2), p2 (width/2,f+sep/2)] # lcA sepLineColor # lwO 1.0 <>
+        fromVertices [p2 (-width/2,t+sep/2), p2 (width/2,t+sep/2)] # lcA sepLineColor # lwO 1.0
+
+drawRotor :: (Enum e, Ord e, Show e) => Rotor e -> e -> e -> Int -> Reader TransformShape (Diagram B)
+drawRotor (Rotor transform _) wireInEnum wireOutEnum offset = do
+    width   <- asks transformWidth
+    height  <- asks transformHeight
+    bgColor <- asks transformBgColor
+
+    let n        = letters transform
         entirety = map (encrypt transform . toEnum) [0..(n-1)]
         allWires = zip (map toEnum [0..]) entirety
-        drawAllWires = mconcat $ map (uncurry drawWire) allWires
-        drawWire :: (Enum e, Show e) => e -> e -> Diagram B
-        drawWire fe te =
-            let
-                from = mod (fromEnum fe) n
-                to = mod (fromEnum te) n
-                f = wd*(fromIntegral from-(ni - 1)/2)
-                t = wd*(fromIntegral to-(ni - 1)/2)
-                outerLeftVertices = map p2 [(-rw-1.0,f),(-rw,f)]
-                outerRightVertices = map p2 [(rw+1.0,t),(rw,t)]
-                innerVertices = map p2 [
-                    (-rw,f),
-                    (-0.5*rw, f),
-                    (0.5*rw, t),
-                    (rw, t)]
-                color
-                  | from == wireIn = red
-                  | from == wireOut = red
-                  | otherwise = gray
-            in
-                text (show fe) # translateX (-rw-1.0) # translateY (wd*(fromIntegral (fromEnum fe) - (ni-1)/2)) <>
-                fromVertices outerRightVertices # lc color # lwO 9 <>
-                fromVertices outerLeftVertices # lc color # lwO 9 <>
-                bspline innerVertices # lc color # lwO 3 <>
-                fromVertices [p2 (-rw,f+wd/2), p2 (rw,f+wd/2)] # lcA (black `withOpacity` 0.3)
-    in
-        rect (2*rw) (wd*ni) <> drawAllWires
-                            <> rect (2*rw) (wd*ni) # fc lightgray
 
-drawRotor :: (Enum e, Ord e, Show e) => Rotor e -> e -> e -> Int -> Diagram B
-drawRotor (Rotor transform _) wireInEnum wireOutEnum offset =
-    let
-        wireIn   = fromEnum wireInEnum
-        wireOut  = fromEnum wireOutEnum
-        n        = letters transform
-        ni       = fromIntegral n
-        entirety = map (encrypt transform . toEnum) [0..(n-1)]
-        allWires = zip (map toEnum [0..]) entirety
-        drawAllWires = mconcat $ map (uncurry drawWire) allWires
-        drawWire :: (Enum e, Show e) => e -> e -> Diagram B
-        drawWire fe te =
-            let
-                from = mod (fromEnum fe-offset) n
-                to = mod (fromEnum te-offset) n
-                f = wd*(fromIntegral from-(ni - 1)/2)
-                t = wd*(fromIntegral to-(ni - 1)/2)
-                outerLeftVertices = map p2 [(-rw-1.0,f),(-rw,f)]
-                outerRightVertices = map p2 [(rw+1.0,t),(rw,t)]
-                innerVertices = map p2 [
-                    (-rw,f),
-                    (-0.5*rw, f),
-                    (0.5*rw, t),
-                    (rw, t)]
-                color
-                  | from == wireIn = red
-                  | from == wireOut = red
-                  | otherwise = gray
-            in
-                text (show fe) # translateX (-rw-1.0) # translateY (wd*(fromIntegral (fromEnum fe) - (ni-1)/2)) <>
-                fromVertices outerRightVertices # lc color # lwO 9 <>
-                fromVertices outerLeftVertices # lc color # lwO 9 <>
-                bspline innerVertices # lc color # lwO 3 <>
-                fromVertices [p2 (-rw,f+wd/2), p2 (rw,f+wd/2)] # lcA (black `withOpacity` 0.3)
-    in
-        rect (2*rw) (wd*ni) <> drawAllWires
-                            <> rect (2*rw) (wd*ni) # fc lightgray
+    allWiresDiagrams <- mapM (\(x,y) -> drawRotorWire x y wireInEnum wireOutEnum n offset) allWires
+    allWiresDiagram  <- foldM (\acc x -> return $ acc <> x) mempty allWiresDiagrams
 
-drawRotor (Reflector transform _) wireInEnum wireOutEnum offset =
-    let
-        wireIn   = fromEnum wireInEnum
-        wireOut  = fromEnum wireOutEnum
-        n        = letters transform
-        ni       = fromIntegral n
-        entirety :: [Int]
-        entirety        = map (fromEnum . encrypt transform . toEnum) [0..(n-1)]
+    return $
+        rect width height                          <>
+        allWiresDiagram   # translateY ((1/fromIntegral n-1)*height/2) <>
+        rect width height # fcA bgColor
+
+drawRotor (Reflector transform _) wireInEnum wireOutEnum offset = do
+    width   <- asks transformWidth
+    height  <- asks transformHeight
+    bgColor <- asks transformBgColor
+
+    let n        = letters transform
 
         nonRepeatingEntiretyBuilder ((x,y):xs) =
             if x `elem` map snd xs
@@ -115,36 +146,40 @@ drawRotor (Reflector transform _) wireInEnum wireOutEnum offset =
                 else nonRepeatingEntiretyBuilder xs
         nonRepeatingEntiretyBuilder [] = []
 
-        allWires =  nonRepeatingEntiretyBuilder $ zip [0..] entirety
-        drawWire :: Int -> Int -> Diagram B
-        drawWire fe te =
-            let
-                from = mod (fromEnum fe-offset) n
-                to = mod (fromEnum te-offset) n
-                f = wd*(fromIntegral from-(fromIntegral n - 1)/2)
-                t = wd*(fromIntegral to-(fromIntegral n - 1)/2)
-                outerLeftVertices = map p2 [(-rw-1,t),(-rw,t)]
-                outerRightVertices = map p2 [(-rw-1,f),(-rw,f)]
+        entirety = map (encrypt transform . toEnum) [0..(n-1)]
 
-                innerVertices i = map p2 [
-                    (-rw,f),
-                    (-rw+0.5 + rw*2*(i/fromIntegral n), f),
-                    (-rw+0.5 + rw*2*(i/fromIntegral n), t),
-                    (-rw, t)]
+        allWires = nonRepeatingEntiretyBuilder $ zip (map toEnum [0..]) entirety
 
-                color
-                  | from == wireIn = red
-                  | from == wireOut = red
-                  | otherwise = gray
-            in
-                text (show fe) # translateX (-rw-1.0) # translateY (wd*(fromIntegral (fromEnum fe) - (ni-1)/2)) <>
-                fromVertices outerRightVertices # lc color # lwO 9 <>
-                fromVertices outerLeftVertices # lc color # lwO 9 <>
-                bspline (innerVertices (fromIntegral from)) # lc color #lwO 3
-        drawAllWires = mconcat $ map (uncurry drawWire) allWires
-    in
-        rect (2*rw) (wd*fromIntegral n) <> drawAllWires
-                                      <> rect (2*rw) (wd*fromIntegral n) # fc lightgray
+    allWiresDiagrams <- mapM (\(x,y) -> drawReflectorWire x y wireInEnum wireOutEnum n offset) allWires
+    allWiresDiagram  <- foldM (\acc x -> return $ acc <> x) mempty allWiresDiagrams
+
+    return $
+        rect width height                                              <>
+        allWiresDiagram   # translateY ((1/fromIntegral n-1)*height/2) <>
+        rect width height # fcA bgColor
+
+
+
+drawPlugboard :: (Enum e, Ord e, Show e) => Plugboard e -> e -> e -> Reader TransformShape (Diagram B)
+drawPlugboard (Plugboard transform) wireInEnum wireOutEnum = do
+    width   <- asks transformWidth
+    height  <- asks transformHeight
+    bgColor <- asks transformBgColor
+
+    let n        = letters transform
+        entirety = map (encrypt transform . toEnum) [0..(n-1)]
+        allWires = zip (map toEnum [0..]) entirety
+
+    allWiresDiagrams <- mapM (\(x,y) -> drawRotorWire x y wireInEnum wireOutEnum n 0) allWires
+    allWiresDiagram  <- foldM (\acc x -> return $ acc <> x) mempty allWiresDiagrams
+
+    return $
+        rect width height                          <>
+        allWiresDiagram   # translateY ((1/fromIntegral n-1)*height/2) <>
+        rect width height # fcA bgColor
+
+
+
 
 --
 --TODO: draw labels between rotors
@@ -156,8 +191,7 @@ drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) acti
         rotornum                  = length rotors
         letter                    = toEnum activeWire
         encryptionPathWriter      = tracedEncrypt enigma letter
-        (_, encryptionPat)           = runWriter encryptionPathWriter
-        encryptionPath =  Debug.Trace.trace (show $ map fromEnum encryptionPat) encryptionPat
+        (_, encryptionPath)       = runWriter encryptionPathWriter
 
         crimp xs =
             let
@@ -172,8 +206,15 @@ drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) acti
             in
                 Debug.Trace.trace (show $ map (bimap fromEnum fromEnum) rout) (pout, rout, refout))
         ((plugboardIn, plugboardOut), rotorsInOut, (reflectorIn, reflectorOut)) = inOut encryptionPath
+
+        --make diagrams
+        plugboardD = runReader (drawPlugboard plugboard plugboardIn plugboardOut) defaultShape
+        rotorsL    = zipWith3 ( curry . curry (\(rotor, ((wireIn, wireOut), pos)) -> drawRotor rotor wireIn wireOut pos)) rotors rotorsInOut positions
+        rotorsD    = map (`runReader` defaultShape) rotorsL
+        reflectorD = runReader (drawRotor reflector reflectorIn reflectorOut 0) defaultShape
     in
         hsep 0.0 [
-            drawPlugboard plugboard plugboardIn plugboardOut,
-            hsep 0.0 $ zipWith3 ( curry . curry (\(rotor, ((wireIn, wireOut), pos)) -> drawRotor rotor wireIn wireOut pos)) rotors rotorsInOut positions,
-            drawRotor reflector reflectorIn reflectorOut 0] # bgFrame 1.0 orange
+            plugboardD,
+            hsep 0.0 rotorsD,
+            reflectorD
+            ] # bgFrame 1.0 orange
