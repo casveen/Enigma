@@ -1,12 +1,13 @@
 import Criterion.Main
 import Cartridge 
-import Cipher
+import Cipher()
 import Enigma
 import Language
 import Parts
 import Control.Monad.State.Strict
 import Plugboard
 
+donitzCipherText :: String
 donitzCipherText = "LANOTCTOUARBBFPMHPHGCZXTDYGAHGUFXGEWKBLKGJWLQXXTGPJJAVTOCKZFSLPPQIHZFX" ++
                               "OEBWIIEKFZLCLOAQJULJOYHSSMBBGWHZANVOIIPYRBRTDJQDJJOQKCXWDNBBTYVXLYTAPG" ++
                               "VEATXSONPNYNQFUDBBHHVWEPYEYDOHNLXKZDNWRHDUWUJUMWWVIIWZXIVIUQDRHYMNCYEF" ++
@@ -14,7 +15,7 @@ donitzCipherText = "LANOTCTOUARBBFPMHPHGCZXTDYGAHGUFXGEWKBLKGJWLQXXTGPJJAVTOCKZF
                               "HJOQIHORTDJDBWXEMEAYXGYQXOHFDMYUXXNOJAZRSGHPLWMLRECWWUTLRTTVLBHYOORGLG" ++
                               "OWUXNXHMHYFAACQEKTHSJW"
 
--- Our benchmark harness.
+main :: IO ()
 main = do 
   let cartridge = Cartridge [viii,vi,v,beta] thinReflectorC [0,0,0]
   let plugboard = mkPlugboard [(A,E),(B,F),(C,M),(D,Q),(H,U),(J,N),(L,X),(P,R),(S,Z),(V,W),(G,G),(I,I),(K,K),(O,O),(T,T),(Y,Y)]

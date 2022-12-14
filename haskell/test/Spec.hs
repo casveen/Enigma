@@ -1,7 +1,6 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
 import Parts
-import Test
-import Rotor
-import Test.HUnit
 import Language
 import Test.Hspec
 import Test.QuickCheck
@@ -76,7 +75,7 @@ cartridgeSpec = describe "Testing cartridge spec." $ do
         it "should encrypt in a given pattern" $
             map (encrypt specificCartridge) [A .. F] `shouldBe` [D,E,F,A,B,C]  -}
 
-
+donitzCipherText :: String
 donitzCipherText = "LANOTCTOUARBBFPMHPHGCZXTDYGAHGUFXGEWKBLKGJWLQXXTGPJJAVTOCKZFSLPPQIHZFX" ++
                               "OEBWIIEKFZLCLOAQJULJOYHSSMBBGWHZANVOIIPYRBRTDJQDJJOQKCXWDNBBTYVXLYTAPG" ++
                               "VEATXSONPNYNQFUDBBHHVWEPYEYDOHNLXKZDNWRHDUWUJUMWWVIIWZXIVIUQDRHYMNCYEF" ++
@@ -189,8 +188,7 @@ tracedEncryptionSpec =
     let enigma    = Enigma plugboard cartridge
     it "should properly trace encryptions" $ do
         let correctWriter = writer (N, [A,E,L,Z,J,N])
-        let trace         = tracedEncryptEnigma A
-        let actualWriter  = evalState trace enigma
+        let actualWriter  = tracedEncrypt enigma A
         actualWriter `shouldBe` correctWriter
         --A `shouldBe` B
 
@@ -220,9 +218,10 @@ tracedEncryptionSpec =
 
 
 
-
+reencryptionProp :: (Show a, Cipher c, Ord a, Enum a) => c a -> a -> Property
 reencryptionProp c p = decrypt c (encrypt c p) === p
 
+main :: IO ()
 main = hspec $ do
     tracedEncryptionSpec
     transformSpec
