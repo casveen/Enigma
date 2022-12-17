@@ -2,7 +2,8 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 module Diagram(
     drawRotor,
-    drawEnigma
+    drawEnigma,
+    defaultShape
 ) where
 
 import Enigma
@@ -17,10 +18,33 @@ import Data.Bifunctor()
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE TypeFamilies              #-}
-import Diagrams.Prelude hiding (offset, to, from, transform, sep, width, height, lineWidth)
+import Diagrams.Prelude
+    ( orange,
+      bgFrame,
+      hsep,
+      fcA,
+      rect,
+      bspline,
+      lwO,
+      lcA,
+      fromVertices,
+      translateY,
+      translateX,
+      (#),
+      text,
+      p2,
+      lightgray,
+      darkgray,
+      red,
+      withOpacity,
+      black,
+      Bifunctor(bimap),
+      Diagram,
+      AlphaColour )
 import Diagrams.Backend.SVG.CmdLine
 import Control.Monad.Reader (Reader, asks, ask, runReader)
 import Language (shiftLetter)
+import Data.List (zip4)
 
 --wd :: Double
 --wd = 2.0
@@ -43,11 +67,11 @@ data TransformShape = TransformShape {
 }
 
 defaultShape :: TransformShape
-defaultShape = TransformShape 10.0 26.0 3.0 9.0 4.0 0.5 2.0 1.0 (black `withOpacity` 0.1) (red `withOpacity` 1.0) (darkgray `withOpacity` 1.0) (lightgray `withOpacity` 1.0)
+defaultShape = TransformShape 10.0 40.0 3.0 12.0 3.0 0.6 0.5 1.0 (black `withOpacity` 0.1) (red `withOpacity` 1.0) (darkgray `withOpacity` 1.0) (lightgray `withOpacity` 1.0)
 
 drawRotorWire :: (Eq e, Enum e, Show e) => e -> e -> e -> e -> Int -> Int -> Reader TransformShape (Diagram B)
 drawRotorWire from to wireIn wireOut n offset = do
-    (TransformShape width height lineWidth outerLineWidth deadZoneWidth smoothness _ letterOffset sepLineColor activeWireColor inactiveWireColor _) <- ask
+    (TransformShape width height lineWidth outerLineWidth deadZoneWidth smoothness letterSize letterOffset sepLineColor activeWireColor inactiveWireColor _) <- ask
 
     let
         fromShifted = shiftLetter from (-offset) n
@@ -74,7 +98,7 @@ drawRotorWire from to wireIn wireOut n offset = do
             | otherwise              = inactiveWireColor
     return $
         text (show fromShifted) # translateX (-width/2-letterOffset)
-                                # translateY f                           <>
+                                # translateY (f - letterSize/2.0)        <>
         fromVertices outerRightVertices # lcA color # lwO outerLineWidth <>
         fromVertices outerLeftVertices # lcA color # lwO outerLineWidth  <>
         bspline innerVertices # lcA color # lwO lineWidth                <>
@@ -82,9 +106,10 @@ drawRotorWire from to wireIn wireOut n offset = do
 
 drawReflectorWire :: (Eq e, Enum e, Show e) => e -> e -> e -> e -> Int -> Int -> Reader TransformShape (Diagram B)
 drawReflectorWire from to wireIn wireOut n offset = do
-    (TransformShape width height lineWidth outerLineWidth deadZoneWidth _ _ letterOffset sepLineColor activeWireColor inactiveWireColor _) <- ask
+    (TransformShape width height lineWidth outerLineWidth deadZoneWidth _ letterSize letterOffset sepLineColor activeWireColor inactiveWireColor _) <- ask
     let
         fromShifted = shiftLetter from (-offset) n
+        toShifted = shiftLetter to (-offset) n
         sep = height / fromIntegral n
         f = sep*fromIntegral (mod (fromEnum from-offset) n)
         t = sep*fromIntegral (mod (fromEnum to-offset) n)
@@ -108,7 +133,9 @@ drawReflectorWire from to wireIn wireOut n offset = do
             | otherwise       = inactiveWireColor
     return $
         text (show fromShifted) # translateX (-width/2-letterOffset)
-                                # translateY f                           <>
+                                # translateY (f - letterSize/2.0)        <>
+        text (show toShifted)   # translateX (-width/2-letterOffset)
+                                # translateY (t - letterSize/2.0)        <>
         fromVertices outerRightVertices # lcA color # lwO outerLineWidth <>
         fromVertices outerLeftVertices # lcA color # lwO outerLineWidth  <>
         bspline innerVertices # lcA color # lwO lineWidth                <>
@@ -185,8 +212,10 @@ drawPlugboard (Plugboard transform) wireInEnum wireOutEnum = do
 --TODO: draw labels between rotors
 --
 
-drawEnigma :: (Enum e, Ord e, Show e) => EnigmaState e -> Int -> Diagram B
-drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) activeWire =
+drawEnigma :: (Enum e, Ord e, Show e) => EnigmaState e -> Int -> Reader TransformShape (Diagram B)
+drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) activeWire = do
+    height <- asks transformHeight
+
     let
         rotornum                  = length rotors
         letter                    = toEnum activeWire
@@ -206,15 +235,17 @@ drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) acti
             in
                 Debug.Trace.trace (show $ map (bimap fromEnum fromEnum) rout) (pout, rout, refout))
         ((plugboardIn, plugboardOut), rotorsInOut, (reflectorIn, reflectorOut)) = inOut encryptionPath
-
-        --make diagrams
-        plugboardD = runReader (drawPlugboard plugboard plugboardIn plugboardOut) defaultShape
-        rotorsL    = zipWith3 ( curry . curry (\(rotor, ((wireIn, wireOut), pos)) -> drawRotor rotor wireIn wireOut pos)) rotors rotorsInOut positions
-        rotorsD    = map (`runReader` defaultShape) rotorsL
-        reflectorD = runReader (drawRotor reflector reflectorIn reflectorOut 0) defaultShape
-    in
-        hsep 0.0 [
-            plugboardD,
-            hsep 0.0 rotorsD,
-            reflectorD
-            ] # bgFrame 1.0 orange
+    --make rotordiagrams
+    rotorsL <- mapM (\(rotor,(wireIn, wireOut),pos) -> drawRotor rotor wireIn wireOut pos)
+            (zip3 rotors rotorsInOut positions)
+    --append names to rotordiagrams
+    let rotorsD = zipWith (\r i -> text ("ROTOR"++show i) # translateY (height/1.98) <> r) rotorsL [1..] --want ReaderT shape [Diagram]
+    --make plugboard and reflector diagrams
+    plugboardD <- drawPlugboard plugboard plugboardIn plugboardOut
+    reflectorD <- drawRotor reflector reflectorIn reflectorOut 0
+    
+    return $ hsep 0.0 [
+        text "PLUGBOARD" # translateY (height/1.98) <> plugboardD,
+        hsep 0.0 rotorsD,
+        text "REFLECTOR" # translateY (height/1.98) <> reflectorD
+        ] # bgFrame 1.0 orange

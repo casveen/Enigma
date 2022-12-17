@@ -3,8 +3,9 @@ module Lib
     ) where
 
 import Parts ( donitz )
-import Diagram ( drawEnigma )
+import Diagram ( drawEnigma, defaultShape )
 import Diagrams.Backend.SVG.CmdLine ( mainWith )
+import Control.Monad.Reader (runReader)
 someFunc :: IO ()
 someFunc = do
-    mainWith $ maybe mempty (`drawEnigma` 0) (Just donitz)
+    mainWith $ maybe mempty (\x -> runReader (drawEnigma x 0) defaultShape) (Just donitz)
