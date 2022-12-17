@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 {-
 The solid state is a construction that models stateful computations where the sequence of states
 are already predefined, and can only be put into the next state by calling nextState.
@@ -17,7 +19,7 @@ so that when bind is done we know that only a single state remains regardless of
 
 
 -}
-{-# LANGUAGE InstanceSigs #-}
+--{-# LANGUAGE InstanceSigs #-}
 
 {-
 data SolidState s a = 
@@ -61,3 +63,23 @@ instance Monad (SolidState s) where
     --                                (State g) = f a  
     --                            in  g newState
 -}
+
+--holds a detemerinistic state d, "monadic" in a
+data DetStateI d a = DetStateI {is :: d, has :: a, next :: d->d}
+
+--class Monad m => MonadDetState s m | m -> s where 
+class Monad m => DeterministicState s m where 
+    get :: m s -- Return the state from the internals of the monad.
+    put :: s -> m () --Replace the state inside the monad.
+    state :: (s -> (a, s)) -> m a --Embed a simple state action into the monad. 
+    
+--why  not just use a narrowed state?
+
+--when i do 
+--if this one transforms a monad, say [], I want the state part OUTSIDE the inner monad
+-- encrypt [[1,2,3],[1,2]] =  [[encrypt 1, encrypt 2, encrypt 3], [encrypt 1, encrypt 2]]
+--the state under which encryption is done should be the same on the outer []!
+--maybe I want an applicative??
+
+
+--hmm ok now to chain  

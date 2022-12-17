@@ -85,3 +85,17 @@ allRotors4 = [im, iim, iiim, ukwm]
 allReflectors4 = [ukwm]
 allRotors6 = [im6, iim6, iiim6, ukwm6]
 allReflectors6 = [ukwm6]
+
+simple4 :: EnigmaState Letter
+simple4 =     let 
+        cartridge = Cartridge [im, iim, iiim] ukwm [0,0,0,0]
+        plugboard = mkPlugboard [(A,A),(B,B),(C,C),(D,D)]
+    in 
+        Enigma plugboard cartridge
+
+simple6 :: EnigmaState Letter
+simple6 =     let 
+        cartridge = Cartridge [im6, iim6, iiim6] ukwm6 [0,0,0,0]
+        plugboard = mkPlugboard [(A,A),(B,B),(C,C),(D,D),(E,E),(F,F)]
+    in 
+        Enigma plugboard cartridge

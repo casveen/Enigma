@@ -4,11 +4,14 @@ Enigma,
 EnigmaState(..),
 mkEnigma,
 step,
+stepEnigma,
 enc,
 encryptText,
+encryptTraversable,
+encryptTraversableOfMonads,
 getPlugboard,
 getCartridge,
-getRotorPosition, 
+getRotorPosition,
 setRotorPosition,
 initialize
 ) where
@@ -54,19 +57,27 @@ getCartridge = state $ \e@(Enigma _ c) -> (c, e)
 --getTransform :: Enigma l (Transform l)
 --getTransform = state $ \e -> (getTransformFromEnigma e, e)
 
+stepEnigma :: EnigmaState e -> EnigmaState e
+stepEnigma (Enigma plugging c) = Enigma plugging (stepCartridge c)
+
 step :: Enigma l ()
-step = state $ \(Enigma plugging c) -> ((), Enigma plugging (stepCartridge c))
+step = state $ \e -> ((), stepEnigma e)
 
 --instance PolyalphabeticCipher Enigma where
 enc :: (Enum l, Ord l) => l -> Enigma l l
 enc plaintext = do
     step
+    encryptWithoutStepping plaintext
+
+encryptWithoutStepping :: (Enum l, Ord l) => l -> Enigma l l
+encryptWithoutStepping plaintext = do
     plugboard  <- getPlugboard
     cartridge  <- getCartridge
     return $
             decrypt plugboard
             (encrypt cartridge
             (encrypt plugboard plaintext))
+
 
 getRotorPosition :: Enigma l [Int]
 getRotorPosition = state $ \e@(Enigma _ (Cartridge _ _ rotorPosition)) -> (reverse rotorPosition, e)
@@ -79,12 +90,12 @@ displace n (Reflector t is) j = Reflector t $ map (\i -> mod (i-j) n) is
 
 --the enigma stores the positions, while the ringsetting affects when rotors turn
 setRotorPosition :: (Enum e) => [e] -> [e] -> Enigma l ()
-setRotorPosition ringSetting rotorPosition = do 
+setRotorPosition ringSetting rotorPosition = do
     c@(Cartridge rotors _ _) <- getCartridge
 
     let n = letters c
     let nrs = zipWith (\rs rp -> mod (fromEnum rp - fromEnum rs) n) ringSetting rotorPosition
-    let displacedRotors = zipWith (displace n) rotors (map fromEnum (reverse ringSetting)) 
+    let displacedRotors = zipWith (displace n) rotors (map fromEnum (reverse ringSetting))
     state $ \(Enigma plugging (Cartridge _ rf _)) -> ((), Enigma plugging (Cartridge displacedRotors rf (reverse nrs)))
 ----------------------------------------------
 --                   Instances              --
@@ -97,13 +108,13 @@ instance Cipher EnigmaState where
     decrypt = encrypt
     letters (Enigma _ cartridge) = letters cartridge
 
-instance TraceableCipher EnigmaState where 
-    tracedEncrypt (Enigma plugboard cartridge) plaintext = 
+instance TraceableCipher EnigmaState where
+    tracedEncrypt (Enigma plugboard cartridge) plaintext =
         do --in the writer monad
             res <- logTrace   plaintext
             res <- logTrace $ encrypt plugboard res
-            res <- tracedEncrypt cartridge res  
-            logTrace $ encrypt plugboard res 
+            res <- tracedEncrypt cartridge res
+            logTrace $ encrypt plugboard res
 
 
 {-
@@ -121,8 +132,8 @@ tracedEncryptEnigma plaintext = do --enigma context
         writer (decryption, return decryption)
         
         -}
-        
-        
+
+
 
 
 
@@ -143,14 +154,46 @@ tracedEncryptEnigma plaintext = do --enigma context
 
 --encryptText :: (Traversable t) => Enigma (t o) l
 encryptText :: (Enum a, Ord a) => [a] -> Enigma a [a]
-encryptText (x:xs) = do
-    c <-  enc x
-    cs <- encryptText xs
-    return (c:cs)
-encryptText [] = do return []
+encryptText = encryptTraversable
+
+encryptTraversable :: (Traversable t, Enum e, Ord e) => t e -> Enigma e (t e)
+encryptTraversable = traverse enc
+
+encryptMonad :: (Monad m, Enum e, Ord e) => m e -> Enigma e (m e)
+encryptMonad mp =
+    --we are in the enigma monad
+    do
+        currentState <- get --current state
+        --in the plaintextmonad
+        let cs = do {p <- mp ; return $ evalState (encryptWithoutStepping p) currentState}
+        -- mc is m (Enigma e), we want Enigma e (m e) or (m e)
 
 
-mkEnigma :: 
+        state $ const (cs, stepEnigma currentState)
+
+
+
+encryptTraversableOfMonads :: (Traversable t, Enum e, Ord e, Monad m) => t (m e) -> Enigma e (t (m e))
+encryptTraversableOfMonads = traverse encryptMonad
+
+
+        --we are in the enigma monad!
+        --let nextState = stepEnigma 
+        --    mEncrypt  =  -- encryption "without" state
+
+        --do  
+        --    p <- mp
+        --    let c = enc p -- c :: m (Enigma l l), in list, we have undet answer and state. 
+            --collapse state.
+            --the return type of enc being the state itself is a big problem!
+            --something representing a deterministic state should not have state type as returntype. 
+            --since these will be wrapped in the monad
+
+
+
+
+
+mkEnigma ::
     Plugboard e ->
     [Rotor e] ->
     Rotor e ->

@@ -1,6 +1,26 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 import Parts
+    ( allPlugboards26,
+      allReflectors26,
+      allReflectors4,
+      allReflectors6,
+      allRotors26,
+      allRotors4,
+      allRotors6,
+      beta,
+      i,
+      identityPlugboard,
+      ii,
+      iii,
+      im6,
+      thinReflectorC,
+      ukw,
+      ukwm6,
+      v,
+      vi,
+      viii, 
+      simple6 )
 import Language
 import Test.Hspec
 import Test.QuickCheck
@@ -12,6 +32,7 @@ import Cartridge
 import Cipher
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
+import Enigma (encryptTraversableOfMonads)
 
 transformSpec :: SpecWith ()
 transformSpec =
@@ -192,6 +213,28 @@ tracedEncryptionSpec =
         actualWriter `shouldBe` correctWriter
         --A `shouldBe` B
 
+undeterministicEnigmaSpec :: SpecWith ()
+undeterministicEnigmaSpec = describe "Testing undeterministic enigma spec." $ do
+    context "given a specific enigma" $ do
+        let enigma              = simple6
+        let undeterministicText = [[A,B,C,D,E,F],[A,B,C,D,E,F],[A,B,C,D,E,F]] --A, B or C, then A or B, then A
+        it "should encrypt all letters undeterministically" $
+            evalState (encryptTraversableOfMonads undeterministicText) enigma `shouldBe`
+            [[C,D,A,B,F,E],[B,A,E,F,C,D],[D,F,E,A,C,B]]
+
+    context "given an arbitrary enigma" $ modifyMaxSuccess (const 1000) $ do     
+        let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors26)
+                                        <*> elements allReflectors26
+                                        <*> vectorOf 3 (chooseInt (0,25))
+        let arbitraryPlugboard = elements allPlugboards26
+        let arbitraryEnigmaState = Enigma <$> arbitraryPlugboard <*> arbitraryCartridge --arbitraryenigmaSTATE
+        let arbitraryEnigma = arbitraryEnigmaState
+        let arbitraryText = listOf (listOf (chooseEnum (A, Z)))
+        it "should reencrypt all letters undeterministically in same order" $
+            forAll arbitraryEnigmaState $ \c ->
+            forAll arbitraryText $ \p ->  
+                evalState (encryptTraversableOfMonads (evalState (encryptTraversableOfMonads p) c)) c `shouldBe` p
+
 
 
 {-rotorSpec = 
@@ -227,6 +270,7 @@ main = hspec $ do
     transformSpec
     cartridgeSpec
     enigmaSpec
+    undeterministicEnigmaSpec
     
 
 
