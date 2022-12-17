@@ -80,4 +80,3 @@ stepCartridge c@(Cartridge rotors reflector positions) = Cartridge rotors reflec
 pad0 :: Show p => Int -> p -> [Char]
 pad0 n x = take ( n - length sx) (cycle "0") ++ sx
     where sx = show x
-
