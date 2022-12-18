@@ -11,5 +11,5 @@ import Data.List (iterate')
 import Diagrams (iterateN)
 someFunc :: IO ()
 someFunc = do
-    mainWith $ runReader (drawEnigma (stepEnigma (stepEnigma simple6)) 0) defaultShape
+    mainWith $ runReader (drawEnigma donitz 0) defaultShape
     --mainWith $ maybe mempty (\x -> runReader (drawEnigma x 0) defaultShape) (Just donitz)

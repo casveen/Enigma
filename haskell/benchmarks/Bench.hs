@@ -23,7 +23,7 @@ main = do
   defaultMain [ 
     bgroup "encryption" [ 
       bench "donitz"  $ whnf (evalState (encryptText $ stringToLanguage donitzCipherText)) enigma,
-      bench "long text"  $ whnf (evalState (encryptText $ stringToLanguage (replicate 1000 'A'))) enigma,
+      bench "long text"  $ whnf (evalState (encryptText $ stringToLanguage (replicate 100000 'A'))) enigma,
       bench "totalmanual"  $ whnf (evalState (encryptText [A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z])) enigma
       --bench "total"  $ whnf (evalState (getTransformFromEnigma)) enigma
       ] ]
