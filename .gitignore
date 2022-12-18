@@ -2,7 +2,7 @@
 ct.exe
 
 *.out
-
+*.html
 *.o
 
 *.exe
