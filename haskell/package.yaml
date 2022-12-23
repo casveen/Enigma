@@ -31,6 +31,9 @@ dependencies:
 - QuickCheck
 - bimap
 - criterion
+- nondeterminism
+- transformers
+- diagrams-cairo
 
 ghc-options:
 - -Wall
@@ -47,6 +50,16 @@ library:
   source-dirs: src
 
 executables:
+  exploreclosure-exe:
+    main:                Main.hs
+    source-dirs:         exploration
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - enigma
+    
   enigma-exe:
     main:                Main.hs
     source-dirs:         app
@@ -56,6 +69,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - enigma
+  
 
 tests:
   enigma-test:

@@ -25,6 +25,10 @@ source-repository head
 
 library
   exposed-modules:
+      Bombe.Bombe
+      Bombe.Tracker
+      Bombe.Wiring
+      Bombe.WiringDiagram
       Cartridge
       Cipher
       Diagram
@@ -47,12 +51,15 @@ library
     , base >=4.7 && <5
     , bimap
     , criterion
+    , diagrams-cairo
     , diagrams-contrib
     , diagrams-lib
     , diagrams-svg
     , hmatrix
     , hspec
     , mtl
+    , nondeterminism
+    , transformers
   default-language: Haskell2010
 
 executable enigma-exe
@@ -68,6 +75,7 @@ executable enigma-exe
     , base >=4.7 && <5
     , bimap
     , criterion
+    , diagrams-cairo
     , diagrams-contrib
     , diagrams-lib
     , diagrams-svg
@@ -75,6 +83,33 @@ executable enigma-exe
     , hmatrix
     , hspec
     , mtl
+    , nondeterminism
+    , transformers
+  default-language: Haskell2010
+
+executable exploreclosure-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_enigma
+  hs-source-dirs:
+      exploration
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit
+    , QuickCheck
+    , base >=4.7 && <5
+    , bimap
+    , criterion
+    , diagrams-cairo
+    , diagrams-contrib
+    , diagrams-lib
+    , diagrams-svg
+    , enigma
+    , hmatrix
+    , hspec
+    , mtl
+    , nondeterminism
+    , transformers
   default-language: Haskell2010
 
 test-suite enigma-test
@@ -91,6 +126,7 @@ test-suite enigma-test
     , base >=4.7 && <5
     , bimap
     , criterion
+    , diagrams-cairo
     , diagrams-contrib
     , diagrams-lib
     , diagrams-svg
@@ -98,6 +134,8 @@ test-suite enigma-test
     , hmatrix
     , hspec
     , mtl
+    , nondeterminism
+    , transformers
   default-language: Haskell2010
 
 benchmark enigma-benchmark
@@ -114,6 +152,7 @@ benchmark enigma-benchmark
     , base >=4.7 && <5
     , bimap
     , criterion
+    , diagrams-cairo
     , diagrams-contrib
     , diagrams-lib
     , diagrams-svg
@@ -121,4 +160,6 @@ benchmark enigma-benchmark
     , hmatrix
     , hspec
     , mtl
+    , nondeterminism
+    , transformers
   default-language: Haskell2010

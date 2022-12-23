@@ -88,7 +88,7 @@ allReflectors6 = [ukwm6]
 
 simple4 :: EnigmaState Letter
 simple4 =     let 
-        cartridge = Cartridge [im, iim, iiim] ukwm [0,0,0,0]
+        cartridge = Cartridge [im, iim, iiim] ukwm [0,0,0]
         plugboard = mkPlugboard [(A,A),(B,B),(C,C),(D,D)]
     in 
         Enigma plugboard cartridge

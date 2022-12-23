@@ -13,7 +13,8 @@ getPlugboard,
 getCartridge,
 getRotorPosition,
 setRotorPosition,
-initialize
+initialize,
+connect
 ) where
 
 import Control.Monad.State.Strict
@@ -23,6 +24,7 @@ import Cipher (Cipher(..), TraceableCipher(..), logTrace)
 import Cartridge (Cartridge(..), stepCartridge)
 import Plugboard (Plugboard(..))
 import Rotor(Rotor(..))
+import Bombe.Wiring hiding (initialize)
 
 ----------------------------------------------
 --              ENIGMA                      --
@@ -145,3 +147,17 @@ mkEnigma plugBoard rotors reflector rss rps = do
         positions = reverse $ (\x y -> mod (x-y) n) <$> rpsList <*> rssList
         in
             Enigma plugBoard (Cartridge rotors reflector positions)
+
+----------------------------------------------------
+--               WIRING                           --
+---------------------------------------------------- 
+
+connect :: (Enum e, Ord e, EnigmaWiring w) => w -> e -> e -> Enigma e w 
+connect wiring cipherLetter cribLetter = do 
+    --in state monad 
+    plugboard  <- getPlugboard
+    let cipher = fromEnum cipherLetter
+        crib   = fromEnum cribLetter 
+        n      = letters plugboard
+    encryption <- encryptTraversableOfMonads [(map toEnum [0..(n-1)])]
+    return $ foldl (\acc (p, c) -> connectWire acc (crib, p) (cipher, c)) wiring (zip [0..(n-1)] (map fromEnum (head encryption)))

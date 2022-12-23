@@ -67,15 +67,18 @@ getNotchesFromCartridge :: Cartridge e -> [[Int]]
 getNotchesFromCartridge (Cartridge rs _ _) = getNotchesFromRotors rs
 
 stepCartridge :: Cartridge l -> Cartridge l
-stepCartridge c@(Cartridge rotors reflector positions) = Cartridge rotors reflector $ stepHelper positions (getNotchesFromRotors rotors) 1
+stepCartridge c@(Cartridge rotors reflector positions) = 
+    Cartridge rotors reflector newPositions
     where
-        n = letters c
-        stepHelper [] _ _ = []
-        stepHelper xs [] _ = xs
-        stepHelper (p:ps) (ns:nss) carry =
-            if elem p ns || carry==1
-                then mod (p+1) n:stepHelper ps nss (if p `elem` ns then 1 else 0)
-                else p:stepHelper ps nss 0
+        n                 = letters c
+        notches           = getNotchesFromRotors rotors
+        engagedBeforeTurn = zipWith elem positions notches
+        newPositions      = 
+            zipWith3 
+            (\p e pe -> if e || pe then mod (p+1) n else p) 
+            positions 
+            engagedBeforeTurn 
+            (True : engagedBeforeTurn) --ensures first always turn, and holds engage of previous
 
 pad0 :: Show p => Int -> p -> [Char]
 pad0 n x = take ( n - length sx) (cycle "0") ++ sx
