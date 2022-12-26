@@ -2,12 +2,14 @@
 
 module Bombe.Wiring where
 import Numeric.LinearAlgebra
+import Debug.Trace
+import Language
 
-data BadMatrixWiring = BadMatrixWiring (Matrix R) Int --bad closure
-data MatrixWiring    = MatrixWiring (Matrix R) Int deriving (Show)
-data QRMatrixWiring  = QRMatrixWiring (Matrix R) Int
+data BadMatrixWiring    = BadMatrixWiring (Matrix R) Int --bad closure
+data MatrixWiring       = MatrixWiring (Matrix R) Int deriving (Show)
+data QRMatrixWiring     = QRMatrixWiring (Matrix R) Int
 data EagerMatrixWiring  = EagerMatrixWiring (Matrix R) Int
-type BW = (Int, Int)
+type BW                 = (Int, Int)
 
 bundleToWire :: BW -> Int -> Int
 bundleToWire (b, w) n = n*b + w
@@ -22,9 +24,29 @@ powerMat m e
   | even e = powerMat (m Numeric.LinearAlgebra.<> m) (div e 2)
   | otherwise = powerMat m (div e 2)
 
+upperTriangularOfUpperTriangular :: (Int,Int) -> Int -> (Int,Int)
+upperTriangularOfUpperTriangular (r,c) n =
+    let 
+        --first map to upper triangular
+        (ur, uc) = (min r c, max r c)
+        --find submatrix origin coordinates
+        (sr, sc) = (div ur n, div uc n)
+        --then find coordinates in submatrix
+        (sur, suc) = (mod ur n, mod uc n)
+        --map to upper triangular in submatrix
+        (usur, usuc) = (min sur suc, max sur suc)
+    in 
+        --map submatrix to matrix
+        (n*sr+usur, n*sc+usuc)
+
+--transitiveClosureOfUpperTriangular (MatrixWiring m n) = 
+
+
+
+
 instance EnigmaWiring QRMatrixWiring where
     --isConnected :: MatrixWiring -> BW -> BW -> Bool
-    isConnected (QRMatrixWiring m n) ii jj =
+    isConnectedBW (QRMatrixWiring m n) ii jj =
         let
             i = bundleToWire ii n
             j = bundleToWire jj n
@@ -61,21 +83,52 @@ instance EnigmaWiring MatrixWiring where
 
     getLetters (MatrixWiring _ n) = n
 
-    isConnected :: MatrixWiring -> BW -> BW -> Bool
-    isConnected (MatrixWiring m n) ii jj =
+    isConnectedBW :: MatrixWiring -> BW -> BW -> Bool
+    isConnectedBW (MatrixWiring m n) ii@(implicantFrom, impliesFrom) jj@(implicantTo, impliesTo) =
         let
             i = bundleToWire ii n
-            j = bundleToWire jj n
+            j = bundleToWire jj n 
+            --choose the upper triangle
+            (pi, pj) = upperTriangularOfUpperTriangular (i,j) n 
         in
-            m `atIndex` (i,j) > 0
+            m `atIndex` (pi,pj) > 0
+
+    isConnected (MatrixWiring m n) i j = 
+        let 
+            (pi,pj) = upperTriangularOfUpperTriangular (i,j) n
+        in
+            trace (show (i,j) ++ "->" ++ show (pi,pj)) $ m `atIndex` (pi,pj) > 0
 
     --connectWire :: MatrixWiring -> Int -> Int -> MatrixWiring
-    connectWire (MatrixWiring m n) ii jj =
+    {-connectWire (MatrixWiring m n) ii jj =
         let
-            i = bundleToWire ii n
-            j = bundleToWire jj n
+            swap (x,y) = (y,x)
+            i = bundleToWire (swap ii) n
+            j = bundleToWire (swap jj) n
         in
-            MatrixWiring (accum m (+) [((i,j),1),((j,i),1)]) n
+            MatrixWiring (accum m (+) [((i,j),1),((j,i),1)]) n-}
+    connectWire (MatrixWiring m n) f@(implicantFrom, implicantTo) t@(impliesFrom, impliesTo) =
+        let
+            swap (x,y) = (y,x)
+            i = bundleToWire f n
+            j = bundleToWire t n
+            it = bundleToWire (swap f) n
+            jt = bundleToWire (swap t) n
+            imfL = show (toEnum implicantFrom :: Letter)
+            imtL = show (toEnum implicantTo :: Letter)
+            imfR = show (toEnum impliesFrom :: Letter)
+            imtR = show (toEnum impliesTo :: Letter)
+            (pi, pj) = upperTriangularOfUpperTriangular (i,j) n
+            --lts = "i:" ++ (show i) ++ "\nit:" ++ (show it) ++ "\nj:" ++ (show j) ++ "\njt:" ++ (show jt) ++ "\n"
+
+
+            --res = trace (imfL ++ "~" ++ imtL ++ "=>" ++ imfR ++ "~" ++ imtR ++ "\n" ++ lts) $ 
+        in
+            MatrixWiring (accum m (+) [
+                --((pi,pj),1)
+                ((i,j),1),
+                ((j,i),1)
+                ]) n
 
     --initialize :: Int -> MatrixWiring
     initialize n =
@@ -86,18 +139,29 @@ instance EnigmaWiring MatrixWiring where
                     let
                         (bi, wi) = wireToBundleWire (round i) n
                         (bj, wj) = wireToBundleWire (round j) n
+                        (implicantFrom, impliesFrom) = wireToBundleWire (round i) n
+                        (implicantTo, impliesTo) = wireToBundleWire (round j) n
                     in
                         if (i==j) || (bi == wj && bj == wi) then 1.0 else 0.0
+                        {-if  (implicantFrom==impliesFrom && implicantTo == impliesTo) ||
+                            (--(i<j) && 
+                            --((implicantFrom == implicantTo && impliesFrom == impliesTo) ||
+                            (implicantFrom == impliesFrom && implicantTo == impliesTo)))
+                            (implicantFrom == impliesTo && implicantTo == impliesFrom))
+                                then 1.0 
+                                else 0.0-}
                 ) ::Matrix R
         in
             MatrixWiring matrix n
 
-    closure (MatrixWiring m n) = MatrixWiring (powerMat m n) n
+    closure (MatrixWiring m n) = MatrixWiring (chain (n*n) (Numeric.LinearAlgebra.<> m) m) n --(powerMat m (n*n)) n'
+    --
+    --closure (MatrixWiring m n) = MatrixWiring (chain (n*n) (Numeric.LinearAlgebra.<> m) m) n --(powerMat m (n*n)) n'
 
 
 
 instance EnigmaWiring BadMatrixWiring where
-    isConnected (BadMatrixWiring m n) ii jj =
+    isConnectedBW (BadMatrixWiring m n) ii jj =
         let
             i = bundleToWire ii n
             j = bundleToWire jj n
@@ -132,7 +196,7 @@ instance EnigmaWiring BadMatrixWiring where
 
 
 instance EnigmaWiring EagerMatrixWiring where
-    isConnected (EagerMatrixWiring m n) ii jj =
+    isConnectedBW (EagerMatrixWiring m n) ii jj =
         let
             i = bundleToWire ii n
             j = bundleToWire jj n
@@ -169,7 +233,8 @@ instance EnigmaWiring EagerMatrixWiring where
 class EnigmaWiring a where
     initialize  :: Int -> a
     connectWire :: a -> BW -> BW -> a
-    isConnected :: a -> BW -> BW -> Bool
+    isConnectedBW :: a -> BW -> BW -> Bool
+    isConnected :: a -> Int -> Int -> Bool
     closure :: a -> a
     getMatrix :: a -> Matrix R
     getLetters :: a -> Int
@@ -202,3 +267,6 @@ prettyPrintMatrix m n =
         upperRow ++ 
         "\n" ++ 
         matrixRows m
+
+
+

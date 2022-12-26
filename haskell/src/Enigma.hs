@@ -153,11 +153,17 @@ mkEnigma plugBoard rotors reflector rss rps = do
 ---------------------------------------------------- 
 
 connect :: (Enum e, Ord e, EnigmaWiring w) => w -> e -> e -> Enigma e w 
-connect wiring cipherLetter cribLetter = do 
+connect wiring cribLetter cipherLetter = do 
     --in state monad 
     plugboard  <- getPlugboard
     let cipher = fromEnum cipherLetter
         crib   = fromEnum cribLetter 
         n      = letters plugboard
     encryption <- encryptTraversableOfMonads [(map toEnum [0..(n-1)])]
-    return $ foldl (\acc (p, c) -> connectWire acc (crib, p) (cipher, c)) wiring (zip [0..(n-1)] (map fromEnum (head encryption)))
+    return $ 
+        foldl 
+            (\acc (p, c) -> 
+                (connectWire acc (crib, p) (c, cipher))
+            ) 
+            wiring 
+            (zip [0..(n-1)] (map fromEnum (head encryption)))
