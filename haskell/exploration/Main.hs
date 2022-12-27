@@ -25,7 +25,7 @@ main = do
     --print $ runState (encryptTraversableOfMonads [[A,B,C,D]]) enigma
     print $ runState (Enigma.connect wiring A B) enigma
 
-    mainWith exploreQR
+    --mainWith exploreQR
 
 
 
@@ -198,7 +198,7 @@ explainingClosure =
 
 
 
-
+{- 
 exploreQR :: Diagram B --MatrixWiring -> Diagram B
 exploreQR = --(MatrixWiring matrix n) =
     let
@@ -287,4 +287,4 @@ exploreQR = --(MatrixWiring matrix n) =
 
 
     in
-        runReader todo shape
+        runReader todo shape-}

@@ -23,6 +23,7 @@ import Parts
       simple6 )
 import Language
 import Test.Hspec
+import WiringSpec
 import Test.QuickCheck
 import Test.Hspec.QuickCheck (modifyMaxSuccess)
 import Transform
@@ -32,8 +33,10 @@ import Cartridge
 import Cipher
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
+--import test.WiringSpec
+
 import Enigma (encryptTraversableOfMonads)
-import Bombe.Wiring (EagerMatrixWiring)
+import Bombe.Wiring
 
 transformSpec :: SpecWith ()
 transformSpec =
@@ -253,85 +256,7 @@ undeterministicEnigmaSpec = describe "Testing undeterministic enigma spec." $ do
 
 
 
-wiringSpec :: SpecWith ()
-wiringSpec = describe "Testing wiring spec." $ do
-    context "given a wiring board" $ do
-        let wiring = Bombe.Wiring.initialize 26 :: EagerMatrixWiring
-        let wires  = chooseInt (0,26*26-1)
-        it "should connect two wires" $
-            forAll wires $ \wireFrom ->
-            forAll wires $ \wireTo ->
-                let 
-                    bwFrom = wireToBundleWire wireFrom 26
-                    bwTo   = wireToBundleWire wireTo 26
-                    connectedMatrix = connectWire wiring bwFrom bwTo
-                in 
-                    isConnected connectedMatrix bwFrom bwTo `shouldBe` True
-        it "should connect two wires symmetrically" $
-            forAll wires $ \wireFrom ->
-            forAll wires $ \wireTo ->
-                let 
-                    bwFrom = wireToBundleWire wireFrom 26
-                    bwTo   = wireToBundleWire wireTo 26
-                    connectedMatrix = connectWire wiring bwFrom bwTo
-                in 
-                    isConnected connectedMatrix bwTo bwFrom `shouldBe` True
-        it "connect 3 wires transitively" $
-            forAll wires $ \wire1 ->
-            forAll wires $ \wire2 ->
-            forAll wires $ \wire3 ->
-                let 
-                    bw1 = wireToBundleWire wire1 26
-                    bw2 = wireToBundleWire wire2 26
-                    bw3 = wireToBundleWire wire3 26
-                    connectedMatrix = closure $ connectWire (connectWire wiring bw1 bw2) bw2 bw3
 
-                in 
-                    isConnected connectedMatrix bw1 bw3 `shouldBe` True
-        it "connect 6 wires transitively" $
-            forAll wires $ \wire1 ->
-            forAll wires $ \wire2 ->
-            forAll wires $ \wire3 ->
-            forAll wires $ \wire4 ->
-            forAll wires $ \wire5 ->
-            forAll wires $ \wire6 ->
-                let 
-                    bw1 = wireToBundleWire wire1 26
-                    bw2 = wireToBundleWire wire2 26
-                    bw3 = wireToBundleWire wire3 26
-                    bw4 = wireToBundleWire wire4 26
-                    bw5 = wireToBundleWire wire5 26
-                    bw6 = wireToBundleWire wire6 26
-                    connectedMatrix = closure $
-                        connectWire (
-                            connectWire (
-                                connectWire (
-                                    connectWire (
-                                        connectWire wiring bw1 bw2) 
-                                        bw2 bw3
-                                        )
-                                    bw3 bw4
-                                    )
-                                bw4 bw5
-                                )
-                            bw5 bw6   
-                in 
-                    do 
-                        isConnected connectedMatrix bw6 bw1 `shouldBe` True
-                        isConnected connectedMatrix bw6 bw2 `shouldBe` True
-                        isConnected connectedMatrix bw6 bw3 `shouldBe` True
-                        isConnected connectedMatrix bw6 bw4 `shouldBe` True
-                        isConnected connectedMatrix bw6 bw5 `shouldBe` True
-                        isConnected connectedMatrix bw1 bw3 `shouldBe` True
-                        isConnected connectedMatrix bw1 bw4 `shouldBe` True
-                        isConnected connectedMatrix bw1 bw5 `shouldBe` True
-                        isConnected connectedMatrix bw1 bw6 `shouldBe` True
-                        isConnected connectedMatrix bw2 bw4 `shouldBe` True
-                        isConnected connectedMatrix bw2 bw5 `shouldBe` True
-                        isConnected connectedMatrix bw2 bw6 `shouldBe` True
-                        isConnected connectedMatrix bw3 bw5 `shouldBe` True
-                        isConnected connectedMatrix bw3 bw6 `shouldBe` True
-                        isConnected connectedMatrix bw4 bw6 `shouldBe` True
 
 
 
@@ -347,9 +272,12 @@ reencryptionProp c p = decrypt c (encrypt c p) === p
 
 main :: IO ()
 main = hspec $ do
+    wiringSpec
+    transitiveClosureSpec
     tracedEncryptionSpec
     transformSpec
     cartridgeSpec
-    enigmaSpec
-    undeterministicEnigmaSpec
-    wiringSpec
+    --enigmaSpec
+    --undeterministicEnigmaSpec
+    
+    

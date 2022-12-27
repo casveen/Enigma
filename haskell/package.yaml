@@ -34,6 +34,7 @@ dependencies:
 - nondeterminism
 - transformers
 - diagrams-cairo
+- typenums
 
 ghc-options:
 - -Wall

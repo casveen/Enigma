@@ -47,7 +47,7 @@ import Control.Monad.Reader (Reader, asks, runReader)
 import Language
 
 import Bombe.Wiring (EnigmaWiring (getLetters, isConnected, getMatrix), MatrixWiring (MatrixWiring))
-import Numeric.LinearAlgebra (toLists, qr)
+import Numeric.LinearAlgebra (toLists, qr, unSym)
 import Diagrams (p2)
 import Diagrams (fromVertices)
 import Numeric.LinearAlgebra.Data (atIndex)
@@ -102,7 +102,7 @@ drawWiresSymmetricDefault wiring =
     )
 
 drawWiresSymmetric :: MatrixWiring -> Reader DiagramShape (Diagram B)
-drawWiresSymmetric m@(MatrixWiring matrix n) = do
+drawWiresSymmetric m@(MatrixWiring mat n) = do
     height       <- asks dHeight
     width        <- asks dWidth
     leftAir      <- asks leftAir
@@ -113,6 +113,7 @@ drawWiresSymmetric m@(MatrixWiring matrix n) = do
     let ni = fromIntegral n
     diagramColor <- asks diagramColor
     let
+        matrix = mat --unSym mat
         letters           = take n [A .. Z]
         lettersAndLetters = [(b,w) | w <- letters, b <- letters ]
         blockHeight = (height - upperAir) / fromIntegral (n*n)
@@ -315,7 +316,7 @@ drawWiresSymmetric m@(MatrixWiring matrix n) = do
 
 
 drawWires :: MatrixWiring -> Reader DiagramShape (Diagram B)
-drawWires m@(MatrixWiring matrix n) = do
+drawWires m@(MatrixWiring mat n) = do
     height       <- asks dHeight
     width        <- asks dWidth
     leftAir      <- asks leftAir
@@ -326,6 +327,7 @@ drawWires m@(MatrixWiring matrix n) = do
     let ni = fromIntegral n
     diagramColor <- asks diagramColor
     let
+        matrix = mat --unSym mat
         letters           = take n [A .. Z]
         lettersAndLetters = [(b,w) | w <- letters, b <- letters ]
         blockHeight = (height - upperAir) / fromIntegral (n*n)
@@ -389,7 +391,7 @@ drawWires m@(MatrixWiring matrix n) = do
             rect leftAir (height-upperAir) # fcA diagramColor # translateY (-(height-upperAir)/2.0) # translateX (-leftAir/2.0)
 
         listOfRows = toLists matrix
-        indexedEntries = mconcat $ map (\r -> map (\c -> (r, c, abs ((getMatrix m) `atIndex` (r,c) ) >=0.001) ) [0..(n*n-1)]) [0..(n*n-1)]
+        indexedEntries = mconcat $ map (\r -> map (\c -> (r, c, abs (matrix `atIndex` (r,c) ) >0) ) [0..(n*n-1)]) [0..(n*n-1)]
         --        (zip listOfRows [0..])
         --indexedEntries = concatMap
         --        (\(r,ri) -> zipWith (\e ci -> (ri, ci, e)) r [0..])

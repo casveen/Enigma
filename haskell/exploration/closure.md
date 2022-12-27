@@ -96,3 +96,22 @@ scan all elements.
     if an element is 0.
         search all nodes that might connect to it, if any 1 then set 1.
         
+
+
+
+non-trivial elemets :
+    n*n - (n * n-1)(n * n-2)/2 - (n-1)(n-2)/2 *  ---------------
+    (n(n+1)/2)^2 = 
+    n^2(n+1)^2/4  
+
+    n = 1 -> 1
+    n = 2 -> 3
+    n = 3 -> 6
+    n = 4 -> 10 = 4*5/2
+          -> 16*25/4 = 4*25 = 100
+
+ellers: n^4
+nå      n^4/4 + n^3/2 + n^2/4
+n = 4: fra 256 til 100
+n = 5: fra 625 til (5*6/2)^2 = (5 *3)^2= 15^2 ? 225
+n = 26:fra 456976 til 123201
