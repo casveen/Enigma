@@ -61,14 +61,14 @@ import Numeric.LinearAlgebra.Data
 
 
 --type ModTwo = Numeric.LinearAlgebra.Data.Mod 2 Z
---type UM2 = Matrix ModTwo
+--type WM = Matrix ModTwo
 --type M2 = Herm ModTwo -- hermetic matrix of integers modulo two
 
 
 wiringSpec :: SpecWith ()
 wiringSpec = describe "Testing wiring spec." $ context "given a wiring board" $ do
     let n = 4
-    let wiring = Bombe.Wiring.initialize n :: MatrixWiring
+    let wiring = Bombe.Wiring.initialize n :: MatrixWiring0
     let wires  = chooseInt (0,n*n-1)
     it "should connect two wires" $
         forAll wires $ \wireFrom ->
@@ -155,19 +155,19 @@ wiringSpec = describe "Testing wiring spec." $ context "given a wiring board" $ 
 transitiveClosureSpec :: SpecWith ()
 transitiveClosureSpec = describe "Testing transitive closure spec." $ do
     context "given a transition matrix where all states connected" $ do
-        let matrix = (4><4) [1,1,0,0,  1,1,1,0,  0,1,1,1,  0,0,1,1] :: UM2
+        let matrix = (4><4) [1,1,0,0,  1,1,1,0,  0,1,1,1,  0,0,1,1] :: WM
         it "should give 1 as transitive closure" $
             transitiveClosure matrix `shouldBe`  (4><4) [1,1,1,1,  1,1,1,1,  1,1,1,1,  1,1,1,1]
     context "given a bipartite transition matrix" $ do
-        let matrix = (4><4) [1,1,0,0,  1,1,0,0,  0,0,1,1,  0,0,1,1] :: UM2
+        let matrix = (4><4) [1,1,0,0,  1,1,0,0,  0,0,1,1,  0,0,1,1] :: WM
         it "should give 1 in two blocks as transitive closure" $
             transitiveClosure matrix `shouldBe`  (4><4) [1,1,0,0,  1,1,0,0,  0,0,1,1,  0,0,1,1]
     context "given a tripartite, sparse transition matrix" $ do
-        let matrix = (6><6) [1,0,1,0,0,0,  0,1,0,0,0,1,  1,0,1,0,1,0,  0,0,0,1,0,0,  0,0,1,0,1,0,  0,1,0,0,0,1] :: UM2
+        let matrix = (6><6) [1,0,1,0,0,0,  0,1,0,0,0,1,  1,0,1,0,1,0,  0,0,0,1,0,0,  0,0,1,0,1,0,  0,1,0,0,0,1] :: WM
         it "should add 1 connection in closure" $
             transitiveClosure matrix `shouldBe`  (6><6) [1,0,1,0,1,0,  0,1,0,0,0,1,  1,0,1,0,1,0,  0,0,0,1,0,0,  1,0,1,0,1,0,  0,1,0,0,0,1]
     context "given a transition matrix where all states connect haphazardly" $ do
-        let matrix = (6><6) [1,0,0,0,1,0,  0,1,0,1,1,0,  0,0,1,0,0,1,  0,1,0,1,0,1,  1,1,0,0,1,0,  0,0,1,1,0,1] :: UM2
+        let matrix = (6><6) [1,0,0,0,1,0,  0,1,0,1,1,0,  0,0,1,0,0,1,  0,1,0,1,0,1,  1,1,0,0,1,0,  0,0,1,1,0,1] :: WM
         it "should give 1 as transitive closure" $
             transitiveClosure matrix `shouldBe`  (6><6) [1,1,1,1,1,1,  1,1,1,1,1,1,  1,1,1,1,1,1,  1,1,1,1,1,1,  1,1,1,1,1,1,  1,1,1,1,1,1]
     context "given a transition matrix where all states connect haphazardly from initial" $ do

@@ -57,6 +57,7 @@ library
     , diagrams-svg
     , hmatrix
     , hspec
+    , monad-memo
     , mtl
     , nondeterminism
     , transformers
@@ -83,6 +84,7 @@ executable enigma-exe
     , enigma
     , hmatrix
     , hspec
+    , monad-memo
     , mtl
     , nondeterminism
     , transformers
@@ -109,6 +111,7 @@ executable exploreclosure-exe
     , enigma
     , hmatrix
     , hspec
+    , monad-memo
     , mtl
     , nondeterminism
     , transformers
@@ -137,6 +140,7 @@ test-suite enigma-test
     , enigma
     , hmatrix
     , hspec
+    , monad-memo
     , mtl
     , nondeterminism
     , transformers
@@ -164,6 +168,7 @@ benchmark enigma-benchmark
     , enigma
     , hmatrix
     , hspec
+    , monad-memo
     , mtl
     , nondeterminism
     , transformers

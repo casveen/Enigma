@@ -35,6 +35,7 @@ dependencies:
 - transformers
 - diagrams-cairo
 - typenums
+- monad-memo
 
 ghc-options:
 - -Wall
