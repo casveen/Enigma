@@ -68,7 +68,7 @@ import Numeric.LinearAlgebra.Data
 wiringSpec :: SpecWith ()
 wiringSpec = describe "Testing wiring spec." $ context "given a wiring board" $ do
     let n = 4
-    let wiring = Bombe.Wiring.initialize n :: MatrixWiring0
+    let wiring = Bombe.Wiring.initialize n :: MatrixWiringC
     let wires  = chooseInt (0,n*n-1)
     it "should connect two wires" $
         forAll wires $ \wireFrom ->

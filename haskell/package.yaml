@@ -36,6 +36,7 @@ dependencies:
 - diagrams-cairo
 - typenums
 - monad-memo
+- containers
 
 ghc-options:
 - -Wall

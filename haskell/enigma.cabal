@@ -50,6 +50,7 @@ library
     , QuickCheck
     , base >=4.7 && <5
     , bimap
+    , containers
     , criterion
     , diagrams-cairo
     , diagrams-contrib
@@ -76,6 +77,7 @@ executable enigma-exe
     , QuickCheck
     , base >=4.7 && <5
     , bimap
+    , containers
     , criterion
     , diagrams-cairo
     , diagrams-contrib
@@ -103,6 +105,7 @@ executable exploreclosure-exe
     , QuickCheck
     , base >=4.7 && <5
     , bimap
+    , containers
     , criterion
     , diagrams-cairo
     , diagrams-contrib
@@ -132,6 +135,7 @@ test-suite enigma-test
     , QuickCheck
     , base >=4.7 && <5
     , bimap
+    , containers
     , criterion
     , diagrams-cairo
     , diagrams-contrib
@@ -160,6 +164,7 @@ benchmark enigma-benchmark
     , QuickCheck
     , base >=4.7 && <5
     , bimap
+    , containers
     , criterion
     , diagrams-cairo
     , diagrams-contrib
