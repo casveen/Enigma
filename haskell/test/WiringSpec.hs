@@ -2,60 +2,24 @@
 {-# LANGUAGE GADTs #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module WiringSpec where
+module WiringSpec (
+    wiringSpec,
+    transitiveClosureSpec
+) where
 
 {- Spec for wiring, specifically the computation of transitive closure -}
 
-
-
-import Parts
-    ( allPlugboards26,
-      allReflectors26,
-      allReflectors4,
-      allReflectors6,
-      allRotors26,
-      allRotors4,
-      allRotors6,
-      beta,
-      i,
-      identityPlugboard,
-      ii,
-      iii,
-      im6,
-      thinReflectorC,
-      ukw,
-      ukwm6,
-      v,
-      vi,
-      viii,
-      simple6 )
-import Language
-import Test.Hspec
-import Test.QuickCheck hiding ((><))
+import Test.Hspec ( shouldBe, it, context, describe, SpecWith )
+import Test.QuickCheck ( forAll, chooseInt )
 import Test.Hspec.QuickCheck (modifyMaxSuccess)
-import Transform
-import Enigma hiding(initialize)
-import Plugboard
-import Cartridge
-import Cipher
-import Control.Monad.State.Strict
-import Control.Monad.Writer.Strict
-import Numeric.LinearAlgebra
-import Debug.Trace
-import Data.TypeNums
-import Numeric.LinearAlgebra.Data
-import GHC.Num.Natural
-import Bombe.Wiring.Wiring -- hiding (ModTwo)
+import Numeric.LinearAlgebra ( (><) )
+import Bombe.Wiring.Wiring
+    ( wireToBundleWire,
+      Wiring(isConnectedBW, getLetters, closure, connectWire) ) -- hiding (ModTwo)
 import Bombe.Wiring.MatrixWiring.MatrixWiring(WM)
-import Control.Exception
-import Test.HUnit.Lang (HUnitFailure(..))
 import Prelude hiding ((<>))
-import Numeric.LinearAlgebra.Data
-import Bombe.Wiring.TransitiveClosure
-
-
-
-
+import Bombe.Wiring.TransitiveClosure ( transitiveClosure )
+import qualified Control.Monad
 
 wiringSpec :: (Wiring w) => w -> SpecWith ()
 wiringSpec wiring = describe "Testing wiring spec." $ context "given a wiring board" $ do
@@ -92,11 +56,9 @@ wiringSpec wiring = describe "Testing wiring spec." $ context "given a wiring bo
                 connectedMatrix = closure $ connectWire (connectWire wiring bw1 bw2) bw2 bw3
 
             in
-                --if bw1 /= bw2 && bw2 /= bw3 
-                    --then 
-                        isConnectedBW connectedMatrix bw1 bw3 `shouldBe` True
-                    --else return ()
-    modifyMaxSuccess (const 10000) $ it "connect 6 wires transitively" $ 
+                isConnectedBW connectedMatrix bw1 bw3 `shouldBe` True
+
+    modifyMaxSuccess (const 10000) $ it "connect 6 wires transitively" $
         forAll wires $ \wire1 ->
         forAll wires $ \wire2 ->
         forAll wires $ \wire3 ->
@@ -123,25 +85,24 @@ wiringSpec wiring = describe "Testing wiring spec." $ context "given a wiring bo
                             bw4 bw5
                             )
                         bw5 bw6
-            in 
-                if bw1 /= bw2 && bw2 /= bw3 && bw3 /= bw4 && bw4 /= bw5 && bw5 /= bw6 then 
-                do
-                    isConnectedBW connectedMatrix bw6 bw1 `shouldBe` True
-                    isConnectedBW connectedMatrix bw6 bw2 `shouldBe` True
-                    isConnectedBW connectedMatrix bw6 bw3 `shouldBe` True
-                    isConnectedBW connectedMatrix bw6 bw4 `shouldBe` True
-                    isConnectedBW connectedMatrix bw6 bw5 `shouldBe` True
-                    isConnectedBW connectedMatrix bw1 bw3 `shouldBe` True
-                    isConnectedBW connectedMatrix bw1 bw4 `shouldBe` True
-                    isConnectedBW connectedMatrix bw1 bw5 `shouldBe` True
-                    isConnectedBW connectedMatrix bw1 bw6 `shouldBe` True
-                    isConnectedBW connectedMatrix bw2 bw4 `shouldBe` True
-                    isConnectedBW connectedMatrix bw2 bw5 `shouldBe` True
-                    isConnectedBW connectedMatrix bw2 bw6 `shouldBe` True
-                    isConnectedBW connectedMatrix bw3 bw5 `shouldBe` True
-                    isConnectedBW connectedMatrix bw3 bw6 `shouldBe` True
-                    isConnectedBW connectedMatrix bw4 bw6 `shouldBe` True
-                else return ()
+            in
+                (Control.Monad.when (bw1 /= bw2 && bw2 /= bw3 && bw3 /= bw4 && bw4 /= bw5 && bw5 /= bw6) $
+            do
+                isConnectedBW connectedMatrix bw6 bw1 `shouldBe` True
+                isConnectedBW connectedMatrix bw6 bw2 `shouldBe` True
+                isConnectedBW connectedMatrix bw6 bw3 `shouldBe` True
+                isConnectedBW connectedMatrix bw6 bw4 `shouldBe` True
+                isConnectedBW connectedMatrix bw6 bw5 `shouldBe` True
+                isConnectedBW connectedMatrix bw1 bw3 `shouldBe` True
+                isConnectedBW connectedMatrix bw1 bw4 `shouldBe` True
+                isConnectedBW connectedMatrix bw1 bw5 `shouldBe` True
+                isConnectedBW connectedMatrix bw1 bw6 `shouldBe` True
+                isConnectedBW connectedMatrix bw2 bw4 `shouldBe` True
+                isConnectedBW connectedMatrix bw2 bw5 `shouldBe` True
+                isConnectedBW connectedMatrix bw2 bw6 `shouldBe` True
+                isConnectedBW connectedMatrix bw3 bw5 `shouldBe` True
+                isConnectedBW connectedMatrix bw3 bw6 `shouldBe` True
+                isConnectedBW connectedMatrix bw4 bw6 `shouldBe` True)
 
 
 
@@ -168,8 +129,8 @@ transitiveClosureSpec = describe "Testing transitive closure spec." $ do
         it "should give 1 as transitive closure" $
             transitiveClosure matrix `shouldBe`  (6><6) [1,1,1,1,1,1,  1,1,1,1,1,1,  1,1,1,1,1,1,  1,1,1,1,1,1,  1,1,1,1,1,1,  1,1,1,1,1,1]
     context "given a transition matrix where all states connect haphazardly from initial" $ do
-        let matrix = (9><9) 
-                [1,1,0,1,0,0,0,0,0, 
+        let matrix = (9><9)
+                [1,1,0,1,0,0,0,0,0,
                  0,1,1,0,1,0,0,0,0,
                  0,0,1,0,0,0,0,0,0,
                  0,0,0,1,0,0,1,1,0,
@@ -179,9 +140,9 @@ transitiveClosureSpec = describe "Testing transitive closure spec." $ do
                  0,0,0,0,0,0,0,1,1,
                  0,0,0,0,0,0,0,0,1]
         it "should give a closure where 1 reaches all" $
-            transitiveClosure matrix `shouldBe`  
-            (9><9) 
-                [1,1,1,1,1,1,1,1,1, 
+            transitiveClosure matrix `shouldBe`
+            (9><9)
+                [1,1,1,1,1,1,1,1,1,
                  0,1,1,0,1,1,0,0,0,
                  0,0,1,0,0,0,0,0,0,
                  0,0,0,1,0,0,1,1,1,
@@ -189,10 +150,10 @@ transitiveClosureSpec = describe "Testing transitive closure spec." $ do
                  0,0,0,0,0,1,0,0,0,
                  0,0,0,0,0,0,1,0,0,
                  0,0,0,0,0,0,0,1,1,
-                 0,0,0,0,0,0,0,0,1] 
+                 0,0,0,0,0,0,0,0,1]
     context "given a transition matrix where all states connect haphazardly from initial in symmetry" $ do
-        let matrix = (9><9) 
-                [1,1,0,1,0,0,0,0,0, 
+        let matrix = (9><9)
+                [1,1,0,1,0,0,0,0,0,
                  1,1,1,0,1,0,0,0,0,
                  0,1,1,0,0,0,0,0,0,
                  1,0,0,1,0,0,1,1,0,
@@ -202,9 +163,9 @@ transitiveClosureSpec = describe "Testing transitive closure spec." $ do
                  0,0,0,1,0,0,0,1,1,
                  0,0,0,0,0,0,0,1,1]
         it "should give 1" $
-            transitiveClosure matrix `shouldBe`  
-            (9><9) 
-                [1,1,1,1,1,1,1,1,1, 
+            transitiveClosure matrix `shouldBe`
+            (9><9)
+                [1,1,1,1,1,1,1,1,1,
                  1,1,1,1,1,1,1,1,1,
                  1,1,1,1,1,1,1,1,1,
                  1,1,1,1,1,1,1,1,1,
@@ -212,7 +173,4 @@ transitiveClosureSpec = describe "Testing transitive closure spec." $ do
                  1,1,1,1,1,1,1,1,1,
                  1,1,1,1,1,1,1,1,1,
                  1,1,1,1,1,1,1,1,1,
-                 1,1,1,1,1,1,1,1,1] 
-            
-
-
+                 1,1,1,1,1,1,1,1,1]
