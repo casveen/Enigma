@@ -1,6 +1,9 @@
-module Bombe.Wiring.MatrixWiring.MatrixWiringCompressed where
+module Bombe.Wiring.MatrixWiring.MatrixWiringCompressed (
+MatrixWiringCompressed(..)
+) where
 
-import Data.Map
+import Data.Map ( Map, (!), fromList )
+import Prelude hiding(pi)
 import Bombe.Wiring.MatrixWiring.MatrixWiring (WM, MatrixWiring(..))
 import Bombe.Wiring.Wiring (Wiring(..), wireToBundleWire)
 import Numeric.LinearAlgebra (ident, atIndex, accum)
@@ -13,7 +16,7 @@ instance Wiring MatrixWiringCompressed where
 
     getLetters (MatrixWiringCompressed _ n _ ) = n
 
-    isConnectedBW (MatrixWiringCompressed m n mapping) ii jj =
+    isConnectedBW (MatrixWiringCompressed m _ mapping) ii jj =
         let
             i = mapping ! ii
             j = mapping ! jj
@@ -24,14 +27,13 @@ instance Wiring MatrixWiringCompressed where
         let
             ii = wireToBundleWire i n
             jj = wireToBundleWire j n
-            i = mapping ! ii
-            j = mapping ! jj
+            pi = mapping ! ii
+            pj = mapping ! jj
         in
-             m `atIndex` (i,j) > 0
+             m `atIndex` (pi,pj) > 0
 
     connectWire (MatrixWiringCompressed m n mapping) ii jj =
         let
-            swap (x,y) = (y,x)
             i  = mapping ! ii
             j  = mapping ! jj
         in
@@ -65,4 +67,4 @@ instance MatrixWiring MatrixWiringCompressed where
         let
             (mt, mem) = transitiveClosureMemoized m memin
         in
-            (MatrixWiringCompressed m n mp, mem)
+            (MatrixWiringCompressed mt n mp, mem)

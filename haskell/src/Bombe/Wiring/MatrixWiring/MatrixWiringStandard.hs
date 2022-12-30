@@ -1,4 +1,6 @@
-module Bombe.Wiring.MatrixWiring.MatrixWiringStandard where
+module Bombe.Wiring.MatrixWiring.MatrixWiringStandard (
+MatrixWiringStandard(..)
+) where
 
 import Bombe.Wiring.MatrixWiring.MatrixWiring (WM, MatrixWiring(..))
 import Bombe.Wiring.Wiring (Wiring(..), bundleToWire, wireToBundleWire)
@@ -19,7 +21,7 @@ instance Wiring MatrixWiringStandard where
         in
             m `atIndex` (i,j) > 0
 
-    isConnected (MatrixWiringStandard m n) i j = m `atIndex` (i,j) > 0
+    isConnected (MatrixWiringStandard m _) i j = m `atIndex` (i,j) > 0
 
     connectWire (MatrixWiringStandard m n) ii jj =
         let

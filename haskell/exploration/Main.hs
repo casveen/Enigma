@@ -1,33 +1,40 @@
 module Main(main) where
 
-import Lib
-import Parts
-import Bombe.Wiring.Wiring
-import Enigma hiding(initialize)
-import Language
-import Control.Monad.State.Strict
-import Control.Monad.Reader (Reader, asks, runReader)
-import Diagrams.TwoD.Arrow
-import Diagrams.Backend.Cairo.CmdLine
-import Bombe.Wiring.WiringDiagram ( drawWires, drawWiresDefault, drawWiresSymmetric, DiagramShape(..), BlockShape(..) )
+import Parts ( simple4 )
+import Bombe.Wiring.Wiring ( Wiring(initialize) )
+import Enigma ( connect )
+import Language ( Letter(A, B) )
+import Control.Monad.State.Strict ( runState )
+--import Control.Monad.Reader (asks, runReader)
+--import Diagrams.TwoD.Arrow ( arrowBetween )
+--import Diagrams.Backend.Cairo.CmdLine ( B )
+--import Bombe.Wiring.WiringDiagram ( drawWires, drawWiresSymmetric, DiagramShape(..), BlockShape(..) )
 import Bombe.Wiring.MatrixWiring.MatrixWiringStandard
-import Diagrams
-import Diagrams.Prelude
-import Numeric.LinearAlgebra (qr)
-
+    ( MatrixWiringStandard )
+{-import Diagrams
+    ( fcA,
+      hsep,
+      vsep,
+      rect,
+      text,
+      rotateBy,
+      translateX,
+      translateY,
+      p2,
+      (#),
+      Diagram )-}
+{-import Diagrams.Prelude
+    ( withOpacity, green, lightgray, orange, white )-}
 main :: IO ()
 main = do
     putStrLn "We start with a simple4 enigma"
     let
         enigma = simple4
         wiring = initialize 4 :: MatrixWiringStandard
-    --print $ runState (encryptTraversableOfMonads [[A,B,C,D]]) enigma
     print $ runState (Enigma.connect wiring A B) enigma
 
-    --mainWith exploreQR
 
-
-
+{-
 explainingClosure :: Diagram B
 explainingClosure =
     let
@@ -178,7 +185,7 @@ explainingClosure =
 
     in
         runReader todo shape
-
+-}
 
 
 

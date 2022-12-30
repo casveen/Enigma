@@ -1,15 +1,17 @@
-import Criterion.Main
-import Cartridge
+import Criterion.Main ( bench, bgroup, whnf, defaultMain )
+import Cartridge ( Cartridge(Cartridge) )
 import Cipher()
-import Enigma
+import Enigma ( EnigmaState(Enigma), encryptText )
 import Language
+    ( Letter(Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R,
+             S, T, U, V, W, X, Y),
+      stringToLanguage )
 import Parts
-import Control.Monad.State.Strict
-import Plugboard
+    ( simple6, viii, vi, v, thinReflectorC, beta, simple4 )
+import Control.Monad.State.Strict ( evalState )
+import Plugboard ( mkPlugboard )
 import Bombe.Tracker (trackManually)
-import Data.Map (empty)
-import Numeric.LinearAlgebra
-import BenchWiring
+import BenchWiring ( wiringBenchmarks )
 
 donitzCipherText :: String
 donitzCipherText = "LANOTCTOUARBBFPMHPHGCZXTDYGAHGUFXGEWKBLKGJWLQXXTGPJJAVTOCKZFSLPPQIHZFX" ++

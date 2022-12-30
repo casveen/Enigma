@@ -1,4 +1,9 @@
-module Bombe.Wiring.Wiring where 
+module Bombe.Wiring.Wiring (
+Wiring(..),
+BW,
+bundleToWire,
+wireToBundleWire    
+) where 
 
 type BW                 = (Int, Int)
 

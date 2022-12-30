@@ -1,7 +1,9 @@
-module Bombe.Bombe where
+module Bombe.Bombe (
 
-import Bombe.Tracker
-import Rotor (Rotor(..))
+)where
+
+--import Bombe.Tracker
+--import Rotor (Rotor(..))
 
 
 {-

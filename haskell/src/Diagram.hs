@@ -1,18 +1,20 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 module Diagram(
     drawRotor,
     drawEnigma,
     defaultShape
 ) where
 
-import Enigma
-import Cartridge
-import Plugboard
-import Rotor
+import Enigma ( EnigmaState(Enigma) )
+import Cartridge ( Cartridge(Cartridge) )
+import Plugboard ( Plugboard(..) )
+import Rotor ( Rotor(..) )
 import Cipher
-import Control.Monad.Writer.Strict
-import Debug.Trace
+    ( TraceableCipher(tracedEncrypt), Cipher(encrypt, letters) )
+import Control.Monad.Writer.Strict ( foldM, runWriter )
+import Debug.Trace ( trace )
 import Data.Bifunctor()
 
 {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -42,9 +44,8 @@ import Diagrams.Prelude
       Diagram,
       AlphaColour )
 import Diagrams.Backend.SVG.CmdLine
-import Control.Monad.Reader (Reader, asks, ask, runReader)
+import Control.Monad.Reader (Reader, asks, ask)
 import Language (shiftLetter)
-import Data.List (zip4)
 
 --wd :: Double
 --wd = 2.0

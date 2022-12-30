@@ -1,9 +1,11 @@
-module Bombe.Wiring.MatrixWiring.MatrixWiringLegacy where
+module Bombe.Wiring.MatrixWiring.MatrixWiringLegacy(
+MatrixWiringLegacy(..)
+) where
 
 import Bombe.Wiring.MatrixWiring.MatrixWiring (WM, MatrixWiring(..))
-import Bombe.Wiring.Wiring (Wiring(..), bundleToWire, wireToBundleWire, BW)
+import Bombe.Wiring.Wiring (Wiring(..), bundleToWire, wireToBundleWire)
 import Numeric.LinearAlgebra (atIndex, accum, assoc, step)
-import Bombe.Wiring.TransitiveClosure (transitiveClosure, transitiveClosureMemoized)
+import Bombe.Wiring.TransitiveClosure (transitiveClosure)
 
 data MatrixWiringLegacy = MatrixWiringLegacy WM Int deriving (Show)
 
@@ -14,16 +16,10 @@ instance Wiring MatrixWiringLegacy where
         let
             i = bundleToWire ii n
             j = bundleToWire jj n
-            --choose the upper triangle
-            --(pi, pj) = (min i j, max i j) --upperTriangularOfUpperTriangular (i,j) n
         in
             m `atIndex` (i,j) > 0
 
-    isConnected (MatrixWiringLegacy m n) i j =
-        let
-            --(pi,pj) = (min i j, max i j) --upperTriangularOfUpperTriangular (i,j) n
-        in
-             m `atIndex` (i,j) > 0
+    isConnected (MatrixWiringLegacy m _) i j = m `atIndex` (i,j) > 0
 
     connectWire (MatrixWiringLegacy m n) ii jj =
         let

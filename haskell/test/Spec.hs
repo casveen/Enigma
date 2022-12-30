@@ -1,26 +1,67 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 import Parts
+    ( simple6,
+      viii,
+      vi,
+      v,
+      ukwm6,
+      ukw,
+      thinReflectorC,
+      im6,
+      iii,
+      ii,
+      identityPlugboard,
+      i,
+      beta,
+      allRotors6,
+      allRotors4,
+      allRotors26,
+      allReflectors6,
+      allReflectors4,
+      allReflectors26,
+      allPlugboards26 )
 import Language
+    ( Letter(Z, M, Q, H, U, X, P, R, S, V, W, G, I, K, O, T, Y, L, J,
+             N, D, F, E, C, B, A),
+      readLetters,
+      stringToLanguage )
 import Test.Hspec
-import WiringSpec
+    ( shouldBe, it, context, describe, SpecWith, hspec )
+import WiringSpec ( transitiveClosureSpec, wiringSpec )
 import Test.QuickCheck
-import Test.Hspec.QuickCheck
-import Transform
+    ( forAll,
+      chooseInt,
+      Property,
+      chooseEnum,
+      elements,
+      listOf,
+      vectorOf,
+      (===),
+      Arbitrary(arbitrary) )
+import Test.Hspec.QuickCheck ( modifyMaxSuccess )
+import Transform ( transformFromLanguage )
 import Enigma
-import Plugboard
-import Cartridge
+    ( EnigmaState(Enigma),
+      enc,
+      encryptText,
+      encryptTraversableOfMonads,
+      getRotorPosition,
+      setRotorPosition,
+      step )
+import Plugboard ( mkPlugboard )
+import Cartridge ( Cartridge(Cartridge) )
 import Cipher
-import Control.Monad.State.Strict
-import Control.Monad.Writer.Strict
+    ( Cipher(encrypt, decrypt), TraceableCipher(tracedEncrypt) )
+import Control.Monad.State.Strict ( evalState )
+import Control.Monad.Writer.Strict ( MonadWriter(writer) )
 import Bombe.Wiring.MatrixWiring.MatrixWiringStandard
+    ( MatrixWiringStandard )
 import Bombe.Wiring.MatrixWiring.MatrixWiringCompressed
+    ( MatrixWiringCompressed )
 import Bombe.Wiring.MatrixWiring.MatrixWiringLegacy
-import Bombe.Wiring.Wiring
---import test.WiringSpec
-
-import Enigma (encryptTraversableOfMonads)
---import Bombe.Wiring
+    ( MatrixWiringLegacy )
+import Bombe.Wiring.Wiring ( Wiring(initialize) )
 
 transformSpec :: SpecWith ()
 transformSpec =
@@ -47,14 +88,14 @@ cartridgeSpec = describe "Testing cartridge spec." $ do
             forAll arbitraryCartridge $ \c ->
             forAll (chooseEnum (A, Z)) $ \p ->
                 reencryptionProp c p
-    
+
     context "given an arbitrary minimal cartridge" $ modifyMaxSuccess (const 100) $ do
         let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors4) <*> elements allReflectors4 <*> arbitrary
         it "should return the original plaintext upon enc- then decryption of a single letter" $
             forAll arbitraryCartridge $ \c ->
             forAll (chooseEnum (A, D)) $ \p ->
                 reencryptionProp c p
-    
+
     context "given an arbitrary 6 wired cartridge" $ modifyMaxSuccess (const 100) $ do
         let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors6) <*> elements allReflectors6 <*> arbitrary
         it "should return the original plaintext upon enc- then decryption of a single letter" $
@@ -198,24 +239,23 @@ undeterministicEnigmaSpec = describe "Testing undeterministic enigma spec." $ do
             evalState (encryptTraversableOfMonads undeterministicText) enigma `shouldBe`
             [[B,A,E,F,C,D],[D,F,E,A,C,B]]
 
-    context "given an arbitrary enigma" $ modifyMaxSuccess (const 1000) $ do     
+    context "given an arbitrary enigma" $ modifyMaxSuccess (const 1000) $ do
         let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors26)
                                         <*> elements allReflectors26
                                         <*> vectorOf 3 (chooseInt (0,25))
         let arbitraryPlugboard = elements allPlugboards26
         let arbitraryEnigmaState = Enigma <$> arbitraryPlugboard <*> arbitraryCartridge
-        let arbitraryEnigma = arbitraryEnigmaState
         let arbitraryText = listOf (listOf (chooseEnum (A, Z)))
         it "should reencrypt all letters undeterministically in same order" $
             forAll arbitraryEnigmaState $ \c ->
-            forAll arbitraryText $ \p ->  
+            forAll arbitraryText $ \p ->
                 evalState (encryptTraversableOfMonads (evalState (encryptTraversableOfMonads p) c)) c `shouldBe` p
 
 reencryptionProp :: (Show a, Cipher c, Ord a, Enum a) => c a -> a -> Property
 reencryptionProp c p = decrypt c (encrypt c p) === p
 
 main :: IO ()
-main = 
+main =
     hspec $ do
         let n = 4
         wiringSpec (Bombe.Wiring.Wiring.initialize n :: MatrixWiringStandard)
@@ -227,5 +267,4 @@ main =
         cartridgeSpec
         enigmaSpec
         undeterministicEnigmaSpec
-    
-    
+

@@ -1,15 +1,24 @@
-module Bombe.Wiring.TransitiveClosure where
+module Bombe.Wiring.TransitiveClosure (
+    transitiveClosure, 
+    transitiveClosureMemoized
+) where
+
 import Bombe.Wiring.MatrixWiring.MatrixWiring (WM, Mem)
 import Data.Map(lookup, insert)
 import Prelude hiding(lookup)
-import Numeric.LinearAlgebra (toBlocksEvery, toLists, rows, cols, step, (|||), (===))
+import Numeric.LinearAlgebra (toBlocksEvery, toLists, rows, cols, step, (|||), (===), Container)
 import Data.Maybe (fromMaybe)
 
+matrixOr :: Num a => a -> a -> a
 matrixOr m1 m2 = m1 + m2 - m1 * m2 -- XXX problem if not 0,1 matrices!!!
-matrixOr2 m1 m2 = m1 + m2 -- XXX problem if not 0,1 matrices!!!
+--matrixOr2 :: Num a => a -> a -> a
+--matrixOr2 m1 m2 = m1 + m2 -- XXX problem if not 0,1 matrices!!!
 
+(<<>>) :: (Ord e, Container c e, Semigroup (c e)) => c e -> c e -> c e
 (<<>>) a b = step $ a <> b
-(<<<>>>) a b = a <> b
+
+--(<<<>>>) :: Semigroup a => a -> a -> a
+--(<<<>>>) a b = a <> b
 
 transitiveClosure :: WM -> WM
 transitiveClosure m =

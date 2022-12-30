@@ -1,5 +1,8 @@
-{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds -Wno-type-defaults -Wno-name-shadowing -Wno-incomplete-uni-patterns  #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+
 module Bombe.Wiring.WiringDiagram(
     drawWires,
     drawWiresDefault,
@@ -9,19 +12,6 @@ module Bombe.Wiring.WiringDiagram(
 ) where
 
 import Data.Bifunctor()
-
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE TypeFamilies              #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE TypeFamilies              #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE TypeFamilies              #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE TypeFamilies              #-}
 import Diagrams.Prelude
     ( AlphaColour,
       Diagram,
@@ -30,7 +20,6 @@ import Diagrams.Prelude
       withOpacity,
       green,
       lightgray,
-      red,
       fcA,
       hsep,
       vsep,
@@ -38,27 +27,20 @@ import Diagrams.Prelude
       text,
       translateX,
       translateY,
-      showOrigin,
       (#), lwL, gray )
 --import Diagrams.Backend.SVG.CmdLine
-import Diagrams.Backend.Cairo.CmdLine
-
+import Diagrams.Backend.Cairo.CmdLine ( B )
 import Control.Monad.Reader (Reader, asks, runReader)
-import Language
-
---import Bombe.Wiring (EnigmaWiring (getLetters, isConnected, getMatrix), MatrixWiring (MatrixWiring))
-
-import Numeric.LinearAlgebra (toLists, qr, unSym)
-import Diagrams (p2)
-import Diagrams (fromVertices)
+import Language ( Letter(Z, A) )
+import Diagrams (fromVertices, p2)
 import Numeric.LinearAlgebra.Data (atIndex)
 import Bombe.Wiring.MatrixWiring.MatrixWiring (MatrixWiring(..))
 import Bombe.Wiring.Wiring (Wiring(..))
 
---wd :: Double
---wd = 2.0
---rw :: Double
---rw = 10.0
+-------------------------------------
+--             SHAPES              --
+-------------------------------------
+
 data BlockShape = BlockShape {
     tColor :: AlphaColour Double,
     fColor :: AlphaColour Double,
@@ -74,6 +56,9 @@ data DiagramShape = DiagramShape {
     diagramColor :: AlphaColour Double
 }
 
+-------------------------------------
+--     DIAGRAMS - DEFAULTSHAPES    -- 
+-------------------------------------
 drawWiresDefault ::  MatrixWiring m => m -> Diagram B
 drawWiresDefault wiring =
     runReader (drawWires wiring)
@@ -104,9 +89,12 @@ drawWiresSymmetricDefault wiring =
         (lightgray `withOpacity` 1.0)
     )
 
+-------------------------------------
+--              DIAGRAMS           -- 
+-------------------------------------
 drawWiresSymmetric :: MatrixWiring m => m -> Reader DiagramShape (Diagram B)
-drawWiresSymmetric m = do 
-    let mat = getMatrix m 
+drawWiresSymmetric m = do
+    --let mat = getMatrix m
     let n = getLetters m
     height       <- asks dHeight
     width        <- asks dWidth
@@ -118,9 +106,9 @@ drawWiresSymmetric m = do
     let ni = fromIntegral n
     diagramColor <- asks diagramColor
     let
-        matrix = mat --unSym mat
+        -- matrix = mat --unSym mat
         letters           = take n [A .. Z]
-        lettersAndLetters = [(b,w) | w <- letters, b <- letters ]
+        -- lettersAndLetters = [(b,w) | w <- letters, b <- letters ]
         blockHeight = (height - upperAir) / fromIntegral (n*n)
         blockWidth  = (width - leftAir) / fromIntegral (n*n)
 
@@ -130,14 +118,14 @@ drawWiresSymmetric m = do
                 map
                     (\b ->
                         (rect (blockWidth*ni) upperAir                 <>
-                        text (show b) # translateY (upperAir/4.0) -- # translateX (-blockWidth/4.0))  <>
+                        text (show b) # translateY (upperAir/4.0)
                             ) # translateY (upperAir/2.0)
                             # translateX (blockWidth*ni / 2.0)  <>
                         hsep 0.0 (
                             map
                                 (\w ->
                                     rect blockWidth (upperAir/2.0) # translateY (upperAir/4.0)    <>
-                                    text (show w) # translateY (upperAir/4.0) -- # translateX (-blockWidth/4.0)
+                                    text (show w) # translateY (upperAir/4.0)
                                 )
                                 letters
                         ) # translateX (blockWidth/2.0)
@@ -145,19 +133,6 @@ drawWiresSymmetric m = do
                     letters
             )  <>
             rect (width-leftAir) upperAir # fcA diagramColor # translateX ((width-leftAir)/2.0) # translateY (upperAir/2.0)
-
-            {-drawUpperDiagram  =
-            hsep 0.0 (
-                map
-                    (\(b,w) ->
-                        rect blockWidth upperAir <>
-                        text (show b ++ " " ++ show w) # translateY (-blockHeight/2.0)
-                    )
-                    lettersAndLetters
-            )  # translateX (blockWidth/2.0) # translateY (upperAir/2.0) <>
-            rect (width-leftAir) upperAir # fcA diagramColor              # translateX ((width-leftAir)/2.0) # translateY (upperAir/2.0) <>
-            rect (width-leftAir) upperAir # fcA (black `withOpacity` 1.0) # translateX ((width-leftAir)/2.0) # translateY (upperAir/2.0)-}
-
 
         drawLeftDiagram :: Diagram B
         drawLeftDiagram  =
@@ -181,14 +156,9 @@ drawWiresSymmetric m = do
             )  <>
             rect leftAir (height-upperAir) # fcA diagramColor # translateY (-(height-upperAir)/2.0) # translateX (-leftAir/2.0)
 
-        listOfRows = toLists matrix
         indexedEntries = mconcat $ map (\r -> map (\c -> (r, c, isConnected m r c)) [0..(n*n-1)]) [0..(n*n-1)]
-        --        (zip listOfRows [0..])
-        --indexedEntries = concatMap
-        --        (\(r,ri) -> zipWith (\e ci -> (ri, ci, e)) r [0..])
-        --        (zip listOfRows [0..])
 
-        drawWiring :: Diagram B
+        {-drawWiring :: Diagram B
         drawWiring =
             let
                 filteredDiagrams =
@@ -206,12 +176,12 @@ drawWiresSymmetric m = do
                          # translateY (-blockHeight/2.0) <>
                 rect (width-leftAir) (height-upperAir) # fcA blockFColor
                                                        # translateX ((width-leftAir)/2.0)
-                                                       # translateY (-(height-upperAir)/2.0)
+                                                       # translateY (-(height-upperAir)/2.0)-}
         drawWiringWithoutSymmetry :: Diagram B
         drawWiringWithoutSymmetry =
             let
                 filteredDiagrams =
-                    filter (\(i,j, e) -> i<=j && (mod i n <= mod j n ) && e) indexedEntries
+                    filter (\(i,j, e) -> i<=j && mod i n <= mod j n && e) indexedEntries
                 --diagrams :: [Diagram B]
                 diagrams = mconcat $
                     map
@@ -220,12 +190,12 @@ drawWiresSymmetric m = do
                                                         # translateX (blockWidth*fromIntegral ci)
                                                         # translateY (-blockHeight*fromIntegral ri))
                     filteredDiagrams
-                greyedOutDiagrams = 
-                    filter 
-                        (\(i, j, _) -> 
-                            i>j || 
-                            (mod i n > mod j n )
-                        ) 
+                greyedOutDiagrams =
+                    filter
+                        (\(i, j, _) ->
+                            i>j ||
+                            mod i n > mod j n
+                        )
                         indexedEntries
 
                 greyedOut = mconcat $
@@ -250,16 +220,16 @@ drawWiresSymmetric m = do
                 fromVertices [p2 (0.0,(-fromIntegral j)*blockHeight), p2 (width-leftAir,(-fromIntegral j)*blockHeight)] | j <- [0..(n*n-1)]
             ] <>
             mconcat [
-                fromVertices [p2 ((fromIntegral i)*blockWidth,0.0), p2 ((fromIntegral i)*blockWidth, -(height-upperAir))] | i <- [0..(n*n-1)]
+                fromVertices [p2 (fromIntegral i*blockWidth,0.0), p2 (fromIntegral i*blockWidth, -(height-upperAir))] | i <- [0..(n*n-1)]
             ]) # fcA (black `withOpacity` 1.0) # lwL 0.01 <>
             (mconcat [
                 fromVertices [p2 (0.0,(-fromIntegral j)*(ni*blockHeight)), p2 (width-leftAir,(-fromIntegral j)*(ni*blockHeight))] | j <- [0..(n-1)]
             ] <>
             mconcat [
-                fromVertices [p2 ((fromIntegral i)*(ni*blockWidth),0.0), p2 ((fromIntegral i)*(ni*blockWidth), -(height-upperAir))] | i <- [0..(n-1)]
+                fromVertices [p2 (fromIntegral i*(ni*blockWidth),0.0), p2 (fromIntegral i*(ni*blockWidth), -(height-upperAir))] | i <- [0..(n-1)]
             ]) # fcA (black `withOpacity` 1.0) # lwL 0.05
 
-        
+
                 {-foldl 
                     (\dia rowDia -> 
                         dia # translateY (-height+upperAir) <>
@@ -321,8 +291,8 @@ drawWiresSymmetric m = do
 
 
 drawWires :: (MatrixWiring m) => m -> Reader DiagramShape (Diagram B)
-drawWires m = do 
-    let mat = getMatrix m 
+drawWires m = do
+    let mat = getMatrix m
     let n = getLetters m
     height       <- asks dHeight
     width        <- asks dWidth
@@ -336,7 +306,7 @@ drawWires m = do
     let
         matrix = mat --unSym mat
         letters           = take n [A .. Z]
-        lettersAndLetters = [(b,w) | w <- letters, b <- letters ]
+        --lettersAndLetters = [(b,w) | w <- letters, b <- letters ]
         blockHeight = (height - upperAir) / fromIntegral (n*n)
         blockWidth  = (width - leftAir) / fromIntegral (n*n)
 
@@ -397,19 +367,13 @@ drawWires m = do
             )  <>
             rect leftAir (height-upperAir) # fcA diagramColor # translateY (-(height-upperAir)/2.0) # translateX (-leftAir/2.0)
 
-        listOfRows = toLists matrix
         indexedEntries = mconcat $ map (\r -> map (\c -> (r, c, abs (matrix `atIndex` (r,c) ) >0) ) [0..(n*n-1)]) [0..(n*n-1)]
-        --        (zip listOfRows [0..])
-        --indexedEntries = concatMap
-        --        (\(r,ri) -> zipWith (\e ci -> (ri, ci, e)) r [0..])
-        --        (zip listOfRows [0..])
 
         drawWiring :: Diagram B
         drawWiring =
             let
                 filteredDiagrams =
                     filter (\(_, _, e) -> e) indexedEntries
-                --diagrams :: [Diagram B]
                 diagrams = mconcat $
                     map
                         (\(ri, ci, _) ->
@@ -423,7 +387,7 @@ drawWires m = do
                 rect (width-leftAir) (height-upperAir) # fcA blockFColor
                                                        # translateX ((width-leftAir)/2.0)
                                                        # translateY (-(height-upperAir)/2.0)
-        drawWiringWithoutSymmetry :: Diagram B
+        {-drawWiringWithoutSymmetry :: Diagram B
         drawWiringWithoutSymmetry =
             let
                 filteredDiagrams =
@@ -458,7 +422,7 @@ drawWires m = do
                                                        # translateY (-blockHeight/2.0) <>
                 rect (width-leftAir) (height-upperAir) # fcA blockFColor
                                                        # translateX ((width-leftAir)/2.0)
-                                                       # translateY (-(height-upperAir)/2.0)
+                                                       # translateY (-(height-upperAir)/2.0)-}
 
         drawGrid :: Diagram B
         drawGrid =
@@ -466,30 +430,17 @@ drawWires m = do
                 fromVertices [p2 (0.0,(-fromIntegral j)*blockHeight), p2 (width-leftAir,(-fromIntegral j)*blockHeight)] | j <- [0..(n*n-1)]
             ] <>
             mconcat [
-                fromVertices [p2 ((fromIntegral i)*blockWidth,0.0), p2 ((fromIntegral i)*blockWidth, -(height-upperAir))] | i <- [0..(n*n-1)]
+                fromVertices [p2 (fromIntegral i*blockWidth,0.0), p2 (fromIntegral i*blockWidth, -(height-upperAir))] | i <- [0..(n*n-1)]
             ]) # fcA (black `withOpacity` 1.0) # lwL 0.01 <>
             (mconcat [
                 fromVertices [p2 (0.0,(-fromIntegral j)*(ni*blockHeight)), p2 (width-leftAir,(-fromIntegral j)*(ni*blockHeight))] | j <- [0..(n-1)]
             ] <>
             mconcat [
-                fromVertices [p2 ((fromIntegral i)*(ni*blockWidth),0.0), p2 ((fromIntegral i)*(ni*blockWidth), -(height-upperAir))] | i <- [0..(n-1)]
+                fromVertices [p2 (fromIntegral i*(ni*blockWidth),0.0), p2 (fromIntegral i*(ni*blockWidth), -(height-upperAir))] | i <- [0..(n-1)]
             ]) # fcA (black `withOpacity` 1.0) # lwL 0.05
 
-        
-                {-foldl 
-                    (\dia rowDia -> 
-                        dia # translateY (-height+upperAir) <>
-                        rowDia
-                    ) 
-                    mempty-}
-
-
-
-
     return $
-        drawLeftDiagram # lwL 0.01 <> -- # translateX (width/2.0) 
-                         -- # translateY (upperAir/2.0)) <> -- # translateY (height/2.0) <>
+        drawLeftDiagram # lwL 0.01 <>
         drawUpperDiagram # lwL 0.01  <>
         drawGrid <>
-        --drawWiring # lwL 0.01 <>
         drawWiring # lwL 0.01

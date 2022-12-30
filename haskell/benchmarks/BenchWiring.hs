@@ -1,23 +1,26 @@
-module BenchWiring where
-import Criterion.Main
-import Cartridge
+module BenchWiring (
+    wiringBenchmarks
+) where
+import Criterion.Main ( bench, bgroup, whnf, Benchmark )
+import Cartridge ()
 import Cipher()
---import Enigma hiding(initialize)
-import Language
-import Parts
-import Control.Monad.State.Strict
-import Plugboard
-import Bombe.Wiring.Wiring
-import Bombe.Tracker (trackManually)
 import Data.Map (empty)
-import Numeric.LinearAlgebra
+import Numeric.LinearAlgebra ( sumElements )
 import Bombe.Wiring.MatrixWiring.MatrixWiringStandard
+    ( MatrixWiringStandard )
 import Bombe.Wiring.MatrixWiring.MatrixWiringLegacy
+    ( MatrixWiringLegacy )
 import Bombe.Wiring.MatrixWiring.MatrixWiringCompressed
+    ( MatrixWiringCompressed )
 import Bombe.Wiring.Wiring
+    ( wireToBundleWire,
+      Wiring(closure, initialize, getLetters, connectWire) )
 import Bombe.Wiring.MatrixWiring.MatrixWiring
+    ( MatrixWiring(getMatrix, memoizedClosure), Mem )
+import Numeric.LinearAlgebra.Data (I)
 
 
+wiringBenchmarks :: Benchmark
 wiringBenchmarks =
     bgroup "wiring" $ [
         bgroup "initialization" [
@@ -45,13 +48,14 @@ wiringBenchmarks =
         ],
 
         bgroup "repeated transitive closures" [
-            bench "MatrixWiring"  $ whnf (fst . repeatedBenchesMemoized) (initialize 26 :: MatrixWiringStandard),
-            bench "MatrixWiringLegacy" $ whnf repeatedBenchesUnmemoized (initialize 26 :: MatrixWiringLegacy),
-            bench "MatrixWiringCompressed" $ whnf repeatedBenchesMemoized (initialize 26 :: MatrixWiringCompressed)
+            bench "MatrixWiring"  $ whnf (fst . repeatedBenchesMemoized) (initialize 12 :: MatrixWiringStandard),
+            bench "MatrixWiringLegacy" $ whnf repeatedBenchesUnmemoized (initialize 12 :: MatrixWiringLegacy),
+            bench "MatrixWiringCompressed" $ whnf repeatedBenchesMemoized (initialize 12 :: MatrixWiringCompressed)
         ]
     ]
 
 
+connectAll :: Wiring a => a -> a
 connectAll m =
     let
         n = getLetters m
@@ -61,6 +65,7 @@ connectAll m =
             m
             [(wireToBundleWire i n, wireToBundleWire j n) | i <- [0..(n*n-1)], j <- [i..(n*n-1)]]
 
+connectBidiagonal :: Wiring a => a -> a
 connectBidiagonal m =
     let
         n = getLetters m
@@ -70,6 +75,7 @@ connectBidiagonal m =
             m
             [(wireToBundleWire i n, wireToBundleWire (i+1) n) | i <- [0..(n*n-2)]]
 
+connectRandom :: Wiring a => Int -> a -> a
 connectRandom k m =
     let
         n = getLetters m
@@ -79,6 +85,7 @@ connectRandom k m =
             m
             [(wireToBundleWire i n, wireToBundleWire (mod (i+j*i*j*k+j + k) (n*n)) n) | i <- [0..(n*n-2)], j<-[0..n]]
 
+repeatedBenchesMemoized :: MatrixWiring a => a -> (I, Mem)
 repeatedBenchesMemoized m =
     foldl
         (\(acc,previousMemo) k ->
@@ -90,6 +97,7 @@ repeatedBenchesMemoized m =
         (0, empty)
         [0..10]
 
+repeatedBenchesUnmemoized :: MatrixWiring b => b -> I
 repeatedBenchesUnmemoized m =
     foldl
         (\acc k ->
