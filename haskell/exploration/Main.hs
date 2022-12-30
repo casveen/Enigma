@@ -2,16 +2,15 @@ module Main(main) where
 
 import Lib
 import Parts
-import Bombe.Wiring
+import Bombe.Wiring.Wiring
 import Enigma hiding(initialize)
 import Language
 import Control.Monad.State.Strict
 import Control.Monad.Reader (Reader, asks, runReader)
 import Diagrams.TwoD.Arrow
---import Diagram ( drawEnigma, defaultShape )
---import Diagrams.Backend.SVG.CmdLine ( mainWith )
 import Diagrams.Backend.Cairo.CmdLine
-import Bombe.WiringDiagram ( drawWires, drawWiresDefault, drawWiresSymmetric, DiagramShape(..), BlockShape(..) )
+import Bombe.Wiring.WiringDiagram ( drawWires, drawWiresDefault, drawWiresSymmetric, DiagramShape(..), BlockShape(..) )
+import Bombe.Wiring.MatrixWiring.MatrixWiringStandard
 import Diagrams
 import Diagrams.Prelude
 import Numeric.LinearAlgebra (qr)
@@ -21,7 +20,7 @@ main = do
     putStrLn "We start with a simple4 enigma"
     let
         enigma = simple4
-        wiring = initialize 4 :: MatrixWiring
+        wiring = initialize 4 :: MatrixWiringStandard
     --print $ runState (encryptTraversableOfMonads [[A,B,C,D]]) enigma
     print $ runState (Enigma.connect wiring A B) enigma
 
@@ -34,7 +33,7 @@ explainingClosure =
     let
         sep = 16.0
         enigma = simple4
-        wiring = initialize 4 :: MatrixWiring
+        wiring = initialize 4 :: MatrixWiringStandard
         initialDiagram = drawWires wiring
         connectAB      = drawWiresSymmetric $ evalState (
             do

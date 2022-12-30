@@ -1,11 +1,12 @@
-
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
-
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module WiringSpec where
+
 {- Spec for wiring, specifically the computation of transitive closure -}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
+
 
 import Parts
     ( allPlugboards26,
@@ -33,7 +34,7 @@ import Test.Hspec
 import Test.QuickCheck hiding ((><))
 import Test.Hspec.QuickCheck (modifyMaxSuccess)
 import Transform
-import Enigma
+import Enigma hiding(initialize)
 import Plugboard
 import Cartridge
 import Cipher
@@ -44,31 +45,21 @@ import Debug.Trace
 import Data.TypeNums
 import Numeric.LinearAlgebra.Data
 import GHC.Num.Natural
-import Bombe.Wiring -- hiding (ModTwo)
-
+import Bombe.Wiring.Wiring -- hiding (ModTwo)
+import Bombe.Wiring.MatrixWiring.MatrixWiring(WM)
 import Control.Exception
 import Test.HUnit.Lang (HUnitFailure(..))
-
-
-
 import Prelude hiding ((<>))
---import Language
---import Data.TypeNums
 import Numeric.LinearAlgebra.Data
---import GHC.Num.Natural
+import Bombe.Wiring.TransitiveClosure
 
 
 
 
---type ModTwo = Numeric.LinearAlgebra.Data.Mod 2 Z
---type WM = Matrix ModTwo
---type M2 = Herm ModTwo -- hermetic matrix of integers modulo two
 
-
-wiringSpec :: SpecWith ()
-wiringSpec = describe "Testing wiring spec." $ context "given a wiring board" $ do
-    let n = 4
-    let wiring = Bombe.Wiring.initialize n :: MatrixWiringC
+wiringSpec :: (Wiring w) => w -> SpecWith ()
+wiringSpec wiring = describe "Testing wiring spec." $ context "given a wiring board" $ do
+    let n = getLetters wiring
     let wires  = chooseInt (0,n*n-1)
     it "should connect two wires" $
         forAll wires $ \wireFrom ->
@@ -151,6 +142,12 @@ wiringSpec = describe "Testing wiring spec." $ context "given a wiring board" $ 
                     isConnectedBW connectedMatrix bw3 bw6 `shouldBe` True
                     isConnectedBW connectedMatrix bw4 bw6 `shouldBe` True
                 else return ()
+
+
+
+
+
+
 
 transitiveClosureSpec :: SpecWith ()
 transitiveClosureSpec = describe "Testing transitive closure spec." $ do

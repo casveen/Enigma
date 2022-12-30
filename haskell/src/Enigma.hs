@@ -24,7 +24,8 @@ import Cipher (Cipher(..), TraceableCipher(..), logTrace)
 import Cartridge (Cartridge(..), stepCartridge)
 import Plugboard (Plugboard(..))
 import Rotor(Rotor(..))
-import Bombe.Wiring hiding (initialize)
+import Bombe.Wiring.Wiring hiding (initialize)
+--import Bombe.Wiring (EnigmaWiring)
 
 ----------------------------------------------
 --              ENIGMA                      --
@@ -152,7 +153,7 @@ mkEnigma plugBoard rotors reflector rss rps = do
 --               WIRING                           --
 ---------------------------------------------------- 
 
-connect :: (Enum e, Ord e, EnigmaWiring w) => w -> e -> e -> Enigma e w 
+connect :: (Enum e, Ord e, Wiring w) => w -> e -> e -> Enigma e w 
 connect wiring cribLetter cipherLetter = do 
     --in state monad 
     plugboard  <- getPlugboard

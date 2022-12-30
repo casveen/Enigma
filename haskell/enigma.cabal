@@ -27,8 +27,13 @@ library
   exposed-modules:
       Bombe.Bombe
       Bombe.Tracker
-      Bombe.Wiring
-      Bombe.WiringDiagram
+      Bombe.Wiring.MatrixWiring.MatrixWiring
+      Bombe.Wiring.MatrixWiring.MatrixWiringCompressed
+      Bombe.Wiring.MatrixWiring.MatrixWiringLegacy
+      Bombe.Wiring.MatrixWiring.MatrixWiringStandard
+      Bombe.Wiring.TransitiveClosure
+      Bombe.Wiring.Wiring
+      Bombe.Wiring.WiringDiagram
       Cartridge
       Cipher
       Diagram
@@ -155,6 +160,7 @@ benchmark enigma-benchmark
   type: exitcode-stdio-1.0
   main-is: Bench.hs
   other-modules:
+      BenchWiring
       Paths_enigma
   hs-source-dirs:
       benchmarks

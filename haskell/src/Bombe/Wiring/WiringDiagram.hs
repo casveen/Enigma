@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
-module Bombe.WiringDiagram(
+module Bombe.Wiring.WiringDiagram(
     drawWires,
     drawWiresDefault,
     DiagramShape(..),
@@ -46,11 +46,14 @@ import Diagrams.Backend.Cairo.CmdLine
 import Control.Monad.Reader (Reader, asks, runReader)
 import Language
 
-import Bombe.Wiring (EnigmaWiring (getLetters, isConnected, getMatrix), MatrixWiring (MatrixWiring))
+--import Bombe.Wiring (EnigmaWiring (getLetters, isConnected, getMatrix), MatrixWiring (MatrixWiring))
+
 import Numeric.LinearAlgebra (toLists, qr, unSym)
 import Diagrams (p2)
 import Diagrams (fromVertices)
 import Numeric.LinearAlgebra.Data (atIndex)
+import Bombe.Wiring.MatrixWiring.MatrixWiring (MatrixWiring(..))
+import Bombe.Wiring.Wiring (Wiring(..))
 
 --wd :: Double
 --wd = 2.0
@@ -71,7 +74,7 @@ data DiagramShape = DiagramShape {
     diagramColor :: AlphaColour Double
 }
 
-drawWiresDefault :: MatrixWiring -> Diagram B
+drawWiresDefault ::  MatrixWiring m => m -> Diagram B
 drawWiresDefault wiring =
     runReader (drawWires wiring)
     (DiagramShape
@@ -86,7 +89,7 @@ drawWiresDefault wiring =
         (lightgray `withOpacity` 1.0)
     )
 
-drawWiresSymmetricDefault :: MatrixWiring -> Diagram B
+drawWiresSymmetricDefault :: MatrixWiring m => m -> Diagram B
 drawWiresSymmetricDefault wiring =
     runReader (drawWiresSymmetric wiring)
     (DiagramShape
@@ -101,8 +104,10 @@ drawWiresSymmetricDefault wiring =
         (lightgray `withOpacity` 1.0)
     )
 
-drawWiresSymmetric :: MatrixWiring -> Reader DiagramShape (Diagram B)
-drawWiresSymmetric m@(MatrixWiring mat n) = do
+drawWiresSymmetric :: MatrixWiring m => m -> Reader DiagramShape (Diagram B)
+drawWiresSymmetric m = do 
+    let mat = getMatrix m 
+    let n = getLetters m
     height       <- asks dHeight
     width        <- asks dWidth
     leftAir      <- asks leftAir
@@ -315,8 +320,10 @@ drawWiresSymmetric m@(MatrixWiring mat n) = do
 
 
 
-drawWires :: MatrixWiring -> Reader DiagramShape (Diagram B)
-drawWires m@(MatrixWiring mat n) = do
+drawWires :: (MatrixWiring m) => m -> Reader DiagramShape (Diagram B)
+drawWires m = do 
+    let mat = getMatrix m 
+    let n = getLetters m
     height       <- asks dHeight
     width        <- asks dWidth
     leftAir      <- asks leftAir

@@ -1,31 +1,11 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 import Parts
-    ( allPlugboards26,
-      allReflectors26,
-      allReflectors4,
-      allReflectors6,
-      allRotors26,
-      allRotors4,
-      allRotors6,
-      beta,
-      i,
-      identityPlugboard,
-      ii,
-      iii,
-      im6,
-      thinReflectorC,
-      ukw,
-      ukwm6,
-      v,
-      vi,
-      viii, 
-      simple6 )
 import Language
 import Test.Hspec
 import WiringSpec
 import Test.QuickCheck
-import Test.Hspec.QuickCheck (modifyMaxSuccess)
+import Test.Hspec.QuickCheck
 import Transform
 import Enigma
 import Plugboard
@@ -33,10 +13,14 @@ import Cartridge
 import Cipher
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
+import Bombe.Wiring.MatrixWiring.MatrixWiringStandard
+import Bombe.Wiring.MatrixWiring.MatrixWiringCompressed
+import Bombe.Wiring.MatrixWiring.MatrixWiringLegacy
+import Bombe.Wiring.Wiring
 --import test.WiringSpec
 
 import Enigma (encryptTraversableOfMonads)
-import Bombe.Wiring
+--import Bombe.Wiring
 
 transformSpec :: SpecWith ()
 transformSpec =
@@ -50,8 +34,6 @@ transformSpec =
         let result = map (decrypt t) [A,B,C,D,E,F]
         let expected = [C,A,E,D,F,B]
         result `shouldBe` expected
-
-
 
 
 cartridgeSpec :: SpecWith ()
@@ -89,16 +71,6 @@ cartridgeSpec = describe "Testing cartridge spec." $ do
         let specificCartridge = Cartridge [im6] ukwm6 [0]
         it "should encrypt in a given pattern" $
             map (encrypt specificCartridge) [A .. F] `shouldBe` [F,C,B,E,D,A]
-
-    {-context "given a specific turned cartridge (im6+1, ukw) with 6 letters" $ do
-        let specificCartridge = Cartridge [im6] ukwm6 [1]
-        it "should encrypt in a given pattern" $
-            map (encrypt specificCartridge) [A .. F] `shouldBe` [F,C,B,E,D,A]  
-    
-    context "given a specific turned cartridge (im6+2, ukw) with 6 letters" $ do
-        let specificCartridge = Cartridge [im6] ukwm6 [2]
-        it "should encrypt in a given pattern" $
-            map (encrypt specificCartridge) [A .. F] `shouldBe` [D,E,F,A,B,C]  -}
 
 donitzCipherText :: String
 donitzCipherText = "LANOTCTOUARBBFPMHPHGCZXTDYGAHGUFXGEWKBLKGJWLQXXTGPJJAVTOCKZFSLPPQIHZFX" ++
@@ -239,45 +211,21 @@ undeterministicEnigmaSpec = describe "Testing undeterministic enigma spec." $ do
             forAll arbitraryText $ \p ->  
                 evalState (encryptTraversableOfMonads (evalState (encryptTraversableOfMonads p) c)) c `shouldBe` p
 
-
-
-{-rotorSpec = 
-    describe "Testing rotor spec." $ do
-        context "given an arbitrary rotor" $ do
-            let rotors = elements allRotors26
-            let letters = chooseEnum (A,Z)
-            let offsets = chooseInt (0,25)
-            let n=26
-            it "should use the same wire if plaintext and rotor turns" $ do
-                forAll rotors $ \r -> 
-                    forAll letters $ \l ->
-                        forAll offsets $ \o ->
-                            shiftLetter (encrypt r $ shiftLetter l o n) (-o) n-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 reencryptionProp :: (Show a, Cipher c, Ord a, Enum a) => c a -> a -> Property
 reencryptionProp c p = decrypt c (encrypt c p) === p
 
 main :: IO ()
-main = hspec $ do
-    wiringSpec
-    transitiveClosureSpec
-    tracedEncryptionSpec
-    transformSpec
-    cartridgeSpec
-    --enigmaSpec
-    --undeterministicEnigmaSpec
+main = 
+    hspec $ do
+        let n = 4
+        wiringSpec (Bombe.Wiring.Wiring.initialize n :: MatrixWiringStandard)
+        wiringSpec (Bombe.Wiring.Wiring.initialize n :: MatrixWiringCompressed)
+        wiringSpec (Bombe.Wiring.Wiring.initialize n :: MatrixWiringLegacy)
+        transitiveClosureSpec
+        tracedEncryptionSpec
+        transformSpec
+        cartridgeSpec
+        enigmaSpec
+        undeterministicEnigmaSpec
     
     
