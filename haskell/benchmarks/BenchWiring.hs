@@ -49,8 +49,8 @@ wiringBenchmarks =
 
         bgroup "repeated transitive closures" [
             bench "MatrixWiring"  $ whnf (fst . repeatedBenchesMemoized) (initialize 12 :: MatrixWiringStandard),
-            bench "MatrixWiringLegacy" $ whnf repeatedBenchesUnmemoized (initialize 12 :: MatrixWiringLegacy),
-            bench "MatrixWiringCompressed" $ whnf repeatedBenchesMemoized (initialize 12 :: MatrixWiringCompressed)
+            bench "MatrixWiringLegacy" $ whnf (fst . repeatedBenchesMemoized) (initialize 12 :: MatrixWiringLegacy),
+            bench "MatrixWiringCompressed" $ whnf (fst . repeatedBenchesMemoized) (initialize 12 :: MatrixWiringCompressed)
         ]
     ]
 
@@ -95,7 +95,7 @@ repeatedBenchesMemoized m =
                 (acc + sumElements (getMatrix closed), newMemo)
         )
         (0, empty)
-        [0..10]
+        [0..100]
 
 repeatedBenchesUnmemoized :: MatrixWiring b => b -> I
 repeatedBenchesUnmemoized m =

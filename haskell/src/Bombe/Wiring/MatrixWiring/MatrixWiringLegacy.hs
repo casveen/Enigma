@@ -5,7 +5,7 @@ MatrixWiringLegacy(..)
 import Bombe.Wiring.MatrixWiring.MatrixWiring (WM, MatrixWiring(..))
 import Bombe.Wiring.Wiring (Wiring(..), bundleToWire, wireToBundleWire)
 import Numeric.LinearAlgebra (atIndex, accum, assoc, step)
-import Bombe.Wiring.TransitiveClosure (transitiveClosure)
+import Bombe.Wiring.TransitiveClosure (transitiveClosure, transitiveClosureMemoized)
 
 data MatrixWiringLegacy = MatrixWiringLegacy WM Int deriving (Show)
 
@@ -54,4 +54,8 @@ instance MatrixWiring MatrixWiringLegacy where
 
     getMatrix (MatrixWiringLegacy m _) = m
 
-    memoizedClosure = undefined
+    memoizedClosure (MatrixWiringLegacy m n, memin) =
+        let
+            (mt, mem) = transitiveClosureMemoized m memin
+        in
+            (MatrixWiringLegacy mt n, mem)
