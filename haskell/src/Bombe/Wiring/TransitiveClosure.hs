@@ -3,7 +3,7 @@ module Bombe.Wiring.TransitiveClosure (
     transitiveClosureMemoized
 ) where
 
-import Bombe.Wiring.MatrixWiring.MatrixWiring (WM, Mem)
+import Bombe.Wiring.MatrixWiring.MatrixWiring (WM, Mem, hashMatrix)
 import Data.Map(lookup, insert)
 import Prelude hiding(lookup)
 import Numeric.LinearAlgebra (toBlocksEvery, toLists, rows, cols, step, (|||), (===), Container)
@@ -92,11 +92,11 @@ transitiveClosureMemoized m mem =
 
         lkup = 
             do 
-                val <- lookup m mem
+                val <- lookup (hashMatrix m) mem
                 return (val, mem3)
 
-        mem3 = insert m res mem
+        mem3 = insert (hashMatrix m) res mem
     in
-        if rn <= 26
+        if rn <= 4
             then fromMaybe (res, if isUniform then mem else mem3) lkup
             else (res, if isUniform then mem else mem2)

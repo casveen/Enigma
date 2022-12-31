@@ -1,6 +1,9 @@
 module Bombe.Bombe (
 
 )where
+import Bombe.Wiring.Wiring (Wiring(..), BW)
+import Numeric.LinearAlgebra (toRows, toBlocksEvery)
+import Bombe.Wiring.MatrixWiring.MatrixWiring (MatrixWiring (getMatrix))
 
 --import Bombe.Tracker
 --import Rotor (Rotor(..))
@@ -64,3 +67,38 @@ analyzeEngage wiring enigma (Forest branches) =
         branches
 
 -}
+
+
+{-
+When we check if a wiring is valid, it can be done on a row-by row basis 
+
+we have a contradiction if there is MORE than two connections in a 26-block-
+
+-}
+isValidWiring :: (MatrixWiring w) => w -> Bool
+isValidWiring wiring = 
+    let 
+        n    = getLetters wiring
+        mt   = getMatrix wiring
+        blockedRows = toBlocksEvery 1 26 mt
+
+    in 
+        False
+
+isValidWiringAt :: (MatrixWiring w) => w -> BW -> Bool
+isValidWiringAt wiring (bundle, wire) = 
+    let 
+        n    = getLetters wiring
+        mt   = getMatrix wiring
+        blockedRows = toBlocksEvery 1 26 mt
+
+    in 
+        False
+
+
+
+
+
+
+
+

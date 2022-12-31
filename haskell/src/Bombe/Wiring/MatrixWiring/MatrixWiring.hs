@@ -9,10 +9,11 @@ module Bombe.Wiring.MatrixWiring.MatrixWiring (
     WM, 
     Wiring,
     MatrixWiring(..),
-    Mem
+    Mem,
+    hashMatrix
 ) where
 
-import Numeric.LinearAlgebra(Matrix, I, Element, Container, Vector, toLists, step)
+import Numeric.LinearAlgebra(Matrix, I, Element, Container, Vector, toLists, step, flatten, toRows, Z)
 import Data.Map (Map)
 import Bombe.Wiring.Wiring (Wiring)
 
@@ -28,7 +29,17 @@ Hermetic/Symmetric matrices have no matrix mult instance, so we end up using jus
 
 type WM = Matrix I
 
-type Mem = Map WM WM
+type Mem = Map I WM
+
+-- TODO: better slicing
+hashMatrix :: WM -> I
+hashMatrix m = 
+    let 
+        flattenUpperTriangle = mconcat $ [drop i l | (i,l) <- zip [0..] (toLists m)]
+        flat = flattenUpperTriangle
+    in 
+        foldl (\acc x -> 2*acc + x) 0 flat
+
 
 class Wiring a => MatrixWiring a where
     getMatrix :: a -> WM
