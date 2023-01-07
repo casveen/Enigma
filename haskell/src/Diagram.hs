@@ -10,13 +10,22 @@ module Diagram(
 import Enigma ( EnigmaState(Enigma) )
 import Cartridge ( Cartridge(Cartridge) )
 import Plugboard ( Plugboard(..) )
-import Rotor ( Rotor(..) )
+import Rotor ( Rotor(..), getName )
 import Cipher
     ( TraceableCipher(tracedEncrypt), Cipher(encrypt, letters), Cipherable )
 import Control.Monad.Writer.Strict ( foldM, runWriter )
 import Debug.Trace ( trace )
 import Data.Bifunctor()
 
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE TypeFamilies              #-}
@@ -42,17 +51,18 @@ import Diagrams.Prelude
       black,
       Bifunctor(bimap),
       Diagram,
-      AlphaColour )
-import Diagrams.Backend.SVG.CmdLine
+      AlphaColour,
+      fontSize, output)
+import Diagrams.Backend.Cairo.CmdLine
 import Control.Monad.Reader (Reader, asks, ask)
-import Language (shiftLetter, LetterOrdinal)
+import Language (LetterOrdinal)
 import Parts (reEnum)
+import Data.Maybe (fromMaybe)
 
---wd :: Double
---wd = 2.0
---rw :: Double
---rw = 10.0
 
+-------------------------------------------------
+--               SHAPES                        --
+-------------------------------------------------
 data TransformShape = TransformShape {
     transformWidth :: Double,
     transformHeight :: Double,
@@ -69,9 +79,12 @@ data TransformShape = TransformShape {
 }
 
 defaultShape :: TransformShape
-defaultShape = TransformShape 10.0 40.0 3.0 12.0 3.0 0.6 0.5 1.0 (black `withOpacity` 0.1) (red `withOpacity` 1.0) (darkgray `withOpacity` 1.0) (lightgray `withOpacity` 1.0)
+defaultShape = TransformShape 10.0 40.0 3.0 28.0 3.0 0.6 18.0 1.0 (black `withOpacity` 0.1) (red `withOpacity` 1.0) (darkgray `withOpacity` 1.0) (lightgray `withOpacity` 1.0)
 
-drawRotorWire :: (Cipherable e, Show e) => e -> e -> e -> e -> Int -> e -> Reader TransformShape (Diagram B)
+---------------------------------------------------
+--                  DIAGRAMS                     --
+---------------------------------------------------
+drawRotorWire :: (Cipherable e) => e -> e -> e -> e -> Int -> e -> Reader TransformShape (Diagram B)
 drawRotorWire from to wireIn wireOut n offset = do
     (TransformShape width height lineWidth outerLineWidth deadZoneWidth smoothness letterSize letterOffset sepLineColor activeWireColor inactiveWireColor _) <- ask
 
@@ -100,13 +113,13 @@ drawRotorWire from to wireIn wireOut n offset = do
             | otherwise              = inactiveWireColor
     return $
         text (show (reEnum fromShifted :: LetterOrdinal)) # translateX (-width/2-letterOffset)
-                                # translateY (f - letterSize/2.0)        <>
+                                # translateY f        <>
         fromVertices outerRightVertices # lcA color # lwO outerLineWidth <>
         fromVertices outerLeftVertices # lcA color # lwO outerLineWidth  <>
         bspline innerVertices # lcA color # lwO lineWidth                <>
         fromVertices [p2 (-width/2,f+sep/2), p2 (width/2,f+sep/2)] # lcA sepLineColor # lwO 1.0
 
-drawReflectorWire :: (Cipherable e, Show e) => e -> e -> e -> e -> Int -> e -> Reader TransformShape (Diagram B)
+drawReflectorWire :: (Cipherable e) => e -> e -> e -> e -> Int -> e -> Reader TransformShape (Diagram B)
 drawReflectorWire from to wireIn wireOut n offset = do
     (TransformShape width height lineWidth outerLineWidth deadZoneWidth _ letterSize letterOffset sepLineColor activeWireColor inactiveWireColor _) <- ask
     let
@@ -135,9 +148,9 @@ drawReflectorWire from to wireIn wireOut n offset = do
             | otherwise       = inactiveWireColor
     return $
         text (show (reEnum fromShifted :: LetterOrdinal)) # translateX (-width/2-letterOffset)
-                                # translateY (f - letterSize/2.0)        <>
+                                # translateY f           <>
         text (show (reEnum toShifted :: LetterOrdinal))   # translateX (-width/2-letterOffset)
-                                # translateY (t - letterSize/2.0)        <>
+                                # translateY t           <>
         fromVertices outerRightVertices # lcA color # lwO outerLineWidth <>
         fromVertices outerLeftVertices # lcA color # lwO outerLineWidth  <>
         bspline innerVertices # lcA color # lwO lineWidth                <>
@@ -187,9 +200,12 @@ drawRotor (Reflector transform _) wireInEnum wireOutEnum offset = do
         allWiresDiagram   # translateY ((1/fromIntegral n-1)*height/2) <>
         rect width height # fcA bgColor
 
+drawRotor (NamedRotor r _) wireInEnum wireOutEnum offset = drawRotor r wireInEnum wireOutEnum offset
 
 
-drawPlugboard :: (Cipherable e, Show e) => Plugboard e -> e -> e -> Reader TransformShape (Diagram B)
+
+
+drawPlugboard :: (Cipherable e) => Plugboard e -> e -> e -> Reader TransformShape (Diagram B)
 drawPlugboard (Plugboard transform) wireInEnum wireOutEnum = do
     width   <- asks transformWidth
     height  <- asks transformHeight
@@ -211,7 +227,8 @@ drawPlugboard (Plugboard transform) wireInEnum wireOutEnum = do
 
 drawEnigma :: (Cipherable e, Show e) => EnigmaState e -> Int -> Reader TransformShape (Diagram B)
 drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) activeWire = do
-    height <- asks transformHeight
+    height     <- asks transformHeight
+    letterSize <- asks transformLetterSize
 
     let
         rotornum                  = length rotors
@@ -225,24 +242,30 @@ drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) acti
             in
                 Debug.Trace.trace (show $ map (bimap fromEnum fromEnum) it) it
         inOut xs =
-            (let
+            let
                 (pout:crimped) = crimp xs
                 rout           = take rotornum crimped
                 refout         = (crimped !! max 0 rotornum) --unsafe
             in
-                Debug.Trace.trace (show $ map (bimap fromEnum fromEnum) rout) (pout, rout, refout))
+                (pout, rout, refout)
         ((plugboardIn, plugboardOut), rotorsInOut, (reflectorIn, reflectorOut)) = inOut encryptionPath
     --make rotordiagrams
     rotorsL <- mapM (\(rotor,(wireIn, wireOut),pos) -> drawRotor rotor wireIn wireOut pos)
             (zip3 rotors rotorsInOut positions)
+    let rotorNames = zipWith (\r i -> fromMaybe ("ROTOR" ++ show i) (getName r)) rotors [1..]
     --append names to rotordiagrams
-    let rotorsD = zipWith (\r i -> text ("ROTOR"++show i) # translateY (height/1.98) <> r) rotorsL [1..] --want ReaderT shape [Diagram]
+    let 
+        rotorsD = zipWith 
+            (\r name -> text name # translateY (height/1.9) <> r) 
+            rotorsL 
+            rotorNames
     --make plugboard and reflector diagrams
     plugboardD <- drawPlugboard plugboard plugboardIn plugboardOut
     reflectorD <- drawRotor reflector reflectorIn reflectorOut 0
     
     return $ hsep 0.0 [
-        text "PLUGBOARD" # translateY (height/1.98) <> plugboardD,
+        text "PLUGBOARD" # translateY (height/1.9) <> plugboardD,
         hsep 0.0 rotorsD,
-        text "REFLECTOR" # translateY (height/1.98) <> reflectorD
+        text (fromMaybe "REFLECTOR" (getName reflector)) # translateY (height/1.9) <> reflectorD
         ] # bgFrame 1.0 orange
+        # fontSize (output letterSize)

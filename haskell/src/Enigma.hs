@@ -22,7 +22,7 @@ import Control.Monad.State.Strict
 import Cipher (Cipher(..), TraceableCipher(..), logTrace, Cipherable)
 import Cartridge (Cartridge(..), stepCartridge)
 import Plugboard (Plugboard(..))
-import Rotor(Rotor(..))
+import Rotor(Rotor(..), displace)
 import Bombe.Wiring.Wiring ( Wiring(connectWire) )
 
 reEnum :: (Enum c, Enum a) => a -> c
@@ -55,10 +55,6 @@ step = modify stepEnigma
 
 getRotorPosition :: Enigma l [l]
 getRotorPosition = gets $ reverse . (\(Cartridge _ _ rp) -> rp) . cartridge
-
-displace :: (Num e) => Rotor e -> e -> Rotor e
-displace (Rotor t is) j     = Rotor t $     map (\i -> i-j) is
-displace (Reflector t is) j = Reflector t $ map (\i -> i-j) is
 
 --the enigma stores the positions, while the ringsetting affects when rotors turn
 setRotorPosition :: (Enum e, Num e, Cipherable l) => [e] -> [e] -> Enigma l ()
@@ -97,13 +93,6 @@ instance (Enum l, Ord l, Show l) => Show (EnigmaState l) where
                         "          ABCDEFGHIJKLMNOPQRSTUVWXYZ\n" ++
                         show p ++ "\n" ++
                         show c ++ "\n----------------------------------------------\n"
-
-{-instance (KnownNat k) => Show (EnigmaState (Mod k)) where
-    show (Enigma p c) = "Enigma(" ++ ")\n" ++
-                        "ID  POS                                 NOTCH\n" ++
-                        "          ABCDEFGHIJKLMNOPQRSTUVWXYZ\n" ++
-                        show p ++ "\n" ++
-                        show c-}
 
 ---------------------------------------------------
 --                ENCRYPTIONS                    --
@@ -149,15 +138,13 @@ mkEnigma ::
     Rotor e ->
     [e] ->
     [e] ->
-    --String ->
-    --String ->
     Maybe (EnigmaState e)
 mkEnigma plugBoard rotors reflector rss rps = do
     let rssRead = rss
     let rpsRead = rps
     return $ let
-        rssList = rssRead --map fromEnum rssRead
-        rpsList = rpsRead --map fromEnum rpsRead
+        rssList = rssRead
+        rpsList = rpsRead
         positions = reverse $ (-) <$> rpsList <*> rssList
         in
             Enigma plugBoard (Cartridge rotors reflector positions)

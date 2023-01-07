@@ -40,6 +40,7 @@ library
       Enigma
       Language
       Lib
+      NamedParts
       Parts
       Plugboard
       Rotor

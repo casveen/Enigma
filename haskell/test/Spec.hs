@@ -60,7 +60,6 @@ import Bombe.Wiring.MatrixWiring.MatrixWiringLegacy
 import Bombe.Wiring.Wiring ( Wiring(initialize) )
 import Language(EnglishLetter, LetterOrdinal(..),readLetters,stringToLanguage, Letter6, Letter4)
 import Transform
-import Debug.Trace(trace)
 
 reEnum :: (Enum a, Enum b) => a -> b
 reEnum = toEnum . fromEnum
@@ -152,7 +151,7 @@ enigmaSpec = describe "Testing enigma spec." $ do
     describe "given a specific enigma" $ do
         let cartridge = Cartridge [iii,ii,i] ukw [0,0,0] :: Cartridge EnglishLetter
         let enigma    = Enigma identityPlugboard cartridge
-        let correctSequence = map (map reEnum) [[A,D,U],[A,D,V],[A,E,W],[B,F,X],[B,F,Y]] -- :: [[EnglishLetter]]
+        let correctSequence = map (map reEnum) [[A,D,U],[A,D,V],[A,E,W],[B,F,X],[B,F,Y]]
         it "should step in the correct sequence when encrypting several letters" $ do
             let actualSequence =
                             let

@@ -2,10 +2,10 @@
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
-module Parts where
+module NamedParts where
 
 import Enigma ( mkEnigma, EnigmaState(Enigma) ) --(transformFromLanguage, readLetters, , , Plugboard, Rotor, Enigma, Cartridge)
-import Rotor ( Rotor(Reflector, Rotor) )
+import Rotor ( Rotor(Reflector, Rotor, NamedRotor) )
 import Plugboard ( Plugboard(Plugboard), mkPlugboard )
 import Transform ( transformFromLanguage, transformFromOrdinals, idTransform )
 import Language( readLetters, LetterOrdinal(..), EnglishLetter)
@@ -19,49 +19,46 @@ reEnum = toEnum . fromEnum
 -----------------------------------------------------------------------
 --                            n = 26                                 --
 -----------------------------------------------------------------------
---idTransform :: (Enum e, Ord e) => Transform e
---idTransform = fromList    --transformFromLanguage (readLetters "ABCDEFGHIJKLMNOPQRSTUVWXYZ") 
-
-ic   = Rotor     (transformFromLanguage (readLetters "DMTWSILRUYQNKFEJCAZBPGXOHV") ) [0]
-iic  = Rotor     (transformFromLanguage (readLetters "HQZGPJTMOBLNCIFDYAWVEUSRKX") ) [0]
-iiic = Rotor     (transformFromLanguage (readLetters "UQNTLSZFMREHDPXKIBVYGJCWOA") ) [0]
-ukw  = Reflector (transformFromLanguage (readLetters "QYHOGNECVPUZTFDJAXWMKISRBL") ) [0]
+ic   = NamedRotor (Rotor (transformFromLanguage (readLetters "DMTWSILRUYQNKFEJCAZBPGXOHV") ) [0]) "COMMERCIAL I"
+iic  = NamedRotor (Rotor     (transformFromLanguage (readLetters "HQZGPJTMOBLNCIFDYAWVEUSRKX") ) [0]) "COMMERCIAL II"
+iiic = NamedRotor (Rotor     (transformFromLanguage (readLetters "UQNTLSZFMREHDPXKIBVYGJCWOA") ) [0]) "COMMERCIAL III"
+ukw  = NamedRotor (Reflector (transformFromLanguage (readLetters "QYHOGNECVPUZTFDJAXWMKISRBL") ) [0]) "UMKEHRWALSE"
                                                                        
-i    = Rotor     (transformFromLanguage (readLetters "EKMFLGDQVZNTOWYHXUSPAIBRCJ") ) [reEnum Q]
-ii   = Rotor     (transformFromLanguage (readLetters "AJDKSIRUXBLHWTMCQGZNPYFVOE") ) [reEnum E]
-iii  = Rotor     (transformFromLanguage (readLetters "BDFHJLCPRTXVZNYEIWGAKMUSQO") ) [reEnum V]
-iv   = Rotor     (transformFromLanguage (readLetters "ESOVPZJAYQUIRHXLNFTGKDCMWB") ) [reEnum J]
-v    = Rotor     (transformFromLanguage (readLetters "VZBRGITYUPSDNHLXAWMJQOFECK") ) [reEnum Z]
-vi   = Rotor     (transformFromLanguage (readLetters "JPGVOUMFYQBENHZRDKASXLICTW") ) [reEnum Z, reEnum M]
-vii  = Rotor     (transformFromLanguage (readLetters "NZJHGRCXMYSWBOUFAIVLPEKQDT") ) [reEnum Z, reEnum M]
-viii = Rotor     (transformFromLanguage (readLetters "FKQHTLXOCBJSPDZRAMEWNIUYGV") ) [reEnum Z, reEnum M]
-beta  = Rotor (transformFromLanguage (readLetters "LEYJVCNIXWPBQMDRTAKZGFUHOS") ) []
-gamma = Rotor (transformFromLanguage (readLetters "FSOKANUERHMBTIYCWLQPZXVGJD") ) []
+i    = NamedRotor (Rotor     (transformFromLanguage (readLetters "EKMFLGDQVZNTOWYHXUSPAIBRCJ") ) [reEnum Q]) "I"
+ii   = NamedRotor (Rotor     (transformFromLanguage (readLetters "AJDKSIRUXBLHWTMCQGZNPYFVOE") ) [reEnum E]) "II"
+iii  = NamedRotor (Rotor     (transformFromLanguage (readLetters "BDFHJLCPRTXVZNYEIWGAKMUSQO") ) [reEnum V]) "III"
+iv   = NamedRotor (Rotor     (transformFromLanguage (readLetters "ESOVPZJAYQUIRHXLNFTGKDCMWB") ) [reEnum J]) "IV"
+v    = NamedRotor (Rotor     (transformFromLanguage (readLetters "VZBRGITYUPSDNHLXAWMJQOFECK") ) [reEnum Z]) "V"
+vi   = NamedRotor (Rotor     (transformFromLanguage (readLetters "JPGVOUMFYQBENHZRDKASXLICTW") ) [reEnum Z, reEnum M]) "VI"
+vii  = NamedRotor (Rotor     (transformFromLanguage (readLetters "NZJHGRCXMYSWBOUFAIVLPEKQDT") ) [reEnum Z, reEnum M]) "VII"
+viii = NamedRotor (Rotor     (transformFromLanguage (readLetters "FKQHTLXOCBJSPDZRAMEWNIUYGV") ) [reEnum Z, reEnum M]) "VIII"
+beta  = NamedRotor (Rotor (transformFromLanguage (readLetters "LEYJVCNIXWPBQMDRTAKZGFUHOS") ) []) "beta"
+gamma = NamedRotor (Rotor (transformFromLanguage (readLetters "FSOKANUERHMBTIYCWLQPZXVGJD") ) []) "gamma"
 
 
-reflectorA = Reflector (transformFromLanguage (readLetters "EJMZALYXVBWFCRQUONTSPIKHGD") ) []
-reflectorB = Reflector (transformFromLanguage (readLetters "YRUHQSLDPXNGOKMIEBFZCWVJAT") ) []
-reflectorC = Reflector (transformFromLanguage (readLetters "FVPJIAOYEDRZXWGCTKUQSBNMHL") ) []
-thinReflectorB = Reflector (transformFromLanguage (readLetters "ENKQAUYWJICOPBLMDXZVFTHRGS") ) []
-thinReflectorC = Reflector (transformFromLanguage (readLetters "RDOBJNTKVEHMLFCWZAXGYIPSUQ") ) []
+reflectorA = NamedRotor (Reflector (transformFromLanguage (readLetters "EJMZALYXVBWFCRQUONTSPIKHGD") ) []) "REFLECTOR A"
+reflectorB = NamedRotor (Reflector (transformFromLanguage (readLetters "YRUHQSLDPXNGOKMIEBFZCWVJAT") ) []) "REFLECTOR B"
+reflectorC = NamedRotor (Reflector (transformFromLanguage (readLetters "FVPJIAOYEDRZXWGCTKUQSBNMHL") ) []) "REFLECTOR C"
+thinReflectorB = NamedRotor (Reflector (transformFromLanguage (readLetters "ENKQAUYWJICOPBLMDXZVFTHRGS") ) []) "THIN REFLECTOR B"
+thinReflectorC = NamedRotor (Reflector (transformFromLanguage (readLetters "RDOBJNTKVEHMLFCWZAXGYIPSUQ") ) []) "THIN REFLECTOR C"
 
 -----------------------------------------------------------------------
 --                            n = 4                                  --
 -----------------------------------------------------------------------
 mplug =            transformFromOrdinals [A, B, C, D] 
-im    = Rotor     (transformFromOrdinals [B, C, D, A] ) [0]
-iim   = Rotor     (transformFromOrdinals [C, D, A, B] ) [0]
-iiim  = Rotor     (transformFromOrdinals [B, A, D, C] ) [0]
-ukwm  = Reflector (transformFromOrdinals [D, C, B, A] ) [0]
+im    = NamedRotor (Rotor     (transformFromOrdinals [B, C, D, A] ) [0]) "I_4"
+iim   = NamedRotor (Rotor     (transformFromOrdinals [C, D, A, B] ) [0]) "II_4"
+iiim  = NamedRotor (Rotor     (transformFromOrdinals [B, A, D, C] ) [0]) "III_4"
+ukwm  = NamedRotor (Reflector (transformFromOrdinals [D, C, B, A] ) [0]) "UKW_4"
 
 -----------------------------------------------------------------------
 --                            n = 6                                  --
 -----------------------------------------------------------------------
 mplug6 =            transformFromOrdinals [A, B, C, D, E, F]
-im6    = Rotor     (transformFromOrdinals [B, C, D, A, F, E]) [0]
-iim6   = Rotor     (transformFromOrdinals [C, D, A, B, F, E] ) [0]
-iiim6  = Rotor     (transformFromOrdinals [B, A, E, F, C, D] ) [0]
-ukwm6  = Reflector (transformFromOrdinals [F, E, D, C, B, A] ) [0]
+im6    = NamedRotor (Rotor     (transformFromOrdinals [B, C, D, A, F, E]) [0] ) "I_6"
+iim6   = NamedRotor (Rotor     (transformFromOrdinals [C, D, A, B, F, E] ) [0]) "II_6"
+iiim6  = NamedRotor (Rotor     (transformFromOrdinals [B, A, E, F, C, D] ) [0]) "III_6"
+ukwm6  = NamedRotor (Reflector (transformFromOrdinals [F, E, D, C, B, A] ) [0]) "UKW_6"
 
 identityPlugboard = Plugboard idTransform
 

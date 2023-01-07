@@ -45,3 +45,4 @@ validRotor (Rotor t no) = isOnto t &&
     where
         n = length no
 validRotor (Reflector t no) = validRotor (Rotor t no)
+validRotor (NamedRotor r _) = validRotor r

@@ -2,20 +2,11 @@ module Lib
     ( someFunc
     ) where
 
-import Parts ( donitz ) 
+import NamedParts ( donitz ) 
 import Diagram ( drawEnigma, defaultShape )
 --import Diagrams.Backend.SVG.CmdLine ( mainWith )
 import Diagrams.Backend.Cairo.CmdLine (mainWith)
 import Control.Monad.Reader (runReader)
-import Enigma
-import Language (EnglishLetter, LetterOrdinal(..))
-import Data.TypeLits (KnownNat)
-import Parts
-import Cartridge 
-import Enigma
-import Rotor
-import Control.Monad.State.Strict (evalState, runState)
-import Cipher
 --import Bombe.Tracker (doTrackSpecsOf)
 
 someFunc :: IO ()

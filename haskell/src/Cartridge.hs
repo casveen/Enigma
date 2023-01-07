@@ -5,11 +5,8 @@ module Cartridge (
     getNotchesFromCartridge,
     stepCartridge,
 ) where
-import Rotor (Rotor(..))
+import Rotor (Rotor(..), getNotches)
 import Cipher (Cipher(..), TraceableCipher(..), logTrace, Cipherable)
-import Language(LetterOrdinal)
-import Debug.Trace(trace)
-import Data.Mod
 
 ----------------------------------------------
 --              CARTRIDGE                   --
@@ -35,22 +32,8 @@ instance Cipher Cartridge where
             total _ []  = encrypt reflector
             total (r:rs) (p:ps) = eout . total rs ps . ein
                 where
-                    eout x = 
-                        --trace ("decryption:" ++ (show . fromEnum $ x) ++ "+") --(show . map fromEnum $ positions) $
-                            --("encryption:" ++ (show . fromEnum $ x) ++ "+" ++ 
-                             --(show . unMod $ x) ++ ") + " ++ 
-                             --(show . fromEnum $ p) ++ "=") $ -- ++
-                             --(show . fromEnum $ (unMod p)) ++ ") = " ++  
-                             --(show . fromEnum $ (x+p))) $ 
-                            decrypt r (x + p) - p    --shiftLetter (decrypt r $ shiftLetter x p n) (-p) n
-                    ein x =  
-                        --trace
-                             --("encryption:" ++ (show . fromEnum $ x) ++ "+") 
-                             --(show . unMod $ x) ++ ") + " ++ 
-                             --(show . fromEnum $ p) ++ "=" ) $ -- ++
-                             --(show . fromEnum $ (unMod p)) ++ ") = " ++  
-                             --(show . fromEnum $ (x+p))) $ 
-                             encrypt r (x + p) - p    --shiftLetter (encrypt r $ shiftLetter x p n) (-p) n
+                    eout x = decrypt r (x + p) - p
+                    ein x =  encrypt r (x + p) - p
     decrypt = encrypt
     letters (Cartridge _ reflector _) = letters reflector
 
@@ -65,7 +48,7 @@ instance TraceableCipher Cartridge where
                 weout res
                 where
                     ein y   = encrypt r (y + p) - p
-                    eout y  = decrypt r (y + p) - p 
+                    eout y  = decrypt r (y + p) - p
                     wein  y = logTrace $ ein y
                     weout y = logTrace $ eout y
         in
@@ -73,14 +56,10 @@ instance TraceableCipher Cartridge where
 
 ----------------------------------------------
 --           HELPER FUNCTIONS               --
-----------------------------------------------     
---getNotchesFromRotors :: [Rotor e] -> [[Int]]
+----------------------------------------------    
 getNotchesFromRotors :: [Rotor e] -> [[e]]
-getNotchesFromRotors [] = []
-getNotchesFromRotors ((Rotor _ notches):rs) = notches:getNotchesFromRotors rs
-getNotchesFromRotors ((Reflector _ notches):rs) = notches:getNotchesFromRotors rs
+getNotchesFromRotors = map getNotches
 
---getNotchesFromCartridge :: Cartridge e -> [[Int]]
 getNotchesFromCartridge :: Cartridge e -> [[e]]
 getNotchesFromCartridge (Cartridge rs _ _) = getNotchesFromRotors rs
 
