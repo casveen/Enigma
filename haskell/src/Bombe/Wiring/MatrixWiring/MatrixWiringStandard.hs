@@ -6,7 +6,6 @@ import Bombe.Wiring.MatrixWiring.MatrixWiring (WM, MatrixWiring(..))
 import Bombe.Wiring.Wiring (Wiring(..), bundleToWire, wireToBundleWire)
 import Numeric.LinearAlgebra (atIndex, accum, assoc)
 import Bombe.Wiring.TransitiveClosure (transitiveClosure, transitiveClosureMemoized)
-import Debug.Trace (trace)
 
 
 data MatrixWiringStandard        = MatrixWiringStandard WM Int deriving (Show, Eq)

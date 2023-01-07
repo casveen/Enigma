@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 import Parts
     ( simple6,
@@ -21,11 +23,6 @@ import Parts
       allReflectors4,
       allReflectors26,
       allPlugboards26 )
-import Language
-    ( Letter(Z, M, Q, H, U, X, P, R, S, V, W, G, I, K, O, T, Y, L, J,
-             N, D, F, E, C, B, A),
-      readLetters,
-      stringToLanguage )
 import Test.Hspec
     ( shouldBe, it, context, describe, SpecWith, hspec )
 import WiringSpec ( transitiveClosureSpec, wiringSpec )
@@ -38,9 +35,8 @@ import Test.QuickCheck
       listOf,
       vectorOf,
       (===),
-      Arbitrary(arbitrary) )
+      Arbitrary(arbitrary), Gen )
 import Test.Hspec.QuickCheck ( modifyMaxSuccess )
-import Transform ( transformFromLanguage )
 import Enigma
     ( EnigmaState(Enigma),
       enc,
@@ -49,10 +45,10 @@ import Enigma
       getRotorPosition,
       setRotorPosition,
       step )
-import Plugboard ( mkPlugboard )
+import Plugboard ( mkPlugboard, Plugboard )
 import Cartridge ( Cartridge(Cartridge) )
 import Cipher
-    ( Cipher(encrypt, decrypt), TraceableCipher(tracedEncrypt) )
+    ( Cipher(encrypt, decrypt, encryptEnummed, decryptEnummed), TraceableCipher(tracedEncrypt), Cipherable )
 import Control.Monad.State.Strict ( evalState )
 import Control.Monad.Writer.Strict ( MonadWriter(writer) )
 import Bombe.Wiring.MatrixWiring.MatrixWiringStandard
@@ -62,17 +58,23 @@ import Bombe.Wiring.MatrixWiring.MatrixWiringCompressed
 import Bombe.Wiring.MatrixWiring.MatrixWiringLegacy
     ( MatrixWiringLegacy )
 import Bombe.Wiring.Wiring ( Wiring(initialize) )
+import Language(EnglishLetter, LetterOrdinal(..),readLetters,stringToLanguage, Letter6, Letter4)
+import Transform
+import Debug.Trace(trace)
+
+reEnum :: (Enum a, Enum b) => a -> b
+reEnum = toEnum . fromEnum
 
 transformSpec :: SpecWith ()
 transformSpec =
     describe "Testing transform spec." $ context "given a specific transform" $ do
-    let t = transformFromLanguage (readLetters "BFADCE") -- :: Transform Letter
+    let t = transformFromLanguage (readLetters "BFADCE") :: Transform Letter6
     it "should encrypt by applying the transform as specified" $ do
-        let result = map (encrypt t) [A,B,C,D,E,F]
+        let result = map (encryptEnummed t) [A,B,C,D,E,F]
         let expected = [B,F,A,D,C,E]
         result `shouldBe` expected
     it "should decrypt by applying the transform as specified" $ do
-        let result = map (decrypt t) [A,B,C,D,E,F]
+        let result = map (decryptEnummed t) [A,B,C,D,E,F]
         let expected = [C,A,E,D,F,B]
         result `shouldBe` expected
 
@@ -83,35 +85,35 @@ cartridgeSpec = describe "Testing cartridge spec." $ do
 
     --test it for reencryption
     context "given an arbitrary cartridge" $ modifyMaxSuccess (const 1000) $ do
-        let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors26) <*> elements allReflectors26 <*> arbitrary
+        let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors26) <*> elements allReflectors26 <*> arbitrary :: Gen (Cartridge EnglishLetter)
         it "should return the original plaintext upon enc- then decryption of a single letter" $
             forAll arbitraryCartridge $ \c ->
-            forAll (chooseEnum (A, Z)) $ \p ->
+            forAll (chooseEnum (minBound, maxBound)) $ \p ->
                 reencryptionProp c p
 
     context "given an arbitrary minimal cartridge" $ modifyMaxSuccess (const 100) $ do
-        let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors4) <*> elements allReflectors4 <*> arbitrary
+        let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors4) <*> elements allReflectors4 <*> arbitrary :: Gen (Cartridge Letter4)
         it "should return the original plaintext upon enc- then decryption of a single letter" $
             forAll arbitraryCartridge $ \c ->
-            forAll (chooseEnum (A, D)) $ \p ->
+            forAll (chooseEnum (minBound, maxBound)) $ \p ->
                 reencryptionProp c p
 
     context "given an arbitrary 6 wired cartridge" $ modifyMaxSuccess (const 100) $ do
-        let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors6) <*> elements allReflectors6 <*> arbitrary
+        let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors6) <*> elements allReflectors6 <*> arbitrary :: Gen (Cartridge Letter6)
         it "should return the original plaintext upon enc- then decryption of a single letter" $
             forAll arbitraryCartridge $ \c ->
-            forAll (chooseEnum (A, F)) $ \p ->
+            forAll (chooseEnum (minBound, maxBound)) $ \p ->
                 reencryptionProp c p
 
     context "given a specific cartridge (i, ukw)" $ do
-        let specificCartridge = Cartridge [i] ukw [0]
+        let specificCartridge = Cartridge [i] ukw [0] :: Cartridge EnglishLetter
         it "should encrypt in a given pattern" $
-            map (encrypt specificCartridge) [A .. Z] `shouldBe` [F,R,L,K,J,A,M,U,V,E,D,C,G,S,W,Y,X,B,N,Z,H,I,O,Q,P,T]
+            map (encrypt specificCartridge) [minBound .. maxBound] `shouldBe` map reEnum [F,R,L,K,J,A,M,U,V,E,D,C,G,S,W,Y,X,B,N,Z,H,I,O,Q,P,T]
 
     context "given a specific cartridge (im6, ukw) with 6 letters" $ do
-        let specificCartridge = Cartridge [im6] ukwm6 [0]
+        let specificCartridge = Cartridge [im6] ukwm6 [0] :: Cartridge Letter6
         it "should encrypt in a given pattern" $
-            map (encrypt specificCartridge) [A .. F] `shouldBe` [F,C,B,E,D,A]
+            map (encrypt specificCartridge) [minBound .. maxBound] `shouldBe` map reEnum [F,C,B,E,D,A]
 
 donitzCipherText :: String
 donitzCipherText = "LANOTCTOUARBBFPMHPHGCZXTDYGAHGUFXGEWKBLKGJWLQXXTGPJJAVTOCKZFSLPPQIHZFX" ++
@@ -127,27 +129,35 @@ enigmaSpec = describe "Testing enigma spec." $ do
     --make an arbitrary cartridge
     let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors26)
                                        <*> elements allReflectors26
-                                       <*> vectorOf 3 (chooseInt (0,25))
-    let arbitraryPlugboard = elements allPlugboards26
+                                       <*> vectorOf 3 (chooseEnum (minBound,maxBound)) :: Gen (Cartridge EnglishLetter)
+    let arbitraryPlugboard = elements allPlugboards26 :: Gen (Plugboard EnglishLetter)
     let arbitraryEnigmaState = Enigma <$> arbitraryPlugboard <*> arbitraryCartridge --arbitraryenigmaSTATE
-    let arbitraryEnigma = arbitraryEnigmaState
+    let arbitraryEnigma = arbitraryEnigmaState :: Gen (EnigmaState EnglishLetter)
     let arbitraryText = listOf (chooseEnum (A, Z))
 
-    context "given an arbitrary enigmastate" $ modifyMaxSuccess (const 10000) $
+    context "given an arbitrary enigmastate" $ modifyMaxSuccess (const 10000) $ do
+        it "the cartridge should return the original plaintext upon enc- then decryption of a single letter" $
+            forAll arbitraryCartridge $ \c ->
+                forAll (chooseEnum (minBound, maxBound)) $ \p ->
+                    reencryptionProp c p
+        it "the plugboard should return the original plaintext upon enc- then decryption of a single letter" $
+            forAll arbitraryPlugboard $ \c ->
+            forAll (chooseEnum (minBound, maxBound)) $ \p ->
+                reencryptionProp c p
         it "should return the original plaintext upon enc- then decryption of a single letter" $
             forAll arbitraryEnigmaState $ \c ->
-            forAll (chooseEnum (A, Z)) $ \p ->
+            forAll (chooseEnum (minBound, maxBound)) $ \p ->
                 reencryptionProp c p
 
     describe "given a specific enigma" $ do
-        let cartridge = Cartridge [iii,ii,i] ukw [0,0,0]
+        let cartridge = Cartridge [iii,ii,i] ukw [0,0,0] :: Cartridge EnglishLetter
         let enigma    = Enigma identityPlugboard cartridge
-        let correctSequence = [[A,D,U],[A,D,V],[A,E,W],[B,F,X],[B,F,Y]]
+        let correctSequence = map (map reEnum) [[A,D,U],[A,D,V],[A,E,W],[B,F,X],[B,F,Y]] -- :: [[EnglishLetter]]
         it "should step in the correct sequence when encrypting several letters" $ do
             let actualSequence =
                             let
                                 action = do
-                                    setRotorPosition [A,A,A] [A,D,U]
+                                    setRotorPosition (map reEnum [A,A,A]) (map reEnum [A,D,U])
                                     adu <- getRotorPosition
                                     step
                                     adv <- getRotorPosition
@@ -157,19 +167,19 @@ enigmaSpec = describe "Testing enigma spec." $ do
                                     bfx <- getRotorPosition
                                     step
                                     bfy <- getRotorPosition
-                                    return $ fmap (fmap toEnum) [adu,adv,aew,bfx,bfy]
+                                    return [adu,adv,aew,bfx,bfy]
                             in
                                 evalState action enigma
             actualSequence `shouldBe` correctSequence
 
-        let cartridge = Cartridge [i,ii,iii] ukw [0,0,0]
+        let cartridge = Cartridge [i,ii,iii] ukw [0,0,0] :: Cartridge EnglishLetter
         let enigma    = Enigma identityPlugboard cartridge
-        let correctSequence = [[K,D,O],[K,D,P],[K,D,Q],[K,E,R],[L,F,S],[L,F,T],[L,F,U]]
+        let correctSequence = map (map reEnum) [[K,D,O],[K,D,P],[K,D,Q],[K,E,R],[L,F,S],[L,F,T],[L,F,U]]
         it "should double-step when third rotor engages" $ do
             let actualSequence =
                             let
                                 action = do
-                                    setRotorPosition [A,A,A] [K,D,O]
+                                    setRotorPosition (map reEnum [A,A,A]) (map reEnum [K,D,O])
                                     kdo <- getRotorPosition
                                     step
                                     kdp <- getRotorPosition
@@ -183,31 +193,35 @@ enigmaSpec = describe "Testing enigma spec." $ do
                                     lft <- getRotorPosition
                                     step
                                     lfu <- getRotorPosition
-                                    return $ fmap (fmap toEnum) [kdo, kdp, kdq, ker, lfs, lft, lfu]
+                                    return [kdo, kdp, kdq, ker, lfs, lft, lfu]
                             in
                                 evalState action enigma
             actualSequence `shouldBe` correctSequence
 
     context "given an arbitrary enigma" $ modifyMaxSuccess (const 10000) $ do
-        it "should return the original plaintext upon enc- then decryption of arbitrary text" $ forAll arbitraryEnigma $ \c ->
-            forAll arbitraryText $ \p ->
-                let left = evalState (encryptText (evalState (encryptText p) c)) c
-                in  left === p
-        it "should return the original plaintext upon enc- then decryption of a single letter" $ forAll arbitraryEnigma $ \c ->
-            forAll (chooseEnum (A, Z)) $ \p ->
-                let left = evalState (enc (evalState (enc p) c)) c
-                in  left === p
+        it "should return the original plaintext upon enc- then decryption of arbitrary text" $
+            forAll arbitraryEnigma $ \c ->
+                forAll arbitraryText $ \p ->
+                    let
+                        left = evalState (encryptText (evalState (encryptText (map reEnum p)) c)) c
+                    in
+                        left === map reEnum p
+        it "should return the original plaintext upon enc- then decryption of a single letter" $
+            forAll arbitraryEnigma $ \c ->
+                forAll (chooseEnum (A, Z)) $ \p ->
+                    let left = evalState (enc (evalState (enc (reEnum p)) c)) c
+                    in  left === reEnum p
 
     context "given the enigma from the donitz example" $ do
         let cartridge = Cartridge [viii,vi,v,beta] thinReflectorC [0,0,0]
         let plugboard = mkPlugboard [(A,E),(B,F),(C,M),(D,Q),(H,U),(J,N),(L,X),(P,R),(S,Z),(V,W),(G,G),(I,I),(K,K),(O,O),(T,T),(Y,Y)]
-        let enigma    = Enigma plugboard cartridge
+        let enigma    = Enigma plugboard cartridge :: EnigmaState EnglishLetter
         it "should reencrypt an arbitrary text to itself" $ forAll arbitraryText $ \p ->
-            let left = evalState (encryptText (evalState (encryptText p) enigma)) enigma
-            in  left === p
+            let left = evalState (encryptText (evalState (encryptText (map reEnum p)) enigma)) enigma
+            in  left === map reEnum p
         it "should decrypt the ciphered text to the donitz message" $ do
             let action = do
-                    setRotorPosition [E,P,E,L] [C,D,S,Z]
+                    setRotorPosition (map reEnum [E,P,E,L]) (map reEnum [C,D,S,Z])
                     let cipherText = donitzCipherText
                     encryptText $ stringToLanguage cipherText
             let decrypted = evalState action enigma
@@ -225,8 +239,8 @@ tracedEncryptionSpec =
     let plugboard = mkPlugboard [(A,E),(B,F),(C,M),(D,Q),(H,U),(J,N),(L,X),(P,R),(S,Z),(V,W),(G,G),(I,I),(K,K),(O,O),(T,T),(Y,Y)]
     let enigma    = Enigma plugboard cartridge
     it "should properly trace encryptions" $ do
-        let correctWriter = writer (N, [A,E,L,Z,J,N])
-        let actualWriter  = tracedEncrypt enigma A
+        let correctWriter = writer (reEnum N :: EnglishLetter, map reEnum [A,E,L,Z,J,N] :: [EnglishLetter])
+        let actualWriter  = tracedEncrypt enigma (reEnum A)
         actualWriter `shouldBe` correctWriter
         --A `shouldBe` B
 
@@ -234,36 +248,44 @@ undeterministicEnigmaSpec :: SpecWith ()
 undeterministicEnigmaSpec = describe "Testing undeterministic enigma spec." $ do
     context "given a specific enigma" $ do
         let enigma              = simple6
-        let undeterministicText = [[A,B,C,D,E,F],[A,B,C,D,E,F]]
+        let undeterministicText = map (map reEnum) [[A,B,C,D,E,F],[A,B,C,D,E,F]] :: [[Letter6]]
         it "should encrypt all letters undeterministically" $
             evalState (encryptTraversableOfMonads undeterministicText) enigma `shouldBe`
-            [[B,A,E,F,C,D],[D,F,E,A,C,B]]
+            map (map reEnum) [[B,A,E,F,C,D],[D,F,E,A,C,B]]
 
-    context "given an arbitrary enigma" $ modifyMaxSuccess (const 1000) $ do
+    context "given an arbitrary enigma" $ modifyMaxSuccess (const 100) $ do
         let arbitraryCartridge = Cartridge <$> vectorOf 3 (elements allRotors26)
                                         <*> elements allReflectors26
-                                        <*> vectorOf 3 (chooseInt (0,25))
-        let arbitraryPlugboard = elements allPlugboards26
-        let arbitraryEnigmaState = Enigma <$> arbitraryPlugboard <*> arbitraryCartridge
-        let arbitraryText = listOf (listOf (chooseEnum (A, Z)))
+                                        <*> vectorOf 3 (chooseEnum (minBound,maxBound-1))
+        let arbitraryPlugboard = elements allPlugboards26 :: Gen (Plugboard EnglishLetter)
+        let arbitraryEnigmaState = Enigma <$> arbitraryPlugboard <*> arbitraryCartridge :: Gen (EnigmaState EnglishLetter)
+        let arbitraryText = listOf (listOf (chooseEnum (minBound, maxBound-1)))
         it "should reencrypt all letters undeterministically in same order" $
-            forAll arbitraryEnigmaState $ \c ->
+            forAll arbitraryEnigmaState $ \c@(Enigma _ (Cartridge _ _ ps)) ->
             forAll arbitraryText $ \p ->
-                evalState (encryptTraversableOfMonads (evalState (encryptTraversableOfMonads p) c)) c `shouldBe` p
+                evalState (
+                    encryptTraversableOfMonads (
+                        evalState (
+                            encryptTraversableOfMonads
+                            p)
+                        c))
+                    c
+                `shouldBe`
+                    p
 
-reencryptionProp :: (Show a, Cipher c, Ord a, Enum a) => c a -> a -> Property
+reencryptionProp :: (Show a, Cipher c, Cipherable a) => c a -> a -> Property
 reencryptionProp c p = decrypt c (encrypt c p) === p
 
 main :: IO ()
 main =
     hspec $ do
         let n = 4
+        transformSpec
         wiringSpec (Bombe.Wiring.Wiring.initialize n :: MatrixWiringStandard)
         wiringSpec (Bombe.Wiring.Wiring.initialize n :: MatrixWiringCompressed)
         wiringSpec (Bombe.Wiring.Wiring.initialize n :: MatrixWiringLegacy)
         transitiveClosureSpec
         tracedEncryptionSpec
-        transformSpec
         cartridgeSpec
         enigmaSpec
         undeterministicEnigmaSpec

@@ -19,13 +19,14 @@ connect
 
 import Control.Monad.State.Strict
     ( State, gets, modify, MonadState(put) )
-import Language ( safelyReadLetters )
-import Cipher (Cipher(..), TraceableCipher(..), logTrace)
+import Cipher (Cipher(..), TraceableCipher(..), logTrace, Cipherable)
 import Cartridge (Cartridge(..), stepCartridge)
 import Plugboard (Plugboard(..))
 import Rotor(Rotor(..))
-import Bombe.Wiring.Wiring hiding (initialize)
---import Bombe.Wiring (EnigmaWiring)
+import Bombe.Wiring.Wiring ( Wiring(connectWire) )
+
+reEnum :: (Enum c, Enum a) => a -> c
+reEnum = toEnum . fromEnum
 
 ----------------------------------------------
 --              ENIGMA                      --
@@ -46,26 +47,29 @@ getPlugboard = gets plugboard
 getCartridge :: Enigma l (Cartridge l)
 getCartridge = gets cartridge
 
-stepEnigma :: EnigmaState e -> EnigmaState e
+stepEnigma :: (Cipherable l) => EnigmaState l -> EnigmaState l
 stepEnigma (Enigma plugging c) = Enigma plugging (stepCartridge c)
 
-step :: Enigma l ()
+step :: (Cipherable l) => Enigma l ()
 step = modify stepEnigma
 
-getRotorPosition :: Enigma l [Int]
+getRotorPosition :: Enigma l [l]
 getRotorPosition = gets $ reverse . (\(Cartridge _ _ rp) -> rp) . cartridge
 
-displace :: Int -> Rotor e -> Int -> Rotor e
-displace n (Rotor t is) j     = Rotor t $     map (\i -> mod (i-j) n) is
-displace n (Reflector t is) j = Reflector t $ map (\i -> mod (i-j) n) is
+displace :: (Num e) => Rotor e -> e -> Rotor e
+displace (Rotor t is) j     = Rotor t $     map (\i -> i-j) is
+displace (Reflector t is) j = Reflector t $ map (\i -> i-j) is
 
 --the enigma stores the positions, while the ringsetting affects when rotors turn
-setRotorPosition :: (Enum e) => [e] -> [e] -> Enigma l ()
+setRotorPosition :: (Enum e, Num e, Cipherable l) => [e] -> [e] -> Enigma l ()
 setRotorPosition ringSetting rotorPosition = do
-    c@(Cartridge rotors _ _) <- getCartridge
-    let n = letters c
-    let nrs = zipWith (\rs rp -> mod (fromEnum rp - fromEnum rs) n) ringSetting rotorPosition
-    let displacedRotors = zipWith (displace n) rotors (map fromEnum (reverse ringSetting))
+    (Cartridge rotors _ _) <- getCartridge
+    let nrs = map reEnum $ zipWith (flip (-)) ringSetting rotorPosition
+    let displacedRotors = zipWith
+            displace
+            rotors
+            (map (toEnum . fromEnum) (reverse ringSetting))
+
     modify $ \(Enigma plugging (Cartridge _ rf _)) -> Enigma plugging (Cartridge displacedRotors rf (reverse nrs))
 
 ----------------------------------------------
@@ -87,65 +91,74 @@ instance TraceableCipher EnigmaState where
             res <- tracedEncrypt cartridge res
             logTrace $ encrypt plugboard res
 
-instance (Show l) => Show (EnigmaState l) where
+instance (Enum l, Ord l, Show l) => Show (EnigmaState l) where
     show (Enigma p c) = "Enigma(" ++ ")\n" ++
                         "ID  POS                                 NOTCH\n" ++
                         "          ABCDEFGHIJKLMNOPQRSTUVWXYZ\n" ++
                         show p ++ "\n" ++
-                        show c
+                        show c ++ "\n----------------------------------------------\n"
+
+{-instance (KnownNat k) => Show (EnigmaState (Mod k)) where
+    show (Enigma p c) = "Enigma(" ++ ")\n" ++
+                        "ID  POS                                 NOTCH\n" ++
+                        "          ABCDEFGHIJKLMNOPQRSTUVWXYZ\n" ++
+                        show p ++ "\n" ++
+                        show c-}
 
 ---------------------------------------------------
 --                ENCRYPTIONS                    --
 ---------------------------------------------------
 --                PARAMETRIC                     -- 
 ---------------------------------------------------
-enc :: (Enum l, Ord l) => l -> Enigma l l
+enc :: (Cipherable l) => l -> Enigma l l
 enc plaintext = do
     step
     encryptWithoutStepping plaintext
 
-encryptWithoutStepping :: (Enum l, Ord l) => l -> Enigma l l
+encryptWithoutStepping :: (Cipherable l) => l -> Enigma l l
 encryptWithoutStepping p = gets (`encrypt` p)
 
 ---------------------------------------------------
 --                  MONADIC                      -- 
 ---------------------------------------------------
-encryptMonad :: (Monad m, Enum e, Ord e) => m e -> Enigma e (m e)
+encryptMonad :: (Monad m, Cipherable e) => m e -> Enigma e (m e)
 encryptMonad mp =
     do
         step
         gets $ \s -> do encrypt s <$> mp --with current state, encrypt each in given monad
 
-encryptTraversableOfMonads :: (Traversable t, Enum e, Ord e, Monad m) => t (m e) -> Enigma e (t (m e))
+encryptTraversableOfMonads :: (Traversable t, Cipherable e, Monad m) => t (m e) -> Enigma e (t (m e))
 encryptTraversableOfMonads = traverse encryptMonad
 
 ---------------------------------------------------
 --            SPECIFIC/ALIASES                   --
 ---------------------------------------------------
-encryptText :: (Enum a, Ord a) => [a] -> Enigma a [a]
+encryptText :: (Cipherable a) => [a] -> Enigma a [a]
 encryptText = encryptTraversable
 
-encryptTraversable :: (Traversable t, Enum e, Ord e) => t e -> Enigma e (t e)
+encryptTraversable :: (Traversable t, Cipherable e) => t e -> Enigma e (t e)
 encryptTraversable = traverse enc
 
 --------------------------------------------------
 --                       HELPERS                --
 --------------------------------------------------
 mkEnigma ::
+    (Cipherable e) =>
     Plugboard e ->
     [Rotor e] ->
     Rotor e ->
-    String ->
-    String ->
+    [e] ->
+    [e] ->
+    --String ->
+    --String ->
     Maybe (EnigmaState e)
 mkEnigma plugBoard rotors reflector rss rps = do
-    rssRead <- safelyReadLetters rss
-    rpsRead <- safelyReadLetters rps
+    let rssRead = rss
+    let rpsRead = rps
     return $ let
-        rssList = map fromEnum rssRead
-        rpsList = map fromEnum rpsRead
-        n       = letters plugBoard
-        positions = reverse $ (\x y -> mod (x-y) n) <$> rpsList <*> rssList
+        rssList = rssRead --map fromEnum rssRead
+        rpsList = rpsRead --map fromEnum rpsRead
+        positions = reverse $ (-) <$> rpsList <*> rssList
         in
             Enigma plugBoard (Cartridge rotors reflector positions)
 
@@ -153,18 +166,18 @@ mkEnigma plugBoard rotors reflector rss rps = do
 --               WIRING                           --
 ---------------------------------------------------- 
 
-connect :: (Enum e, Ord e, Wiring w) => w -> e -> e -> Enigma e w 
-connect wiring cribLetter cipherLetter = do 
+connect :: (Cipherable e, Wiring w) => w -> e -> e -> Enigma e w
+connect wiring cribLetter cipherLetter = do
     --in state monad 
     plugboard  <- getPlugboard
     let cipher = fromEnum cipherLetter
-        crib   = fromEnum cribLetter 
+        crib   = fromEnum cribLetter
         n      = letters plugboard
-    encryption <- encryptTraversableOfMonads [(map toEnum [0..(n-1)])]
-    return $ 
-        foldl 
-            (\acc (p, c) -> 
-                (connectWire acc (crib, p) (c, cipher))
-            ) 
-            wiring 
+    encryption <- encryptTraversableOfMonads [map toEnum [0..(n-1)]]
+    return $
+        foldl
+            (\acc (p, c) ->
+                connectWire acc (crib, p) (c, cipher)
+            )
+            wiring
             (zip [0..(n-1)] (map fromEnum (head encryption)))

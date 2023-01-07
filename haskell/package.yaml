@@ -37,6 +37,7 @@ dependencies:
 - typenums
 - monad-memo
 - containers
+- mod
 
 ghc-options:
 - -Wall
@@ -60,6 +61,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    
     dependencies:
     - enigma
     
@@ -82,6 +84,7 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -O0
     dependencies:
     - enigma
 

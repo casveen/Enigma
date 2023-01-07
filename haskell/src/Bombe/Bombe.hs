@@ -1,9 +1,9 @@
 module Bombe.Bombe (
 
 )where
-import Bombe.Wiring.Wiring (Wiring(..), BW)
-import Numeric.LinearAlgebra (toRows, toBlocksEvery)
-import Bombe.Wiring.MatrixWiring.MatrixWiring (MatrixWiring (getMatrix))
+--import Bombe.Wiring.Wiring (Wiring(..), BW)
+--import Numeric.LinearAlgebra (toRows, toBlocksEvery)
+--import Bombe.Wiring.MatrixWiring.MatrixWiring (MatrixWiring (getMatrix))
 
 --import Bombe.Tracker
 --import Rotor (Rotor(..))
@@ -75,6 +75,8 @@ When we check if a wiring is valid, it can be done on a row-by row basis
 we have a contradiction if there is MORE than two connections in a 26-block-
 
 -}
+
+{-
 isValidWiring :: (MatrixWiring w) => w -> Bool
 isValidWiring wiring = 
     let 
@@ -95,8 +97,7 @@ isValidWiringAt wiring (bundle, wire) =
     in 
         False
 
-
-
+-}
 
 
 

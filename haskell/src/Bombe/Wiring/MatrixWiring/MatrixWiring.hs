@@ -13,7 +13,7 @@ module Bombe.Wiring.MatrixWiring.MatrixWiring (
     hashMatrix
 ) where
 
-import Numeric.LinearAlgebra(Matrix, I, Element, Container, Vector, toLists, step, flatten, toRows, Z)
+import Numeric.LinearAlgebra(Matrix, I, Element, Container, Vector, toLists, step)
 import Data.Map (Map)
 import Bombe.Wiring.Wiring (Wiring)
 

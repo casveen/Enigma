@@ -7,7 +7,7 @@ module Test (
 ) where
 import Rotor(Rotor(..))
 import Transform(Transform(..))
-import Cipher ( Cipher(encrypt) )
+import Cipher ( Cipher(encrypt), Cipherable )
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust)
 -----------------------------------------------
@@ -34,14 +34,14 @@ class Surjection f where
     isOnto :: f -> Bool
     isOnto = isSurjective
 
-instance (Ord e, Enum e) => Surjection (Transform e) where
+instance (Cipherable e) => Surjection (Transform e) where
     isSurjective tr =
         isPrefixOf (fmap toEnum [0..]) $ fmap (encrypt tr . toEnum) [0..]
 
-validRotor :: (Ord e, Enum e) => Rotor e -> Bool
+validRotor :: (Cipherable e) => Rotor e -> Bool
 validRotor (Rotor t no) = isOnto t &&
                           noRepeats no &&
-                          all (< n) no
+                          all (< maxBound) no
     where
         n = length no
 validRotor (Reflector t no) = validRotor (Rotor t no)

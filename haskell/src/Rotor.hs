@@ -7,16 +7,16 @@ import Cipher (Cipher(..))
 ----------------------------------------------
 --              ROTOR                       --
 ----------------------------------------------    
-data Rotor e = Rotor (Transform e) [Int] | Reflector (Transform e) [Int] deriving(Eq)
+data Rotor e = Rotor (Transform e) [e] | Reflector (Transform e) [e] deriving(Eq)
 
 -----------------------------------------------
 --             INSTANCES                     --
 -----------------------------------------------
-instance (Show e) => Show (Rotor e) where
+instance (Enum e, Ord e, Show e) => Show (Rotor e) where
     show (Rotor t ns) = "|" ++ show t ++ "| - "
-                     ++ show (map (pad0 2) ns)
+                     ++ show (map (pad0 2 . fromEnum) ns)
     show (Reflector t ns) = "<" ++ show t ++ "> - "
-                     ++ show (map (pad0 2) ns)
+                     ++ show (map (pad0 2 . fromEnum) ns)
 instance Cipher Rotor where
     encrypt (Rotor t _)     = encrypt t
     encrypt (Reflector t _) = encrypt t

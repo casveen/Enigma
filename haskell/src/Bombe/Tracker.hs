@@ -7,22 +7,19 @@ module Bombe.Tracker (
     trackManually,
     trackEngageTreeOfLength,
     doTrackSpecsOf
-
-
-
 ) where
 
 import Enigma ( step, getRotorPosition, EnigmaState (Enigma) )
 import Control.Monad.State.Strict (runState)
 import Cartridge (Cartridge(..))
-import Cipher (Cipher(..))
+import Cipher (Cipher(..), Cipherable)
 import Data.List (partition)
 import Control.Monad.Amb ()
-import Plugboard (mkPlugboard)
 import Rotor (Rotor(..))
 import Prelude hiding(init)
+import Parts (identityPlugboard)
 
-runStateForever :: (Show b) => (a -> (b, a)) -> a -> [b]
+runStateForever :: (a -> (b, a)) -> a -> [b]
 runStateForever trans init =
     let
         val = trans init
@@ -42,7 +39,7 @@ takeWhileNoRepeats =
     in
         takeWhileNoRepeatsHelper []
 
-trackManually :: EnigmaState l -> [[Int]]
+trackManually ::(Cipherable l) => EnigmaState l -> [[l]]
 trackManually st =
     let
         stepOnce = runState (do step; getRotorPosition)
@@ -65,7 +62,7 @@ groupBy2 = go [] where
     let (hs, nohs) = partition (comp h) t
     in go ((h:hs):acc) comp nohs
 
-trackEngageTreeOfLength :: Ord e => [Rotor e] -> Rotor e -> Int -> EngageTree
+trackEngageTreeOfLength :: (Cipherable e) => [Rotor e] -> Rotor e -> Int -> EngageTree
 trackEngageTreeOfLength rotors reflector s =
     let             --has to be taken out of monad since this state monad is strict!
         trackSpecific = take s . stepForever
@@ -79,7 +76,7 @@ trackEngageTreeOfLength rotors reflector s =
         permutedPositions   =
             let
                 helper []     = []
-                helper (_:xs) = [0..(n-1)] : helper xs
+                helper (_:xs) = [minBound .. (maxBound-1)] : helper xs
 
                 permuteHelper [] = [[]]
                 permuteHelper (ls:lss) = (++) <$> map pure ls <*> permuteHelper lss
@@ -92,7 +89,7 @@ trackEngageTreeOfLength rotors reflector s =
             let allPositions   = permutedPositions
             arbitraryPosition <- allPositions
             let newCartridge   = Cartridge rotors reflector arbitraryPosition --an arbitrary cartridge
-            let newEnigma      = Enigma (mkPlugboard []) newCartridge --ord comes from here...
+            let newEnigma      = Enigma identityPlugboard newCartridge
             let allEngages     = toEngages . trackSpecific $ newEnigma
             return allEngages
 
@@ -115,14 +112,14 @@ countLeaves (Forest trees) = foldl (\acc (_, tree) -> acc+countLeaves tree) 0 tr
 countLeaves Leaf = 1
 
 --doTrackSpecsOf :: EnigmaState l-> IO ()
-doTrackSpecsOf :: Ord e => EnigmaState e -> IO ()
+doTrackSpecsOf :: (Cipherable e) => EnigmaState e -> IO ()
 doTrackSpecsOf  e  = do
     print $ allLeaveCountsOfEngagetre 5 30 e
     let tracks = trackManually e
     --print $ tracks
     putStrLn $ "Orbit length: " ++ show (length tracks)
 
-allLeaveCountsOfEngagetre :: (Num a, Ord e) => Int -> Int -> EnigmaState e -> [a]
+allLeaveCountsOfEngagetre :: (Num a, Cipherable e) => Int -> Int -> EnigmaState e -> [a]
 allLeaveCountsOfEngagetre f t e@(Enigma _ (Cartridge rotors reflector _)) =
     if f<t
         then countLeaves (trackEngageTreeOfLength rotors reflector f) : allLeaveCountsOfEngagetre (f+1) t e

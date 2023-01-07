@@ -3,31 +3,41 @@ module Cipher (
 Cipher(..),
 TraceableCipher(..), 
 PolyalphabeticCipher(..),
+Cipherable,
 logTrace
 ) where
 import Control.Monad.Writer.Strict (Writer, writer)
 
+reEnummed :: (Enum c, Enum a1, Enum t, Enum a2) => (t -> a1) -> a2 -> c
+reEnummed f x = toEnum . fromEnum $ f (toEnum . fromEnum $ x)
+
 -----------------------------------------------------------------------
 --                          Ciphers                                  --
 -----------------------------------------------------------------------
+class (Enum e, Ord e, Bounded e, Num e) => Cipherable e
+
 class Cipher c where
-    encrypt ::(Ord e, Enum e) => c e -> e -> e
-    decrypt ::(Ord e, Enum e) => c e -> e -> e
+    encrypt ::(Cipherable e) => c e -> e -> e
+    decrypt ::(Cipherable e) => c e -> e -> e
     letters :: c e -> Int
-    encryptEntirety :: (Ord e, Enum e) => c e -> [e]
+    encryptEnummed :: (Cipherable e, Enum a) => c e -> a -> a
+    encryptEnummed c = reEnummed (encrypt c)
+    decryptEnummed :: (Cipherable e, Enum a) => c e -> a -> a
+    decryptEnummed c = reEnummed (decrypt c)
+    encryptEntirety :: (Cipherable e) => c e -> [e]
     encryptEntirety c = map (encrypt c . toEnum) [0..(letters c-1)]
-    decryptEntirety :: (Ord e, Enum e) => c e -> [e]
+    decryptEntirety :: (Cipherable e) => c e -> [e]
     decryptEntirety c = map (encrypt c . toEnum) [0..(letters c-1)]
 
 logTrace :: (Monoid (w e), Monad w) => e -> Writer (w e) e
 logTrace t = writer (t, return t)
 
 class (Cipher c) => TraceableCipher c where
-    tracedEncrypt :: (Enum e, Ord e, Monoid (w e), Monad w) => c e -> e -> Writer (w e) e
+    tracedEncrypt :: (Cipherable e, Monoid (w e), Monad w) => c e -> e -> Writer (w e) e
 
 class (Cipher c) => MonadCipher c where
-    monadicEncrypt :: (Ord e, Enum e, Monad m) => c e -> m e -> m e
-    monadicDecrypt :: (Ord e, Enum e, Monad m) => c e -> m e -> m e
+    monadicEncrypt :: (Cipherable e, Monad m) => c e -> m e -> m e
+    monadicDecrypt :: (Cipherable e, Monad m) => c e -> m e -> m e
     monadicEncrypt cipher c = do encrypt cipher <$> c
     monadicDecrypt cipher c = do decrypt cipher <$> c
 

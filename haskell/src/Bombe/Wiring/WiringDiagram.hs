@@ -31,7 +31,7 @@ import Diagrams.Prelude
 --import Diagrams.Backend.SVG.CmdLine
 import Diagrams.Backend.Cairo.CmdLine ( B )
 import Control.Monad.Reader (Reader, asks, runReader)
-import Language ( Letter(Z, A) )
+--import Language ( Letter(Z, A) )
 import Diagrams (fromVertices, p2)
 import Numeric.LinearAlgebra.Data (atIndex)
 import Bombe.Wiring.MatrixWiring.MatrixWiring (MatrixWiring(..))
@@ -107,7 +107,7 @@ drawWiresSymmetric m = do
     diagramColor <- asks diagramColor
     let
         -- matrix = mat --unSym mat
-        letters           = take n [A .. Z]
+        letters           = take n [0 .. ]
         -- lettersAndLetters = [(b,w) | w <- letters, b <- letters ]
         blockHeight = (height - upperAir) / fromIntegral (n*n)
         blockWidth  = (width - leftAir) / fromIntegral (n*n)
@@ -305,7 +305,7 @@ drawWires m = do
     diagramColor <- asks diagramColor
     let
         matrix = mat --unSym mat
-        letters           = take n [A .. Z]
+        letters           = take n [0 .. ]
         --lettersAndLetters = [(b,w) | w <- letters, b <- letters ]
         blockHeight = (height - upperAir) / fromIntegral (n*n)
         blockWidth  = (width - leftAir) / fromIntegral (n*n)

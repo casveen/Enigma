@@ -2,8 +2,8 @@ module Main(main) where
 
 import Parts ( simple4 )
 import Bombe.Wiring.Wiring ( Wiring(initialize) )
-import Enigma ( connect )
-import Language ( Letter(A, B) )
+import Enigma ( connect, EnigmaState )
+import Language ( LetterOrdinal(A, B), Letter4 )
 import Control.Monad.State.Strict ( runState )
 --import Control.Monad.Reader (asks, runReader)
 --import Diagrams.TwoD.Arrow ( arrowBetween )
@@ -29,9 +29,9 @@ main :: IO ()
 main = do
     putStrLn "We start with a simple4 enigma"
     let
-        enigma = simple4
+        enigma = simple4 :: EnigmaState (Letter4)
         wiring = initialize 4 :: MatrixWiringStandard
-    print $ runState (Enigma.connect wiring A B) enigma
+    print $ runState (Enigma.connect wiring 0 1) enigma
 
 
 {-

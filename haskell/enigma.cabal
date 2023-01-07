@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -63,6 +63,7 @@ library
     , diagrams-svg
     , hmatrix
     , hspec
+    , mod
     , monad-memo
     , mtl
     , nondeterminism
@@ -91,6 +92,7 @@ executable enigma-exe
     , enigma
     , hmatrix
     , hspec
+    , mod
     , monad-memo
     , mtl
     , nondeterminism
@@ -119,6 +121,7 @@ executable exploreclosure-exe
     , enigma
     , hmatrix
     , hspec
+    , mod
     , monad-memo
     , mtl
     , nondeterminism
@@ -134,7 +137,7 @@ test-suite enigma-test
       Paths_enigma
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N -O0
   build-depends:
       HUnit
     , QuickCheck
@@ -149,6 +152,7 @@ test-suite enigma-test
     , enigma
     , hmatrix
     , hspec
+    , mod
     , monad-memo
     , mtl
     , nondeterminism
@@ -179,6 +183,7 @@ benchmark enigma-benchmark
     , enigma
     , hmatrix
     , hspec
+    , mod
     , monad-memo
     , mtl
     , nondeterminism
