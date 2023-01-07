@@ -1,10 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
---{-# LANGUAGE KindSignatures #-} -- ? knownnat in sig
---{-# LANGUAGE TypeSynonymInstances #-}
---{-# LANGUAGE FlexibleInstances #-}
-
 module Language (
 Letter,
 LetterOrdinal(..),
@@ -18,12 +14,12 @@ stringToLanguage
 ) where
 
 import Text.Read (readMaybe)
-import Data.Mod.Word
---import GHC.TypeNats
+import Data.Mod.Word ( Mod )
 import Cipher (Cipherable)
 import Data.TypeLits (KnownNat)
 import Test.QuickCheck (Arbitrary, chooseEnum)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
+
 -----------------------------------------------------------------------
 --                          LANGUAGE                                 --
 -----------------------------------------------------------------------
@@ -37,17 +33,6 @@ instance Num LetterOrdinal where
     signum = id
     fromInteger = toEnum . fromIntegral
 
-
---type LetterOrdinals = [LetterOrdinal]
-
---instance Cipherable EnglishLetter where 
-
-make :: (KnownNat k) => Mod k
-make = 21
-
-
---integers modulo m
---type Letters m = [Letter m]
 type Letter m = Mod m
 
 type EnglishLetter = Letter 26
@@ -55,24 +40,17 @@ type EnglishLetter = Letter 26
 type Letter4 = Letter 4
 
 type Letter6 = Letter 6
---data TwentySix
 
 instance (KnownNat m) => Cipherable (Mod m)
 instance Cipherable LetterOrdinal
-
---instance Cipherable LetterOrdinal
 
 instance Arbitrary LetterOrdinal where
   arbitrary = chooseEnum(minBound, maxBound)
 
 
 instance (KnownNat m) => Arbitrary (Mod m) where
---instance Arbitrary EnglishLetter where
   arbitrary = chooseEnum(minBound, maxBound)
 
-
-
---safelyReadLetters :: KnownNat n => String -> Maybe (Letters n)
 safelyReadLetters :: Enum a => String -> Maybe [a]
 safelyReadLetters (s:str) = do
     l <- fmap (toEnum . fromEnum) (readMaybe [s] :: Maybe LetterOrdinal)

@@ -45,7 +45,8 @@ import Diagrams.Prelude
       AlphaColour )
 import Diagrams.Backend.SVG.CmdLine
 import Control.Monad.Reader (Reader, asks, ask)
-import Language (shiftLetter)
+import Language (shiftLetter, LetterOrdinal)
+import Parts (reEnum)
 
 --wd :: Double
 --wd = 2.0
@@ -98,7 +99,7 @@ drawRotorWire from to wireIn wireOut n offset = do
             | fromShifted == wireOut = activeWireColor
             | otherwise              = inactiveWireColor
     return $
-        text (show fromShifted) # translateX (-width/2-letterOffset)
+        text (show (reEnum fromShifted :: LetterOrdinal)) # translateX (-width/2-letterOffset)
                                 # translateY (f - letterSize/2.0)        <>
         fromVertices outerRightVertices # lcA color # lwO outerLineWidth <>
         fromVertices outerLeftVertices # lcA color # lwO outerLineWidth  <>
@@ -133,9 +134,9 @@ drawReflectorWire from to wireIn wireOut n offset = do
             | fromShifted == wireOut = activeWireColor
             | otherwise       = inactiveWireColor
     return $
-        text (show fromShifted) # translateX (-width/2-letterOffset)
+        text (show (reEnum fromShifted :: LetterOrdinal)) # translateX (-width/2-letterOffset)
                                 # translateY (f - letterSize/2.0)        <>
-        text (show toShifted)   # translateX (-width/2-letterOffset)
+        text (show (reEnum toShifted :: LetterOrdinal))   # translateX (-width/2-letterOffset)
                                 # translateY (t - letterSize/2.0)        <>
         fromVertices outerRightVertices # lcA color # lwO outerLineWidth <>
         fromVertices outerLeftVertices # lcA color # lwO outerLineWidth  <>
@@ -207,11 +208,6 @@ drawPlugboard (Plugboard transform) wireInEnum wireOutEnum = do
         rect width height # fcA bgColor
 
 
-
-
---
---TODO: draw labels between rotors
---
 
 drawEnigma :: (Cipherable e, Show e) => EnigmaState e -> Int -> Reader TransformShape (Diagram B)
 drawEnigma enigma@(Enigma plugboard (Cartridge rotors reflector positions)) activeWire = do
