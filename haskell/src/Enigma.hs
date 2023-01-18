@@ -14,7 +14,8 @@ getCartridge,
 getRotorPosition,
 setRotorPosition,
 initialize,
-connect
+connect,
+connectEnums
 ) where
 
 import Control.Monad.State.Strict
@@ -168,3 +169,7 @@ connect wiring cribLetter cipherLetter = do
             )
             wiring
             (zip [0..(n-1)] (map fromEnum (head encryption)))
+
+connectEnums :: (Enum e, Cipherable f, Wiring w) => w -> e -> e -> Enigma f w
+connectEnums wiring cribLetter cipherLetter = 
+    connect wiring (reEnum cribLetter) (reEnum cipherLetter)

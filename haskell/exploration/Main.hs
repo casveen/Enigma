@@ -1,17 +1,17 @@
 module Main(main) where
 
-import Parts ( simple4 )
-import Bombe.Wiring.Wiring ( Wiring(initialize) )
-import Enigma ( connect, EnigmaState )
-import Language ( LetterOrdinal(A, B), Letter4 )
-import Control.Monad.State.Strict ( runState )
---import Control.Monad.Reader (asks, runReader)
---import Diagrams.TwoD.Arrow ( arrowBetween )
---import Diagrams.Backend.Cairo.CmdLine ( B )
---import Bombe.Wiring.WiringDiagram ( drawWires, drawWiresSymmetric, DiagramShape(..), BlockShape(..) )
-import Bombe.Wiring.MatrixWiring.MatrixWiringStandard
-    ( MatrixWiringStandard )
-{-import Diagrams
+import Parts ( simple4, simple6 )
+import Bombe.Wiring.Wiring ( Wiring(initialize, closure) )
+import Enigma ( connect, connectEnums, EnigmaState, Enigma )
+import Language ( LetterOrdinal(..), Letter4, Letter6 )
+import Control.Monad.State.Strict ( runState, evalState )
+import Control.Monad.Reader (asks, runReader)
+import Diagrams.TwoD.Arrow ( arrowBetween )
+import Diagrams.Backend.Cairo.CmdLine ( B, mainWith )
+import Bombe.Wiring.WiringDiagram ( drawWires, drawWiresSymmetric, DiagramShape(..), BlockShape(..) )
+import Bombe.Wiring.MatrixWiring.MatrixWiringCompressed
+    ( MatrixWiringCompressed )
+import Diagrams
     ( fcA,
       hsep,
       vsep,
@@ -22,48 +22,49 @@ import Bombe.Wiring.MatrixWiring.MatrixWiringStandard
       translateY,
       p2,
       (#),
-      Diagram )-}
-{-import Diagrams.Prelude
-    ( withOpacity, green, lightgray, orange, white )-}
+      Diagram )
+import Diagrams.Prelude
+    ( withOpacity, green, lightgray, orange, white )
 main :: IO ()
 main = do
     putStrLn "We start with a simple4 enigma"
     let
-        enigma = simple4 :: EnigmaState (Letter4)
-        wiring = initialize 4 :: MatrixWiringStandard
-    print $ runState (Enigma.connect wiring 0 1) enigma
+        enigma = simple4 :: EnigmaState Letter4
+        wiring = initialize 4 :: MatrixWiringCompressed
+    print $ wiring
+    mainWith explainingClosure
 
 
-{-
+
 explainingClosure :: Diagram B
 explainingClosure =
     let
         sep = 16.0
-        enigma = simple4
-        wiring = initialize 4 :: MatrixWiringStandard
+        enigma = simple6 :: EnigmaState Letter6
+        wiring = initialize 6 :: MatrixWiringCompressed
         initialDiagram = drawWires wiring
-        connectAB      = drawWiresSymmetric $ evalState (
+        connectAB      = drawWires $ evalState (
             do
-                Enigma.connect wiring A B) enigma
-        connectABClosed = drawWiresSymmetric $ evalState (
+                Enigma.connectEnums wiring A B) enigma
+        connectABClosed = drawWires $ evalState (
             do
-                w1 <- Enigma.connect wiring A B
+                w1 <- Enigma.connectEnums wiring A B
                 return $ closure w1) enigma
-        connectCD      = drawWiresSymmetric $ evalState (
+        connectCD      = drawWires $ evalState (
             do
-                Enigma.connect wiring C D) enigma
-        connectCDClosed = drawWiresSymmetric $ evalState (
+                Enigma.connectEnums wiring C D) enigma
+        connectCDClosed = drawWires $ evalState (
             do
-                w1 <- Enigma.connect wiring C D
+                w1 <- Enigma.connectEnums wiring C D
                 return $ closure w1) enigma
-        connectABCD = drawWiresSymmetric $ evalState (
+        connectABCD = drawWires $ evalState (
             do
-                w1 <- Enigma.connect wiring A B
-                Enigma.connect w1 C D) enigma
-        connectABCDClosed = drawWiresSymmetric $ evalState (
+                w1 <- Enigma.connectEnums wiring A B
+                Enigma.connectEnums w1 C D) enigma
+        connectABCDClosed = drawWires $ evalState (
             do
-                w1 <- Enigma.connect wiring A B
-                w2 <- Enigma.connect w1 C D
+                w1 <- Enigma.connectEnums wiring A B
+                w2 <- Enigma.connectEnums w1 C D
                 return $ closure w2) enigma
 
         connectArrowAB = do 
@@ -185,7 +186,6 @@ explainingClosure =
 
     in
         runReader todo shape
--}
 
 
 
@@ -227,7 +227,7 @@ exploreQR = --(MatrixWiring matrix n) =
         
         ab = 
             do  
-                let abMatrix  = evalState (do Enigma.connect wiring A B) enigma
+                let abMatrix  = evalState (do Enigma.connectEnumswiring A B) enigma
                 let (q,r)     = qr (getMatrix abMatrix)
                 abDefault    <- drawWires abMatrix
                 abq          <- drawWires (MatrixWiring q n)
@@ -237,7 +237,7 @@ exploreQR = --(MatrixWiring matrix n) =
 
         cd = 
             do  
-                let cdMatrix  = evalState (do Enigma.connect wiring C D) enigma
+                let cdMatrix  = evalState (do Enigma.connectEnumswiring C D) enigma
                 let (q,r)     = qr (getMatrix cdMatrix)
                 cdDefault    <- drawWires cdMatrix
                 cdq          <- drawWires (MatrixWiring q n)
@@ -248,8 +248,8 @@ exploreQR = --(MatrixWiring matrix n) =
         abcd = 
             do  
                 let abcdMatrix  = evalState ( do 
-                        w1 <- Enigma.connect wiring A B
-                        Enigma.connect w1 C D
+                        w1 <- Enigma.connectEnumswiring A B
+                        Enigma.connectEnumsw1 C D
                         ) enigma
                 let (q,r)     = qr (getMatrix abcdMatrix)
                 abcdDefault    <- drawWires abcdMatrix

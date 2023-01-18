@@ -8,6 +8,7 @@ import Bombe.Wiring.MatrixWiring.MatrixWiring (WM, MatrixWiring(..))
 import Bombe.Wiring.Wiring (Wiring(..), wireToBundleWire)
 import Numeric.LinearAlgebra (ident, atIndex, accum)
 import Bombe.Wiring.TransitiveClosure (transitiveClosure, transitiveClosureMemoized)
+import Debug.Trace
 
 
 data MatrixWiringCompressed = MatrixWiringCompressed WM Int (Map (Int, Int) Int) deriving(Show ,Eq)
@@ -46,17 +47,30 @@ instance Wiring MatrixWiringCompressed where
         let
             m = div (n*(n+1)) 2
 
+            allIndexes =
+                [((bi, wi), (bj, wj)) | i <- [0 .. (n * n - 1)],
+                               let (bi, wi) = wireToBundleWire i n,
+                               j <- [0 .. (n * n - 1)],
+                               let (bj, wj) = wireToBundleWire j n,
+                               bi == wj && bj == wi]
+
             matrix = ident m
 
-            mapping = fromList
-                ([((i,j), n * i - (i*(i+1) `div` 2) + j) | i <- [0 .. (n - 1)],
-                                        j <- [i .. (n - 1)]] ++
-                [((i,j), n* i - (i*(i+1) `div` 2) + j ) | i <- [1 .. (n - 1)],
-                                          j <- [0 .. (i-1)]])
-        in
-            MatrixWiringCompressed matrix n mapping
+            --connectAll :: MatrixWiringCompressed -> MatrixWiringCompressed
+            connectAll mm = foldl (\acc (ii,jj) -> connectWire acc ii jj) mm allIndexes
 
-    closure (MatrixWiringCompressed m n mapping) = MatrixWiringCompressed(transitiveClosure m) n mapping
+            mapping = fromList $
+                [((b,w), i) | b <- [0..(n-1)], 
+                              w <- [b..(n-1)],
+                              let i = (w-(b*(b+1) `div` 2))+b*n] ++
+                [((b,0), b) | b <- [1..(n-1)]] ++
+                [((b,w), i) | b <- [1..(n-1)], 
+                              w <- [1..(b-1)],
+                              let i = b+w*n - (w*(w+1) `div` 2)]
+        in
+            connectAll (MatrixWiringCompressed matrix n mapping)
+
+    closure (MatrixWiringCompressed m n mapping) = MatrixWiringCompressed (transitiveClosure m) n mapping
 
     
 

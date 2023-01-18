@@ -367,7 +367,8 @@ drawWires m = do
             )  <>
             rect leftAir (height-upperAir) # fcA diagramColor # translateY (-(height-upperAir)/2.0) # translateX (-leftAir/2.0)
 
-        indexedEntries = mconcat $ map (\r -> map (\c -> (r, c, abs (matrix `atIndex` (r,c) ) >0) ) [0..(n*n-1)]) [0..(n*n-1)]
+        --indexedEntries = mconcat $ map (\r -> map (\c -> (r, c, abs (matrix `atIndex` (r,c) ) >0) ) [0..(n*n-1)]) [0..(n*n-1)]
+        indexedEntries = mconcat $ map (\r -> map (\c -> (r, c, isConnected m r c) ) [0..(n*n-1)]) [0..(n*n-1)]
 
         drawWiring :: Diagram B
         drawWiring =

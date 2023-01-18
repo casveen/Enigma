@@ -81,7 +81,7 @@ trackEngageTreeOfLength rotors reflector s =
                 permuteHelper [] = [[]]
                 permuteHelper (ls:lss) = (++) <$> map pure ls <*> permuteHelper lss
             in
-                permuteHelper $ helper rotors
+                permuteHelper $ [0] : (tail . helper $ rotors) --the first rotor is always 0
 
         workWithAllPositions :: [EngagePath] --WriterT String (Amb EngagePath)
 

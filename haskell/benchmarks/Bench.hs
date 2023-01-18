@@ -11,7 +11,7 @@ import Language
       stringToLanguage,
       Letter4, Letter6, EnglishLetter )
 import Parts
-    ( simple6, viii, vi, v, thinReflectorC, beta, simple4 )
+    ( simple6, viii, vi, v, thinReflectorC, beta, simple4, donitz )
 import Control.Monad.State.Strict ( evalState )
 import Plugboard ( mkPlugboard )
 import Bombe.Tracker (trackManually)
@@ -54,7 +54,7 @@ main = do
 
     bgroup "tracking" [
       bench "tracking of simple4"  $ whnf trackManually (simple4 :: EnigmaState Letter4),
-      bench "tracking of simple6"  $ whnf trackManually (simple6 :: EnigmaState Letter6) --,
-      --bench "tracking of donitz"  $ whnf trackManually donitz
+      bench "tracking of simple6"  $ whnf trackManually (simple6 :: EnigmaState Letter6),  --,
+      bench "tracking of donitz"  $ whnf trackManually donitz
       ]
     ]
